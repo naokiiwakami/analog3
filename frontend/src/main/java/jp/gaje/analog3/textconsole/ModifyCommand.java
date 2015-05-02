@@ -37,7 +37,7 @@ public class ModifyCommand extends Command {
             String name = parameters[2];
             String value = parameters[3];
             try {
-                target.modifyAttribute(name, value);
+                target.setAttributePersistent(name, value);
             } catch (SynthComponentException e) {
                 System.err.println(e.getMessage());
             }

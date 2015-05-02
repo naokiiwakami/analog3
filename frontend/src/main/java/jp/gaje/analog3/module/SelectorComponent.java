@@ -13,11 +13,11 @@ public class SelectorComponent extends ModulePart
     {
         super(TYPE_SELECTOR, name, rack);
         if (initial != null) {
-            addParameter("value", initial);
+            addAttribute("value", initial);
         }
         attributes.put("choices", choices);
 
-        addReadOnly("choices");
+        markReadOnly("choices");
     }
 
     public SelectorComponent(String componentName,
@@ -28,7 +28,7 @@ public class SelectorComponent extends ModulePart
 
         boolean isMandatory = true;
         setAttributeStringSet(ATTR_CHOICES, sourceAttributes, isMandatory);
-        addReadOnly(ATTR_CHOICES);
+        markReadOnly(ATTR_CHOICES);
         setAttribute(ATTR_VALUE, sourceAttributes, isMandatory, String.class);
 
         for (Map.Entry<String, Object> attribute : sourceAttributes.entrySet()) {
@@ -44,13 +44,13 @@ public class SelectorComponent extends ModulePart
 
     public String getValue()
     {
-        return getParameter("value");
+        return getAttribute("value");
     }
 
     public void setValue(String value)
     {
         try {
-            modifyAttribute(ATTR_VALUE, value);
+            setAttributePersistent(ATTR_VALUE, value);
         } catch (SynthComponentException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

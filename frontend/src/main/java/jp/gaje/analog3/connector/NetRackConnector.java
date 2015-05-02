@@ -93,7 +93,7 @@ public class NetRackConnector extends RackConnector
         // Build modules from the description. 
         List<SynthComponent> components = new ArrayList<SynthComponent>();
         for (Component cnComponent : reply.getComponentList()) {
-            ModuleComponent module = fetchModuleComponent(cnComponent);
+            SynthComponent module = fetchComponent(cnComponent);
             if (module != null) {
                 components.add(module);
             }
@@ -103,7 +103,7 @@ public class NetRackConnector extends RackConnector
     }
     
     @Override
-    public void modifyAttribute(String[] backendPath, String attributeName, Object value)
+    public void setAttribute(String[] backendPath, String attributeName, Object value)
             throws SynthComponentException
     {
         // Reply reply;
@@ -141,7 +141,7 @@ public class NetRackConnector extends RackConnector
     }
     
     @Override
-    public void removeAttribute(String[] backendPath, String attributeName)
+    public void unsetAttribute(String[] backendPath, String attributeName)
             throws SynthComponentException
     {
         try {
@@ -268,55 +268,7 @@ public class NetRackConnector extends RackConnector
         return Reply.parseFrom(data);
     }
     
-    private ModuleComponent fetchModuleComponent(Component cnComponent)
-    {
-        // Fetch module name from the input component
-        String fullName = cnComponent.getName();
-        String[] words = fullName.split("\\.", 2);
-        if (words.length < 2) {
-            // TODO: exception
-            System.err.println(fullName + ": incomplete component full name.");
-            return null;
-        }
-        if (!words[0].equalsIgnoreCase(SynthComponent.TYPE_MODULE)) {
-            System.err.println(fullName + ": This is not a module.");
-            return null;
-        }
-
-        // Fetch module attributes from the input component
-        String moduleType = null;
-        Map<String, Object> otherAttributes = new LinkedHashMap<String, Object>();
-
-        for (Attribute cnAttribute : cnComponent.getAttributeList()) {
-            if (ModuleComponent.ATTR_MODULE_TYPE.equalsIgnoreCase(cnAttribute.getName())) {
-                moduleType = cnAttribute.getValue().getSvalue();
-            } else {
-                Value cnValue = cnAttribute.getValue();
-                Object value = fetchValue(cnValue);
-                otherAttributes.put(cnAttribute.getName(), value);
-            }
-        }
-        if (moduleType == null) {
-            System.err.println(fullName + ": Mandatory attribute "
-                    + ModuleComponent.ATTR_MODULE_TYPE + " is missing.");
-            return null;
-        }
-        
-        // Build the output module component
-        ModuleComponent module = new ModuleComponent(words[1], moduleType, rack);
-        module.addAttributes(otherAttributes);
-
-        // Build subcomponents
-        for (Component cnSubComponent : cnComponent.getSubComponentList()) {
-            SynthComponent subComponent = fetchSubComponent(cnSubComponent);
-            if (subComponent != null) {
-                module.addSubComponent(subComponent);
-            }
-        }
-        return module;
-    }
-
-    private SynthComponent fetchSubComponent(Component cnComponent)
+    private SynthComponent fetchComponent(Component cnComponent)
     {
         // fetch name
         String name = cnComponent.getName();
@@ -341,7 +293,9 @@ public class NetRackConnector extends RackConnector
         // Build the output component
         SynthComponent component = null;
         try {
-            if (componentType.equalsIgnoreCase(SynthComponent.TYPE_KNOB)) {
+            if (componentType.equalsIgnoreCase(SynthComponent.TYPE_MODULE)) {
+                component = new ModuleComponent(componentName, attributes, rack);
+            } else if (componentType.equalsIgnoreCase(SynthComponent.TYPE_KNOB)) {
                 component = new KnobComponent(componentName, attributes, rack);
             } else if (componentType.equalsIgnoreCase(SynthComponent.TYPE_SELECTOR)) {
                 component = new SelectorComponent(componentName, attributes, rack);
@@ -353,9 +307,14 @@ public class NetRackConnector extends RackConnector
             return null;
         }
         
+        if (component == null) {
+            // unknown component
+            return null;
+        }
+        
         // Build subcomponents
         for (Component cnSubComponent : cnComponent.getSubComponentList()) {
-            SynthComponent subComponent = fetchSubComponent(cnSubComponent);
+            SynthComponent subComponent = fetchComponent(cnSubComponent);
             if (subComponent != null) {
                 component.addSubComponent(subComponent);
             }

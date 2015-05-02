@@ -112,7 +112,7 @@ public class Rack extends GridPane {
             if (subComponent instanceof PortComponent) {
                 PortComponent port = (PortComponent) subComponent;
                 boolean isOutput = false;
-                String direction = subComponent.getParameter("direction");
+                String direction = subComponent.getAttribute("direction");
                 Jack jack = new Jack(port);
                 System.out.println("jack path = " + port.getPath());
                 jackResolver.put(port.getPath(), jack);

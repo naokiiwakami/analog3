@@ -178,14 +178,14 @@ public class SynthComponent {
     }
 
     /**
-     * Add a parameter to this component. Note this method does not go to
+     * Add an attribute to this component. Note this method does not go to
      * back-end, so should not be used for the purpose other than initial object
      * build.
      * 
      * @param attributeName Parameter Name.
      * @param value The value.
      */
-    public void addParameter(String attributeName, String value) {
+    public void addAttribute(String attributeName, String value) {
         attributes.put(attributeName, value);
     }
     
@@ -194,25 +194,25 @@ public class SynthComponent {
         attributes.putAll(newAttributes);
     }
 
-    public String getParameter(String name) {
+    public String getAttribute(String name) {
         return (String) attributes.get(name);
     }
     
-    void removeParameter(String name) {
+    void unsetAttribute(String name) {
         attributes.remove(name);
     }
     
-    void removeParameterPersistent(String attributeName) throws SynthComponentException {
+    void unsetAttributePersistent(String attributeName) throws SynthComponentException {
         
-        String value = getParameter(attributeName);
+        String value = getAttribute(attributeName);
         
         try {
-            removeParameter(attributeName);
+            unsetAttribute(attributeName);
             
-            backendRemoveAttribute(attributeName);
+            backendUnsetAttribute(attributeName);
             
         } catch (SynthComponentException ex) {
-            addParameter(attributeName, value);
+            addAttribute(attributeName, value);
             throw ex;
         }
         
@@ -221,7 +221,7 @@ public class SynthComponent {
         }
     }
     
-    public <T> void modifyAttribute(String attributeName, T value) throws SynthComponentException
+    public <T> void setAttributePersistent(String attributeName, T value) throws SynthComponentException
     {
         // check read only
         if (readOnlyAttributes.contains(attributeName)) {
@@ -236,7 +236,7 @@ public class SynthComponent {
         }
         
         try {
-            backendModifyAttribute(attributeName, value);
+            backendSetAttribute(attributeName, value);
         } catch (SynthComponentException ex) {
             // revert the cache change
             if (oldValue == null) {
@@ -300,7 +300,7 @@ public class SynthComponent {
             addSubComponent(subComponent);
             
             // per-implementation modification
-            executeAddSubComponent(subComponent);
+            backendAddSubComponent(subComponent);
             
         } catch (SynthComponentException ex) {
             // revert the change
@@ -333,7 +333,7 @@ public class SynthComponent {
             result = removeSubComponent(subComponent.getName());
             
             // per-implementation modification
-            executeRemoveSubComponent(subComponent);
+            backendRemoveSubComponent(subComponent);
             
         } catch (SynthComponentException ex) {
             // revert the cache
@@ -353,10 +353,10 @@ public class SynthComponent {
     }
     
     /**
-     * Add a name for a read-only attribute.
+     * Mark an attribute name read only.
      * @param attributeName
      */
-    protected void addReadOnly(String attributeName) {
+    protected void markReadOnly(String attributeName) {
         readOnlyAttributes.add(attributeName);
     }
 
@@ -469,22 +469,22 @@ public class SynthComponent {
     ///////
     // backend executors for persistent methods.
     
-    <T> void backendModifyAttribute(String name, T value) throws SynthComponentException
+    <T> void backendSetAttribute(String name, T value) throws SynthComponentException
     {
         // do nothing in default
     }
 
-    void backendRemoveAttribute(String name)  throws SynthComponentException
+    void backendUnsetAttribute(String name)  throws SynthComponentException
     {
         // do nothing in default
     }
     
-    void executeAddSubComponent(SynthComponent subComponent) throws SynthComponentException
+    void backendAddSubComponent(SynthComponent subComponent) throws SynthComponentException
     {
         // do nothing in default
     }
 
-    void executeRemoveSubComponent(SynthComponent subComponent) throws SynthComponentException
+    void backendRemoveSubComponent(SynthComponent subComponent) throws SynthComponentException
     {
         // do nothing in default
     }

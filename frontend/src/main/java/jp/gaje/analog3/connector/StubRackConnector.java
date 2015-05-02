@@ -26,13 +26,13 @@ public class StubRackConnector extends RackConnector {
         
         // Make a dummy envelope generator
         ModuleComponent eg = new ModuleComponent("eg", "ADSR", rack);
-        eg.addParameter("attackTime", "10");
-        eg.addParameter("decayTime", "480");
-        eg.addParameter("sustainLevel", "230");
-        eg.addParameter("releaseTime", "120");
-        eg.addParameter("curve", "exponential");
-        eg.addParameter("velocityDepth", "1023");
-        eg.addParameter("timeScaleDepth", "100");
+        eg.addAttribute("attackTime", "10");
+        eg.addAttribute("decayTime", "480");
+        eg.addAttribute("sustainLevel", "230");
+        eg.addAttribute("releaseTime", "120");
+        eg.addAttribute("curve", "exponential");
+        eg.addAttribute("velocityDepth", "1023");
+        eg.addAttribute("timeScaleDepth", "100");
         
         eg.addSubComponent(new PortComponent("gate", PortComponent.INPUT, PortComponent.SIGNAL_NOTE, rack));
         eg.addSubComponent(new PortComponent("envelope", PortComponent.OUTPUT, PortComponent.SIGNAL_VALUE, rack));
@@ -52,7 +52,7 @@ public class StubRackConnector extends RackConnector {
 
     @Override
 	public
-    void removeAttribute(String[] path, String attributeName) throws SynthComponentException
+    void unsetAttribute(String[] path, String attributeName) throws SynthComponentException
     {
         // TODO Auto-generated method stub
         
@@ -68,7 +68,7 @@ public class StubRackConnector extends RackConnector {
     }
 
     @Override
-    public void modifyAttribute(String[] backendPath, String attributeName, Object value)
+    public void setAttribute(String[] backendPath, String attributeName, Object value)
             throws SynthComponentException
     {
         // TODO Auto-generated method stub

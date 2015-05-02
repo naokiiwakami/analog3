@@ -53,25 +53,25 @@ public class ModulePart extends SynthComponent
     // backend executors for persistent methods.
 
     @Override
-    <T> void backendModifyAttribute(String attributeName, T value) throws SynthComponentException
+    <T> void backendSetAttribute(String attributeName, T value) throws SynthComponentException
     {
         RackConnector connector = getRackConnector();
         if (connector != null) {
-            connector.modifyAttribute(getBackendPath(), attributeName, value);
+            connector.setAttribute(getBackendPath(), attributeName, value);
         }
     }
     
     @Override
-    void backendRemoveAttribute(String name)  throws SynthComponentException
+    void backendUnsetAttribute(String name)  throws SynthComponentException
     {
         RackConnector connector = getRackConnector();
         if (connector != null) {
-            connector.removeAttribute(getBackendPath(), name);
+            connector.unsetAttribute(getBackendPath(), name);
         }
     }
     
     @Override
-    void executeAddSubComponent(SynthComponent subComponent) throws SynthComponentException
+    void backendAddSubComponent(SynthComponent subComponent) throws SynthComponentException
     {
         RackConnector connector = getRackConnector();
         if (connector != null) {
@@ -80,7 +80,7 @@ public class ModulePart extends SynthComponent
     }
     
     @Override
-    void executeRemoveSubComponent(SynthComponent subComponent) throws SynthComponentException {
+    void backendRemoveSubComponent(SynthComponent subComponent) throws SynthComponentException {
         RackConnector connector = getRackConnector();
         if (connector != null) {
             connector.removeSubComponent(getBackendPath(), subComponent);

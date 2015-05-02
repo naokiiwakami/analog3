@@ -158,7 +158,7 @@ public class FileRackConnector extends RackConnector
                 module.addSubComponent(createKnob(key, value.getAsJsonObject(), rack));
             } else {
                 try {
-                    module.addParameter(key, value.getAsString());
+                    module.addAttribute(key, value.getAsString());
                 } catch (UnsupportedOperationException ex) {
                     throw new ComponentBuildException("value of parameter " + key
                             + " is expected to be string but it's not. " + value);
@@ -195,7 +195,7 @@ public class FileRackConnector extends RackConnector
                 knob.addSubComponent(createPort(key, value.getAsJsonObject(), rack));
             } else {
                 try {
-                    knob.addParameter(key, value.getAsString());
+                    knob.addAttribute(key, value.getAsString());
                 } catch (UnsupportedOperationException ex) {
                     throw new ComponentBuildException("value of parameter " + key
                             + " is expected to be string but it's not. " + value);
@@ -253,7 +253,7 @@ public class FileRackConnector extends RackConnector
             String value = entry.getValue().getAsString();
             if (!key.equalsIgnoreCase(PortComponent.ATTR_DIRECTION)
                     && !key.equalsIgnoreCase(PortComponent.ATTR_SIGNAL)) {
-                port.addParameter(key, value);
+                port.addAttribute(key, value);
             }
         }
         return port;
@@ -303,7 +303,7 @@ public class FileRackConnector extends RackConnector
 
     @Override
 	public
-    void removeAttribute(String[] path, String attributeName) throws SynthComponentException
+    void unsetAttribute(String[] path, String attributeName) throws SynthComponentException
     {
         update(path);
     }
@@ -373,7 +373,7 @@ public class FileRackConnector extends RackConnector
     }
 
     @Override
-    public void modifyAttribute(String[] backendPath, String attributeName, Object value)
+    public void setAttribute(String[] backendPath, String attributeName, Object value)
             throws SynthComponentException
     {
         // TODO Auto-generated method stub

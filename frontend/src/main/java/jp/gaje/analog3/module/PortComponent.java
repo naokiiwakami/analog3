@@ -37,12 +37,12 @@ public class PortComponent extends ModulePart
         super(TYPE_PORT, componentName, rack);
 
         this.direction = direction;
-        addParameter(ATTR_DIRECTION, direction.name());
-        addReadOnly(ATTR_DIRECTION);
+        addAttribute(ATTR_DIRECTION, direction.name());
+        markReadOnly(ATTR_DIRECTION);
 
         this.signal = signal;
-        addParameter(ATTR_SIGNAL, signal);
-        addReadOnly(ATTR_SIGNAL);
+        addAttribute(ATTR_SIGNAL, signal);
+        markReadOnly(ATTR_SIGNAL);
     }
 
     public PortComponent(String componentName,
@@ -59,12 +59,12 @@ public class PortComponent extends ModulePart
         }
         directionStr = (String) value;
         direction = Direction.valueOf(directionStr);
-        addParameter(ATTR_DIRECTION, directionStr);
-        addReadOnly(ATTR_DIRECTION);
+        addAttribute(ATTR_DIRECTION, directionStr);
+        markReadOnly(ATTR_DIRECTION);
 
         boolean isMandatory = true;
         signal = setAttribute(ATTR_SIGNAL, sourceAttributes, isMandatory, String.class);
-        addReadOnly(ATTR_SIGNAL);
+        markReadOnly(ATTR_SIGNAL);
         
         isMandatory = false;
         setAttribute(ATTR_WIREID, sourceAttributes, isMandatory, String.class);
@@ -91,17 +91,17 @@ public class PortComponent extends ModulePart
         if (wireId.equals(getWireId())) {
             return;
         }
-        modifyAttribute("wireId", wireId);
+        setAttributePersistent("wireId", wireId);
     }
 
     public String getWireId()
     {
-        return getParameter("wireId");
+        return getAttribute("wireId");
     }
 
     public void removeWireId() throws SynthComponentException
     {
-        removeParameterPersistent("wireId");
+        unsetAttributePersistent("wireId");
     }
 
     public Direction getDirection()

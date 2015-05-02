@@ -24,14 +24,14 @@ public class WireComponent extends SynthComponent {
         super(TYPE_WIRE, makeWireName(wireId));
 
         this.wireId = wireId;
-        addParameter(WIREID, wireId);
-        addReadOnly(WIREID);
+        addAttribute(WIREID, wireId);
+        markReadOnly(WIREID);
         
         attributes.put(SOURCE, null);
         
         listeners = new LinkedHashSet<String>();
         attributes.put(LISTENERS, listeners);
-        addReadOnly(LISTENERS);
+        markReadOnly(LISTENERS);
     }
 
     /**
@@ -50,13 +50,13 @@ public class WireComponent extends SynthComponent {
      * TODO: throw SourceConflictException instead of SynthComponentException
      */
     public void setSourcePath(String path) throws SynthComponentException {
-        String source = getParameter(SOURCE);
+        String source = getAttribute(SOURCE);
         if (source != null) {
             throw new SynthComponentException(this,
                     "source is already set. src=" + source);
         }
 
-        addParameter(SOURCE, path);
+        addAttribute(SOURCE, path);
     }
 
     /**
@@ -65,7 +65,7 @@ public class WireComponent extends SynthComponent {
      * @return The path if it's already set. If it's not set yet, returns null.
      */
     public String getSourcePath() {
-        return getParameter(SOURCE);
+        return getAttribute(SOURCE);
     }
     
     public PortComponent getSourceComponent() {
@@ -77,7 +77,7 @@ public class WireComponent extends SynthComponent {
      * Remove source from the 
      */
     public void removeSource() {
-        addParameter(SOURCE, null);
+        addAttribute(SOURCE, null);
     }
 
     /**

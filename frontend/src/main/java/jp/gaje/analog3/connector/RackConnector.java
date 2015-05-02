@@ -47,9 +47,9 @@ public abstract class RackConnector {
 
     public abstract List<SynthComponent> recognizeModules() throws SynthComponentException, ComponentBuildException;
     
-    public abstract void modifyAttribute(String[] backendPath, String attributeName, Object value) throws SynthComponentException;
+    public abstract void setAttribute(String[] backendPath, String attributeName, Object value) throws SynthComponentException;
     
-    public abstract void removeAttribute(String[] backendPath, String attributeName) throws SynthComponentException;
+    public abstract void unsetAttribute(String[] backendPath, String attributeName) throws SynthComponentException;
 
     public abstract void addSubComponent(String[] backendPath, SynthComponent subComponent) throws SynthComponentException;
 
