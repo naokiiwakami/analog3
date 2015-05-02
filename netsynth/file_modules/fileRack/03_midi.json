@@ -1,0 +1,30 @@
+{
+  "Module.midi": {
+    "Metadata.moduleType": "midicv",
+    "Metadata.deviceId": "2",
+    "Selector.channels": {
+      "value": "1",
+      "choices": [
+        "1",
+        "2",
+        "4",
+        "6",
+        "8",
+        "16"
+      ]
+    },
+    "Port.note1": {
+      "direction": "OUTPUT",
+      "signal": "note",
+      "wireId": "1"
+    },
+    "Port.note2": {
+      "direction": "OUTPUT",
+      "signal": "note"
+    },
+    "Port.bend": {
+      "direction": "OUTPUT",
+      "signal": "value"
+    }
+  }
+}

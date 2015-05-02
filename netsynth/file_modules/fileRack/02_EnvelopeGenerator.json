@@ -1,0 +1,45 @@
+{
+  "Module.eg1": {
+    "Metadata.moduleType": "ADSR",
+    "Knob.attack": {
+      "scale": 1023,
+      "value": 547
+    },
+    "Knob.decay": {
+      "scale": 1023,
+      "value": 85
+    },
+    "Knob.sustain": {
+      "scale": 1023,
+      "value": 585
+    },
+    "Knob.release": {
+      "scale": 1023,
+      "value": 185
+    },
+    "Selector.curve": {
+      "value": "exponential",
+      "choices": [
+        "linear",
+        "exponential"
+      ]
+    },
+    "Knob.velocityDepth": {
+      "scale": 1023,
+      "value": 263
+    },
+    "Knob.timeScaleDepth": {
+      "scale": 1023,
+      "value": 235
+    },
+    "Port.note": {
+      "direction": "INPUT",
+      "signal": "note",
+      "wireId": "1"
+    },
+    "Port.envelope": {
+      "direction": "OUTPUT",
+      "signal": "value"
+    }
+  }
+}

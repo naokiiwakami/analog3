@@ -1,0 +1,44 @@
+{
+  "Module.vco01": {
+    "Metadata.moduleType": "VCO",
+    "Knob.frequency": {
+      "scale": 1023,
+      "value": 582
+    },
+    "Knob.pulseWidth": {
+      "scale": 1023,
+      "value": 167
+    },
+    "Knob.analogMod": {
+      "scale": 1023,
+      "value": 105
+    },
+    "Knob.analogFM": {
+      "scale": 1023,
+      "value": 0
+    },
+    "Knob.analogPWM": {
+      "scale": 1023,
+      "value": 0
+    },
+    "Selector.sync": {
+      "value": "off",
+      "choices": [
+        "off",
+        "on"
+      ]
+    },
+    "Selector.gateSync": {
+      "value": "on",
+      "choices": [
+        "off",
+        "on"
+      ]
+    },
+    "Port.note": {
+      "direction": "INPUT",
+      "signal": "note",
+      "wireId": "1"
+    }
+  }
+}

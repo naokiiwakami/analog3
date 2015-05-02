@@ -1,0 +1,40 @@
+{
+  "Module.lfo02": {
+    "Metadata.moduleType": "LFO",
+    "Knob.frequency": {
+      "scale": "1023",
+      "value": "87"
+    },
+    "Knob.delay": {
+      "scale": "1023",
+      "value": "25"
+    },
+    "Selector.waveform": {
+      "value": "sine",
+      "choices": [
+        "sine",
+        "triangle",
+        "rectangle",
+        "random"
+      ]
+    },
+    "Selector.gateSync": {
+      "value": "off",
+      "choices": [
+        "off",
+        "0 degree",
+        "90 degree",
+        "180 degree",
+        "270 degree"
+      ]
+    },
+    "Port.gate": {
+      "direction": "INPUT",
+      "signal": "note"
+    },
+    "Port.waveOut": {
+      "direction": "OUTPUT",
+      "signal": "value"
+    }
+  }
+}
