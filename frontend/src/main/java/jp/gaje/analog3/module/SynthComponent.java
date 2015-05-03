@@ -228,11 +228,17 @@ public class SynthComponent {
             throw new OperationNotSupportedException(this, "read only: " + attributeName);
         }
         
-        T oldValue = (T) attributes.get(attributeName);
+        Object oldValue = attributes.get(attributeName);
         if (oldValue == null) {
             attributes.put(attributeName, value);
         } else {
-            attributes.replace(attributeName, value);
+            Class<?> originalClass = oldValue.getClass();
+            Class<?> newClass = value.getClass();
+            if (originalClass == newClass) {
+                attributes.replace(attributeName, value);
+            } else {
+                throw new SynthComponentException(this, "attribute value type mismatch");
+            }
         }
         
         try {

@@ -15,14 +15,19 @@ def receiveChunk(s):
     data = s.recv(4)
     if not data:
         return
-    unpacked = struct.unpack('i', data)
+    unpacked = struct.unpack('I', data)
     length = socket.ntohl(unpacked[0])
     print(length)
-    message = s.recv(length)
+    remaining = length
+    message = ""
+    while remaining > 0:
+        buf = s.recv(remaining)
+        remaining -= len(buf)
+        message += buf
     return message
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(('localhost', 12345))
+s.connect(('raspberrypi', 12345))
 
 request = connector_pb2.Request()
 request.command = connector_pb2.Request.DESCRIBE
@@ -30,6 +35,8 @@ data = request.SerializeToString()
 sendChunk(s, data)
 
 replyData = receiveChunk(s)
+
+print('abc', replyData)
 
 reply = connector_pb2.Reply()
 reply.ParseFromString(replyData)

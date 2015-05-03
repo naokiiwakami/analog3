@@ -254,6 +254,7 @@ public class NetRackConnector extends RackConnector
         OutputStream ostream = socket.getOutputStream();
         ostream.write(header);
         ostream.write(payload);
+        ostream.flush();
     }
     
     protected Reply receiveReply() throws IOException
@@ -264,7 +265,14 @@ public class NetRackConnector extends RackConnector
         int length = ((header[0] & 0xff) << 24) + ((header[1] & 0xff) << 16)
                 + ((header[2] & 0xff) << 8) + (header[3] & 0xff);
         byte[] data = new byte[length];
-        istream.read(data, 0, length);
+        int remaining = length;
+        while (remaining > 0) {
+            int nread = istream.read(data, length - remaining, remaining);
+            if (nread <= 0) {
+                break;
+            }
+            remaining -= nread;
+        }
         return Reply.parseFrom(data);
     }
     
@@ -317,6 +325,9 @@ public class NetRackConnector extends RackConnector
             SynthComponent subComponent = fetchComponent(cnSubComponent);
             if (subComponent != null) {
                 component.addSubComponent(subComponent);
+            }
+            else {
+                System.err.println(component.getPath() + ": failed to create a sub component");
             }
         }
         

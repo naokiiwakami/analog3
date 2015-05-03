@@ -35,8 +35,19 @@ public class ModifyCommand extends Command {
         
         if (target != null) {
             String name = parameters[2];
-            String value = parameters[3];
+            String inputValue = parameters[3];
             try {
+                Object value;
+                if (inputValue.startsWith("\"")) {
+                    if (inputValue.endsWith("\"")) {
+                        value = inputValue.substring(1, inputValue.length() - 1);
+                    } else {
+                        value = inputValue.substring(1);
+                    }
+                } else {
+                    value = Integer.parseInt(inputValue);
+                }
+
                 target.setAttributePersistent(name, value);
             } catch (SynthComponentException e) {
                 System.err.println(e.getMessage());

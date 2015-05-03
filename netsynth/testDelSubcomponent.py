@@ -15,7 +15,7 @@ def receiveChunk(s):
     data = s.recv(4)
     if not data:
         return
-    unpacked = struct.unpack('i', data)
+    unpacked = struct.unpack('I', data)
     length = socket.ntohl(unpacked[0])
     print(length)
     message = s.recv(length)
