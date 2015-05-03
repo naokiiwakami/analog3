@@ -3,14 +3,14 @@
     "Metadata.moduleType": "LFO",
     "Knob.frequency": {
       "scale": 1023,
-      "value": 487
+      "value": 568
     },
     "Knob.delay": {
       "scale": 1023,
-      "value": 25
+      "value": 110
     },
     "Selector.waveform": {
-      "value": "sine",
+      "value": "triangle",
       "choices": [
         "sine",
         "triangle",

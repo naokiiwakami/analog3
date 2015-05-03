@@ -13,6 +13,8 @@
 #include <log4cplus/loggingmacros.h>
 #include <log4cplus/configurator.h>
 #include <stack>
+#include <errno.h>
+#include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/uio.h>
@@ -253,7 +255,7 @@ FileModuleDriver::makeDocument()
         char errText[4096];
         size_t offset = document->GetErrorOffset();
         std::string message;
-        snprintf(errText, sizeof(errText), "Error (offset %lu): %s\n",
+        snprintf(errText, sizeof(errText), "Error (offset %u): %s\n",
                  offset,
                  GetParseError_En(document->GetParseError()));
         message = errText;

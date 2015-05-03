@@ -1,13 +1,16 @@
+#include <arpa/inet.h>
 #include <log4cplus/logger.h>
 #include <log4cplus/loggingmacros.h>
 #include <log4cplus/configurator.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <ctype.h>
 
 #include "Sock.h"
 
@@ -116,8 +119,10 @@ int Sock::sendChunk(const std::string& message)
 
     int size = message.size();
     remaining = size;
+    const char* ptr = message.c_str();
     while (remaining > 0) {
-        nwrite = write(m_fd, message.c_str() + size - remaining, remaining);
+        nwrite = write(m_fd,  ptr, remaining);
+        LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": nwrite=" << nwrite << ", " << (int) *ptr));
         if (nwrite < 0) {
             if (errno == EINTR) {
                 continue;
@@ -127,6 +132,7 @@ int Sock::sendChunk(const std::string& message)
                 return nwrite;
             }
         }
+        ptr += nwrite;
         remaining -= nwrite;
     }
 

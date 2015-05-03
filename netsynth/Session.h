@@ -3,6 +3,7 @@
 
 #include "Runnable.h"
 
+#include <string>
 #include <map>
 #include <list>
 

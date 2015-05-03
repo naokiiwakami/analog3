@@ -46,6 +46,7 @@ Session::initialize()
     bool result = false;
     try {
         struct dirent *ep;
+        std::map<std::string, FileModuleDriver*> sortMap;
         while ((ep = readdir(dp)) != NULL) {
             char* ptr = strcasestr(ep->d_name, ".json");
             if (ptr == NULL || *(ptr + 5) != '\0') {
@@ -62,9 +63,13 @@ Session::initialize()
             FileModuleDriver* moduleDriver = new FileModuleDriver(fileName);
             const std::string& name = moduleDriver->getFullName();
             m_modules[name] = moduleDriver;
-            m_modulesList.push_back(moduleDriver);
+            sortMap[fileName] = moduleDriver;
         }
 
+        for (std::map<std::string, FileModuleDriver*>::iterator it = sortMap.begin();
+             it != sortMap.end(); ++it) {
+            m_modulesList.push_back(it->second);
+        }
         result = true;
     }
     catch (ModuleRecognitionException& ex) {

@@ -9,9 +9,9 @@ CLEANESTFILES = $(CLEANFILES) *.d depend *.pb.* *_pb2.*
 
 CPP = g++
 LD  = g++
-CPPFLAGS = -g -D_Linux_ -Wlong-long -Wformat -Wpointer-arith -Wall -I../include -I../log4cplus/include
-LDFLAGS =
-LIB = -lpthread -lprotobuf -L../log4cplus/lib -llog4cplus
+CPPFLAGS = -g -D_Linux_ -Wlong-long -Wformat -Wpointer-arith -Wall -I../thirdparty/include
+LDFLAGS = -L../thirdparty/lib 
+LIB = -lpthread -lprotobuf -llog4cplus
 DEPFLAGS = -M
 
 OBJS = \
