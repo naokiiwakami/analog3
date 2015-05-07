@@ -13,9 +13,9 @@ const char* version = "0.1";
 
 Listener *listener;
 
-bool initialize()
+bool initialize(const char* rackURL)
 {
-    if (!Session::initialize()) {
+    if (!Session::initialize(rackURL)) {
         return false;
     }
     return true;
@@ -45,7 +45,12 @@ int main ( int argc, char* argv[] )
         }
     }
 
-    if (!initialize()) {
+    const char* rackURL = "file:/file_modules/fileRack";
+    if (argc > 2) {
+        rackURL = argv[2];
+    }
+
+    if (!initialize(rackURL)) {
         LOG4CPLUS_FATAL(logger, LOG4CPLUS_TEXT("Server initialization failed."));
         return 1;
     }

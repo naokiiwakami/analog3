@@ -19,6 +19,7 @@ OBJS = \
 	main.o \
 	FileModuleDriver.o \
 	Listener.o \
+	ModuleDriver.o \
 	Session.o \
 	Sock.o \
 	Thread.o

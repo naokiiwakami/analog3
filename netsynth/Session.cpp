@@ -1,11 +1,10 @@
 #include "Session.h"
 
-#include "FileModuleDriver.h"
+#include "ModuleDriver.h"
 #include "ModuleRecognitionException.h"
 #include "Sock.h"
 #include "connector.pb.h"
 
-#include <dirent.h>
 #include <iostream>
 #include <sys/types.h>
 #include <google/protobuf/text_format.h>
@@ -17,8 +16,8 @@
 
 using namespace google::protobuf;
 
-std::map<std::string, FileModuleDriver*> Session::m_modules;
-std::list<FileModuleDriver*> Session::m_modulesList;
+std::map<std::string, ModuleDriver*> Session::m_modules;
+std::list<ModuleDriver*> Session::m_modulesList;
 
 static log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("Session"));
 
@@ -33,50 +32,31 @@ Session::~Session()
 }
 
 bool
-Session::initialize()
+Session::initialize(const char* rackURL)
 {
     static const std::string fname = "Session::initialize()";
-    const char* dirName = "file_modules/fileRack/";
-    DIR *dp = opendir(dirName);
-    if (dp == NULL) {
-        LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT(fname << ": " << dirName << ": no such directory"));
+
+    RackDriver* rackDriver = RackDriver::create(rackURL);
+    if (rackDriver == NULL) {
         return false;
     }
 
-    bool result = false;
-    try {
-        struct dirent *ep;
-        std::map<std::string, FileModuleDriver*> sortMap;
-        while ((ep = readdir(dp)) != NULL) {
-            char* ptr = strcasestr(ep->d_name, ".json");
-            if (ptr == NULL || *(ptr + 5) != '\0') {
-                // not a target file
-                continue;
-            }
-            if (ep->d_type != DT_REG) {
-                continue;
-            }
-            LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT("fileName=" << ep->d_name));
-            std::string fileName = dirName;
-            fileName += "/";
-            fileName += ep->d_name;
-            FileModuleDriver* moduleDriver = new FileModuleDriver(fileName);
-            const std::string& name = moduleDriver->getFullName();
-            m_modules[name] = moduleDriver;
-            sortMap[fileName] = moduleDriver;
-        }
+    if (!rackDriver->discover(&m_modulesList)) {
+        LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT(fname << ": Error occurred during module discovery"));
+        return false;
+    }
 
-        for (std::map<std::string, FileModuleDriver*>::iterator it = sortMap.begin();
-             it != sortMap.end(); ++it) {
-            m_modulesList.push_back(it->second);
+    std::list<ModuleDriver*>::iterator it;
+    for (it = m_modulesList.begin(); it != m_modulesList.end(); ++it) {
+        ModuleDriver* moduleDriver = *it;
+        const std::string& name = moduleDriver->getFullName();
+        if (!name.empty()) {
+            m_modules[name] = moduleDriver;
         }
-        result = true;
+        // TODO: also make module id table.
     }
-    catch (ModuleRecognitionException& ex) {
-        LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT(fname << ": " << ex.what()));
-    }
-    closedir(dp);
-    return result;
+
+    return true;
 }
 
 void
@@ -144,11 +124,11 @@ Session::describe(const connector::Request& request, connector::Reply* reply)
 {
     static const std::string fname = "Session::describe()";
     try {
-        std::list<FileModuleDriver*>::iterator it = m_modulesList.begin();
-        std::list<FileModuleDriver*>::iterator end = m_modulesList.end();
+        std::list<ModuleDriver*>::iterator it = m_modulesList.begin();
+        std::list<ModuleDriver*>::iterator end = m_modulesList.end();
 
         for (; it != end; ++it) {
-            FileModuleDriver* moduleDriver = *it;
+            ModuleDriver* moduleDriver = *it;
             moduleDriver->read(reply->add_component());
 
             if (logger.getLogLevel() <= log4cplus::DEBUG_LOG_LEVEL) {
@@ -192,7 +172,7 @@ Session::modifyAttribute(const connector::Request& request, connector::Reply* re
             throw Error("Invalid request: target path is incomplete");
         }
         const std::string& moduleName = request.path(0);
-        std::map<std::string, FileModuleDriver*>::iterator it = m_modules.find(moduleName);
+        std::map<std::string, ModuleDriver*>::iterator it = m_modules.find(moduleName);
         if (it == m_modules.end()) {
             std::string message = moduleName;
             message += ": target module not found.";
@@ -231,7 +211,7 @@ Session::addSubComponent(const connector::Request& request, connector::Reply* re
             throw Error("Invalid request: attribute modifier is missing");
         }
         const std::string& moduleName = request.path(0);
-        std::map<std::string, FileModuleDriver*>::iterator it = m_modules.find(moduleName);
+        std::map<std::string, ModuleDriver*>::iterator it = m_modules.find(moduleName);
         if (it == m_modules.end()) {
             std::string message = moduleName;
             message += ": target module not found.";
@@ -270,7 +250,7 @@ Session::removeSubComponent(const connector::Request& request, connector::Reply*
         }
 
         const std::string& moduleName = request.path(0);
-        std::map<std::string, FileModuleDriver*>::iterator it = m_modules.find(moduleName);
+        std::map<std::string, ModuleDriver*>::iterator it = m_modules.find(moduleName);
         if (it == m_modules.end()) {
             std::string message = moduleName;
             message += ": target module not found.";

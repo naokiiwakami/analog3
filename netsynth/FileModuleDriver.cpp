@@ -8,6 +8,7 @@
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/error/en.h"
 
+#include <dirent.h>
 #include <fcntl.h>
 #include <log4cplus/logger.h>
 #include <log4cplus/loggingmacros.h>
@@ -22,7 +23,55 @@
 
 using namespace rapidjson;
 
-static log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("Session"));
+static log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("FileModuleDriver"));
+
+FileRackDriver::FileRackDriver(const char* dirName)
+    : m_dirName(dirName)
+{
+}
+
+bool FileRackDriver::discover(std::list<ModuleDriver*>* modulesList)
+{
+    static const std::string fname = "FileRackDriver::discover()";
+    DIR *dp = opendir(m_dirName);
+    if (dp == NULL) {
+        LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT(fname << ": " << m_dirName << ": no such directory"));
+        return false;
+    }
+
+    bool result = false;
+    try {
+        struct dirent *ep;
+        std::map<std::string, ModuleDriver*> sortMap;
+        while ((ep = readdir(dp)) != NULL) {
+            char* ptr = strcasestr(ep->d_name, ".json");
+            if (ptr == NULL || *(ptr + 5) != '\0') {
+                // not a target file
+                continue;
+            }
+            if (ep->d_type != DT_REG) {
+                continue;
+            }
+            LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT("fileName=" << ep->d_name));
+            std::string fileName = m_dirName;
+            fileName += "/";
+            fileName += ep->d_name;
+            ModuleDriver* moduleDriver = new FileModuleDriver(fileName);
+            sortMap[fileName] = moduleDriver;
+        }
+
+        for (std::map<std::string, ModuleDriver*>::iterator it = sortMap.begin();
+             it != sortMap.end(); ++it) {
+            modulesList->push_back(it->second);
+        }
+        result = true;
+    }
+    catch (ModuleRecognitionException& ex) {
+        LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT(fname << ": " << ex.what()));
+    }
+    closedir(dp);
+    return result;
+}
 
 class FileModuleDriverData
 {
@@ -253,7 +302,7 @@ FileModuleDriver::makeDocument()
     document->Parse(buf);
     if (document->HasParseError()) {
         char errText[4096];
-        size_t offset = document->GetErrorOffset();
+        unsigned int offset = document->GetErrorOffset();
         std::string message;
         snprintf(errText, sizeof(errText), "Error (offset %u): %s\n",
                  offset,

@@ -7,7 +7,7 @@
 #include <map>
 #include <list>
 
-class FileModuleDriver;
+class ModuleDriver;
 class Sock;
 namespace connector {
     class Request;
@@ -20,7 +20,7 @@ public:
     Session(Sock* sock);
     virtual ~Session();
 
-    static bool initialize();
+    static bool initialize(const char* rackURL);
 
     void run();
 
@@ -32,8 +32,8 @@ protected:
 
     Sock* m_sock;
 
-    static std::map<std::string, FileModuleDriver*> m_modules;
-    static std::list<FileModuleDriver*> m_modulesList;
+    static std::map<std::string, ModuleDriver*> m_modules;
+    static std::list<ModuleDriver*> m_modulesList;
 };
 
 #endif

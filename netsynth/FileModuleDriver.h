@@ -1,16 +1,22 @@
 #ifndef _filemoduledriver_h_
 #define _filemoduledriver_h_
 
-#include <string>
+#include "ModuleDriver.h"
 
-namespace connector {
-    class Request;
-    class Component;
-}
+class FileRackDriver : public RackDriver
+{
+ public:
+    FileRackDriver(const char* dirName);
+
+    bool discover(std::list<ModuleDriver*>* modulesList);
+
+ private:
+    const char* m_dirName;
+};
 
 class FileModuleDriverData;
 
-class FileModuleDriver
+class FileModuleDriver : public ModuleDriver
 {
 public:
     FileModuleDriver(const std::string& fileName);
