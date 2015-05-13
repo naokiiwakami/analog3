@@ -27,7 +27,7 @@ def receiveChunk(s):
     return message
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(('raspberrypi', 12345))
+s.connect(('localhost', 12345))
 
 request = connector_pb2.Request()
 request.command = connector_pb2.Request.DESCRIBE

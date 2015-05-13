@@ -26,7 +26,8 @@ public:
 
     const std::string& getFullName();
 
-    void read(connector::Component* component);
+    bool describe(connector::Component* component,
+                  std::string* errorMessage);
 
     bool modifyAttribute(const connector::Request& request,
                          std::string* errorMessage);

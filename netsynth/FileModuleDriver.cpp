@@ -324,8 +324,9 @@ FileModuleDriver::makeDocument()
     m_data->m_document = document;
 }
 
-void
-FileModuleDriver::read(connector::Component* component)
+bool
+FileModuleDriver::describe(connector::Component* component,
+                           std::string* errorMessage)
 {
     // Convert the Json document to protocol buffer
     SaxEventToProtocolBuf handler(component);
@@ -333,9 +334,11 @@ FileModuleDriver::read(connector::Component* component)
         char errText[4096];
         snprintf(errText, sizeof(errText), "Error: %s\n",
                  GetParseError_En(m_data->m_document->GetParseError()));
-        ModuleRecognitionException ex(errText);
-        throw ex;
+        *errorMessage = errText;
+        return false;
     }
+
+    return true;
 }
 
 bool

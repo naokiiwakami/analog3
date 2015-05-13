@@ -9,7 +9,8 @@ CLEANESTFILES = $(CLEANFILES) *.d depend *.pb.* *_pb2.*
 
 CPP = g++
 LD  = g++
-CPPFLAGS = -g -D_Linux_ -Wlong-long -Wformat -Wpointer-arith -Wall -I../thirdparty/include
+CFLAGS = -I../nanopb
+CPPFLAGS = -g -D_Linux_ -Wlong-long -Wformat -Wpointer-arith -Wall -I../thirdparty/include -I../nanopb
 LDFLAGS = -L../thirdparty/lib 
 LIB = -lpthread -lprotobuf -llog4cplus
 DEPFLAGS = -M
@@ -17,6 +18,10 @@ DEPFLAGS = -M
 OBJS = \
 	connector.pb.o \
 	main.o \
+	nano_connector.pb.o \
+	pb_common.o \
+	pb_encode.o \
+	pb_decode.o \
 	FileModuleDriver.o \
 	Listener.o \
 	ModuleDriver.o \
@@ -33,6 +38,10 @@ netsynth: $(OBJS)
 
 connector.pb.cc: ../protobuf/connector.proto
 	protoc -I../protobuf --cpp_out=. ../protobuf/connector.proto
+
+nano_connector.pb.c : ../protobuf/connector.proto
+	protoc -I../protobuf -o nano_connector.pb ../protobuf/connector.proto
+	python ../nanopb/generator/nanopb_generator.py nano_connector.pb
 
 # compile and generate dependency info;
 # more complicated dependency computation, so all prereqs listed

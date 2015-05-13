@@ -123,29 +123,28 @@ void
 Session::describe(const connector::Request& request, connector::Reply* reply)
 {
     static const std::string fname = "Session::describe()";
-    try {
-        std::list<ModuleDriver*>::iterator it = m_modulesList.begin();
-        std::list<ModuleDriver*>::iterator end = m_modulesList.end();
+    std::list<ModuleDriver*>::iterator it = m_modulesList.begin();
+    std::list<ModuleDriver*>::iterator end = m_modulesList.end();
 
-        for (; it != end; ++it) {
-            ModuleDriver* moduleDriver = *it;
-            moduleDriver->read(reply->add_component());
-
-            if (logger.getLogLevel() <= log4cplus::DEBUG_LOG_LEVEL) {
-                std::string dump;
-                io::StringOutputStream output(&dump);
-                TextFormat::Print(*reply, &output);
-                LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": reply=" << dump));
-            }
+    for (; it != end; ++it) {
+        ModuleDriver* moduleDriver = *it;
+        std::string errorMessage;
+        if (!moduleDriver->describe(reply->add_component(), &errorMessage)) {
+            LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT(fname << ": " << errorMessage));
+            reply->clear_component();
+            reply->set_status(connector::Reply::ERROR);
+            return;
         }
 
-        reply->set_status(connector::Reply::SUCCESS);
+        if (logger.getLogLevel() <= log4cplus::DEBUG_LOG_LEVEL) {
+            std::string dump;
+            io::StringOutputStream output(&dump);
+            TextFormat::Print(*reply, &output);
+            LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": reply=" << dump));
+        }
     }
-    catch (ModuleRecognitionException& ex) {
-        LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT(fname << ": " << ex.what()));
-        reply->clear_component();
-        reply->set_status(connector::Reply::ERROR);
-    }
+
+    reply->set_status(connector::Reply::SUCCESS);
 }
 
 void

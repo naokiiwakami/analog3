@@ -26,7 +26,8 @@ public:
 
     virtual const std::string& getFullName() = 0;
 
-    virtual void read(connector::Component* component) = 0;
+    virtual bool describe(connector::Component* component,
+                          std::string* errorMessage) = 0;
 
     virtual bool modifyAttribute(const connector::Request& request,
                                  std::string* errorMessage) = 0;
