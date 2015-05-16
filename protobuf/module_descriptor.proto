@@ -1,0 +1,35 @@
+package connector;
+option java_package = "jp.gaje.analog3.connector";
+
+message Description {
+  repeated Component component = 1;
+}
+
+message Component {
+  enum Type {
+    Rack = 0;
+    Module = 1;
+    Knob = 2;
+    Selector = 3;
+    Port = 4;
+  }
+
+  required string name = 1;
+  optional Type type = 2;
+  optional uint32 id = 5;
+  repeated Attribute attribute = 3;
+  repeated Component sub_component = 4;
+}
+
+message Attribute {
+  required string name = 1;
+  optional Value value = 2;
+  optional uint32 id = 3;
+}
+
+message Value {
+  optional string svalue = 1;
+  optional int32 ivalue = 2;
+  optional double dvalue = 3;
+  repeated Value avalue = 4;
+}

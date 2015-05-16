@@ -5,7 +5,7 @@
 
 #include <pb_encode.h>
 #include <pb_decode.h>
-#include "nano_connector.pb.h"
+#include "nano_module_descriptor.pb.h"
 
 #include <log4cplus/logger.h>
 #include <log4cplus/loggingmacros.h>

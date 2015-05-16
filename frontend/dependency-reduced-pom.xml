@@ -48,6 +48,11 @@
                   <arg />
                   <arg />
                 </exec>
+                <exec>
+                  <arg />
+                  <arg />
+                  <arg />
+                </exec>
               </tasks>
               <sourceRoot>target/generated-sources</sourceRoot>
             </configuration>

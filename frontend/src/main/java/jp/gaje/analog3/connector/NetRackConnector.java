@@ -9,11 +9,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import jp.gaje.analog3.connector.ConnectorMessages.Attribute;
-import jp.gaje.analog3.connector.ConnectorMessages.Component;
-import jp.gaje.analog3.connector.ConnectorMessages.Reply;
-import jp.gaje.analog3.connector.ConnectorMessages.Request;
-import jp.gaje.analog3.connector.ConnectorMessages.Value;
+import jp.gaje.analog3.connector.Connector.Reply;
+import jp.gaje.analog3.connector.Connector.Request;
+import jp.gaje.analog3.connector.ModuleDescriptor.Attribute;
+import jp.gaje.analog3.connector.ModuleDescriptor.Component;
+import jp.gaje.analog3.connector.ModuleDescriptor.Value;
 import jp.gaje.analog3.module.ComponentBuildException;
 import jp.gaje.analog3.module.KnobComponent;
 import jp.gaje.analog3.module.ModuleComponent;

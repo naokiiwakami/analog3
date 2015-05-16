@@ -71,6 +71,11 @@
                <exec failonerror="true" executable="/usr/local/bin/protoc">
                  <arg value="-I=../protobuf"/>
                  <arg value="--java_out=target/generated-sources"/>
+                 <arg value="../protobuf/module_descriptor.proto"/>
+               </exec>
+               <exec failonerror="true" executable="/usr/local/bin/protoc">
+                 <arg value="-I=../protobuf"/>
+                 <arg value="--java_out=target/generated-sources"/>
                  <arg value="../protobuf/connector.proto"/>
                </exec>
              </tasks>
