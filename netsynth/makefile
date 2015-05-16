@@ -11,7 +11,7 @@ CPP = g++
 LD  = g++
 CFLAGS = -I../nanopb
 CPPFLAGS = -g -D_Linux_ -Wlong-long -Wformat -Wpointer-arith -Wall -I../thirdparty/include -I../nanopb
-LDFLAGS = -L../thirdparty/lib 
+LDFLAGS = -L../thirdparty/lib
 LIB = -lpthread -lprotobuf -llog4cplus
 DEPFLAGS = -M
 
@@ -24,6 +24,7 @@ OBJS = \
 	pb_encode.o \
 	pb_decode.o \
 	FileModuleDriver.o \
+	I2CModuleDriver.o \
 	Listener.o \
 	ModuleDriver.o \
 	Session.o \

@@ -1,5 +1,6 @@
 #include "ModuleDriver.h"
 #include "FileModuleDriver.h"
+#include "I2CModuleDriver.h"
 
 #include "connector.pb.h"
 
@@ -10,6 +11,7 @@
 #include <log4cplus/logger.h>
 #include <log4cplus/loggingmacros.h>
 #include <log4cplus/configurator.h>
+#include <stdio.h>
 #include <string>
 #include <string.h>
 
@@ -154,13 +156,34 @@ RackDriver* RackDriver::create(const char* rackURL)
 
     RackDriver* rackDriver = NULL;
     if (strncasecmp(rackURL, "file:", 5) == 0) {
+        // url = file:/<rackDir>
         const char* ptr = rackURL + 5;
         if (*ptr == '/') {
             ++ptr;
         }
         rackDriver = new FileRackDriver(ptr);
     }
+    else if (strncasecmp(rackURL, "i2c://", 6) == 0) {
+        // url = i2c://<deviceName>/<i2c_address>
+        char* ptr = strdup(rackURL + 6);
+        const char* tmp = strtok(ptr, "/");
+        if (tmp == NULL) {
+            LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT(fname << ": " << rackURL << ": device name is missing"));
+            return NULL;
+        }
+        std::string deviceName = tmp;
+        tmp = strtok(NULL, "/");
+        if (tmp == NULL) {
+            LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT(fname << ": " << rackURL << ": i2c address is missing"));
+            return NULL;
+        }
+        std::string address(tmp);
+        free(ptr);
+        LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": " << deviceName << ", " << address));
+        rackDriver = new I2CRackDriver(deviceName, address);
+    }
     else if (strncasecmp(rackURL, "stub:", 5) == 0) {
+        // url = stub:<type>
         rackDriver = new StubRackDriver(rackURL + 5);
     }
     else {
