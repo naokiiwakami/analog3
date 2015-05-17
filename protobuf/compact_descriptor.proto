@@ -1,4 +1,4 @@
-package compact_descriptor;
+package descriptor;
 
 message Description {
   repeated Component component = 1;
@@ -10,7 +10,10 @@ message Component {
     Module = 1;
     Knob = 2;
     Selector = 3;
-    Port = 4;
+    ValueInputPort = 4;
+    ValueOutputPort = 5;
+    GateInputPort = 6;
+    GateOutputPort = 7;
   }
 
   required string name = 1;
@@ -30,15 +33,7 @@ message Attribute {
     Signal = 5;
   }
 
-  enum Parameter {
-    DirectionInput = 0;
-    DirectionOutput = 1;
-    SignalValue = 2;
-    SignalGate = 3;
-  }
-
   required Type type = 1;
   optional uint32 ivalue = 2;
-  optional Parameter parameter = 3;
-  repeated string svalue = 4;
+  repeated string svalue = 3;
 }

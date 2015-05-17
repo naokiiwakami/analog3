@@ -112,7 +112,7 @@ bool write_string_array(pb_ostream_t *stream, const pb_field_t *field, void * co
 }
 
 // Values table
-enum ValueIndex {
+typedef enum _ValueIndex {
     IndexAttack,
     IndexDecay,
     IndexSustain,
@@ -121,7 +121,7 @@ enum ValueIndex {
     IndexGate,
     IndexOutput,
     NumIndexes
-};
+} ValueIndex;
 
 // TODO: load them from flash on startup
 uint16_t eg_values[NumIndexes] = {
@@ -135,6 +135,14 @@ enum SelectorNameIndex {
 };
 
 // schema.  better to have it on eeprom
+#define Knob descriptor_Component_Type_Knob
+#define Selector descriptor_Component_Type_Selector
+#define ValueInputPort descriptor_Component_Type_ValueInputPort
+#define ValueOutputPort descriptor_Component_Type_ValueOutputPort
+#define GateInputPort descriptor_Component_Type_GateInputPort
+#define GateOutputPort descriptor_Component_Type_GateOutputPort
+
+/*
 typedef enum _Type {
     Knob,
     Selector,
@@ -143,11 +151,12 @@ typedef enum _Type {
     InputGatePort,
     OutputGatePort,
 } Type;
+*/
 
 typedef struct Component {
     const char* name;
-    Type type;
-    int valueIndex;
+    uint8_t type;
+    ValueIndex valueIndex;
 } Component;
 
 const char* curve_selector_names[] = {
@@ -162,8 +171,8 @@ Component eg_components[] = {
     { "sustainLevel", Knob, IndexSustain },
     { "releaseTime", Knob, IndexRelease },
     { "curve", Selector, IndexCurve },
-    { "gate", InputGatePort, IndexGate },
-    { "output", OutputSignalPort, IndexOutput },
+    { "gate", GateInputPort, IndexGate },
+    { "output", ValueOutputPort, IndexOutput },
     { NULL }
 };
 
@@ -173,24 +182,24 @@ bool write_knob_attributes(pb_ostream_t *stream, const pb_field_t *field, void *
 {
     int valueIndex = *(int*) *arg;
 
-    compact_descriptor_Attribute attr_value = {};
-    attr_value.type = compact_descriptor_Attribute_Type_Value;
+    descriptor_Attribute attr_value = {};
+    attr_value.type = descriptor_Attribute_Type_Value;
     attr_value.ivalue = eg_values[valueIndex];
     attr_value.has_ivalue = true;
     
     if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_value))
+        !pb_encode_submessage(stream, descriptor_Attribute_fields, &attr_value))
     {
         return false;
     }
 
-    compact_descriptor_Attribute attr_scale = {};
-    attr_scale.type = compact_descriptor_Attribute_Type_Scale;
+    descriptor_Attribute attr_scale = {};
+    attr_scale.type = descriptor_Attribute_Type_Scale;
     attr_scale.ivalue = SCALE;
     attr_scale.has_ivalue = true;
     
     if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_scale))
+        !pb_encode_submessage(stream, descriptor_Attribute_fields, &attr_scale))
     {
         return false;
     }
@@ -202,24 +211,24 @@ bool write_selector_attributes(pb_ostream_t *stream, const pb_field_t *field, vo
 {
     int valueIndex = *(int*) *arg;
     
-    compact_descriptor_Attribute attr_value = {};
-    attr_value.type = compact_descriptor_Attribute_Type_Value;
+    descriptor_Attribute attr_value = {};
+    attr_value.type = descriptor_Attribute_Type_Value;
     attr_value.ivalue = eg_values[valueIndex];
     attr_value.has_ivalue = true;
     
     if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_value))
+        !pb_encode_submessage(stream, descriptor_Attribute_fields, &attr_value))
     {
         return false;
     }
     
-    compact_descriptor_Attribute attr_choices = {};
-    attr_choices.type = compact_descriptor_Attribute_Type_Choices;
+    descriptor_Attribute attr_choices = {};
+    attr_choices.type = descriptor_Attribute_Type_Choices;
     attr_choices.svalue.funcs.encode = &write_string_array;
     attr_choices.svalue.arg = curve_selector_names;
 
     if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_choices))
+        !pb_encode_submessage(stream, descriptor_Attribute_fields, &attr_choices))
     {
         return false;
     }
@@ -228,7 +237,7 @@ bool write_selector_attributes(pb_ostream_t *stream, const pb_field_t *field, vo
 }
 
 typedef struct _TypeAndValue {
-    Type type;
+    descriptor_Component_Type type;
     int valueIndex;
 } TypeAndValue;
 
@@ -239,52 +248,18 @@ bool write_port_attributes(pb_ostream_t *stream, const pb_field_t *field, void *
     // put wire Id
     int ivalue = eg_values[tnv->valueIndex];
     if (ivalue > 0) {
-        compact_descriptor_Attribute attr_wireId = {};
-        attr_wireId.type = compact_descriptor_Attribute_Type_WireId;
+        descriptor_Attribute attr_wireId = {};
+        attr_wireId.type = descriptor_Attribute_Type_WireId;
         attr_wireId.ivalue = ivalue;
         attr_wireId.has_ivalue = true;
     
         if (!pb_encode_tag_for_field(stream, field) ||
-            !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_wireId))
+            !pb_encode_submessage(stream, descriptor_Attribute_fields, &attr_wireId))
         {
             return false;
         }
     }
 
-    compact_descriptor_Attribute_Parameter direction;
-    if (tnv->type == InputSignalPort || tnv->type == InputGatePort) {
-        direction = compact_descriptor_Attribute_Parameter_DirectionInput;
-    }
-    else {
-        direction = compact_descriptor_Attribute_Parameter_DirectionOutput;
-    }
-    compact_descriptor_Attribute attr_direction = {};
-    attr_direction.type = compact_descriptor_Attribute_Type_Direction;
-    attr_direction.parameter = direction;
-    attr_direction.has_parameter = true;
-    if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_direction))
-    {
-        return false;
-    }
-    
-    compact_descriptor_Attribute_Parameter signal;
-    if (tnv->type == InputSignalPort || tnv->type == OutputSignalPort) {
-        signal = compact_descriptor_Attribute_Parameter_SignalValue;
-    }
-    else {
-        signal = compact_descriptor_Attribute_Parameter_SignalGate;
-    }
-    compact_descriptor_Attribute attr_signal = {};
-    attr_signal.type = compact_descriptor_Attribute_Type_Signal;
-    attr_signal.parameter = signal;
-    attr_signal.has_parameter = true;
-    if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_signal))
-    {
-        return false;
-    }
-    
     return true;
 }
 
@@ -293,36 +268,35 @@ bool write_subcomponents(pb_ostream_t *stream, const pb_field_t *field, void * c
     Component* components = (Component*) *arg;
     int ic;
     for (ic = 0; components[ic].name != NULL; ++ic) {
-        compact_descriptor_Component subComponent = {};
+        descriptor_Component subComponent = {};
         subComponent.name.funcs.encode = &write_cstring;
         subComponent.name.arg = (void*) components[ic].name;
         subComponent.id = components[ic].valueIndex;
+        subComponent.type = components[ic].type;
         switch (components[ic].type) {
         case Knob:
-            subComponent.type = compact_descriptor_Component_Type_Knob;
             subComponent.attribute.funcs.encode = &write_knob_attributes;
             subComponent.attribute.arg = &components[ic].valueIndex;
             break;
         case Selector:
-            subComponent.type = compact_descriptor_Component_Type_Selector;
             subComponent.attribute.funcs.encode = &write_selector_attributes;
             subComponent.attribute.arg = &components[ic].valueIndex;
             break;
-        case InputSignalPort:
-        case OutputSignalPort:
-        case InputGatePort:
-        case OutputGatePort:
-            subComponent.type = compact_descriptor_Component_Type_Port;
+        case ValueInputPort:
+        case ValueOutputPort:
+        case GateInputPort:
+        case GateOutputPort: {
             TypeAndValue tnv = { components[ic].type, components[ic].valueIndex };
             subComponent.attribute.funcs.encode = &write_port_attributes;
             subComponent.attribute.arg = &tnv;
             break;
+        }
         };
 
         if (!pb_encode_tag_for_field(stream, field))
             return false;
     
-        if (!pb_encode_submessage(stream, compact_descriptor_Component_fields, &subComponent)) {
+        if (!pb_encode_submessage(stream, descriptor_Component_fields, &subComponent)) {
             return false;
         }
     }
@@ -332,10 +306,10 @@ bool write_subcomponents(pb_ostream_t *stream, const pb_field_t *field, void * c
 
 bool write_components(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
 {
-    compact_descriptor_Component component = {};
+    descriptor_Component component = {};
     component.name.funcs.encode = &write_cstring;
     component.name.arg = "eg_nano";
-    component.type = compact_descriptor_Component_Type_Module;
+    component.type = descriptor_Component_Type_Module;
     component.id = 1;
     component.sub_component.funcs.encode = &write_subcomponents;
     component.sub_component.arg = eg_components;
@@ -343,7 +317,7 @@ bool write_components(pb_ostream_t *stream, const pb_field_t *field, void * cons
     if (!pb_encode_tag_for_field(stream, field))
         return false;
     
-    if (!pb_encode_submessage(stream, compact_descriptor_Component_fields, &component)) {
+    if (!pb_encode_submessage(stream, descriptor_Component_fields, &component)) {
         return false;
     }
     
@@ -369,13 +343,13 @@ void handleI2CInput()
             break;
         }
         case COMMAND_DESCRIBE: {
-            compact_descriptor_Description description = {};
+            descriptor_Description description = {};
             description.component.funcs.encode = &write_components;
             description.component.arg = NULL;
             // fprintf(stderr, "arg=%p\n", nano_component.name.arg);
 
             pb_ostream_t stream = { &ostream_callback, NULL, 65536, 0 };
-            pb_encode(&stream, compact_descriptor_Description_fields, &description);
+            pb_encode(&stream, descriptor_Description_fields, &description);
             flush();
 
             break;
