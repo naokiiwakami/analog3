@@ -13,7 +13,7 @@
 
 #include <pb_encode.h>
 #include <pb_decode.h>
-#include "nano_module_descriptor.pb.h"
+#include "nano_compact_descriptor.pb.h"
 
 ////////////////////
 // I2C
@@ -100,12 +100,9 @@ bool write_string_array(pb_ostream_t *stream, const pb_field_t *field, void * co
     
     int ii;
     for (ii = 0; string_list[ii] != NULL; ++ii) {
-        connector_Value value = {};
-        value.svalue.funcs.encode = &write_cstring;
-        value.svalue.arg = string_list[ii];
-
+        char* text = string_list[ii];
         if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, connector_Value_fields, &value))
+            !pb_encode_string(stream, (uint8_t*) text, strlen(text)))
         {
             return false;
         }
@@ -170,51 +167,30 @@ Component eg_components[] = {
     { NULL }
 };
 
-const char* attr_name_value = "value";
-const char* attr_name_scale = "scale";
-const char* attr_name_choices = "choices";
-const char* attr_name_wireId = "wireId";
-const char* attr_name_signal = "signal";
-const char* attr_name_direction = "direction";
-
-const char* signal_value = "value";
-const char* signal_note = "note";
-
-const char* direction_input = "INPUT";
-const char* direction_output = "OUTPUT";
-
 const uint16_t SCALE = 1023;
 
 bool write_knob_attributes(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
 {
     int valueIndex = *(int*) *arg;
 
-    connector_Attribute attr_value = {};
-    attr_value.name.funcs.encode = &write_cstring;
-    attr_value.name.arg = (void*) attr_name_value;
-    connector_Value value = {};
-    value.ivalue = eg_values[valueIndex];
-    value.has_ivalue = true;
-    attr_value.value = value;
-    attr_value.has_value = true;
+    compact_descriptor_Attribute attr_value = {};
+    attr_value.type = compact_descriptor_Attribute_Type_Value;
+    attr_value.ivalue = eg_values[valueIndex];
+    attr_value.has_ivalue = true;
     
     if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, connector_Attribute_fields, &attr_value))
+        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_value))
     {
         return false;
     }
 
-    connector_Attribute attr_scale = {};
-    attr_scale.name.funcs.encode = &write_cstring;
-    attr_scale.name.arg = (void*) attr_name_scale;
-    connector_Value scale = {};
-    scale.ivalue = SCALE;
-    scale.has_ivalue = true;
-    attr_scale.value = scale;
-    attr_scale.has_value = true;
+    compact_descriptor_Attribute attr_scale = {};
+    attr_scale.type = compact_descriptor_Attribute_Type_Scale;
+    attr_scale.ivalue = SCALE;
+    attr_scale.has_ivalue = true;
     
     if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, connector_Attribute_fields, &attr_scale))
+        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_scale))
     {
         return false;
     }
@@ -226,32 +202,24 @@ bool write_selector_attributes(pb_ostream_t *stream, const pb_field_t *field, vo
 {
     int valueIndex = *(int*) *arg;
     
-    connector_Attribute attr_value = {};
-    attr_value.name.funcs.encode = &write_cstring;
-    attr_value.name.arg = (void*) attr_name_value;
-    connector_Value value = {};
-    value.ivalue = eg_values[valueIndex];
-    value.has_ivalue = true;
-    attr_value.value = value;
-    attr_value.has_value = true;
+    compact_descriptor_Attribute attr_value = {};
+    attr_value.type = compact_descriptor_Attribute_Type_Value;
+    attr_value.ivalue = eg_values[valueIndex];
+    attr_value.has_ivalue = true;
     
     if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, connector_Attribute_fields, &attr_value))
+        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_value))
     {
         return false;
     }
     
-    connector_Attribute attr_choices = {};
-    attr_choices.name.funcs.encode = &write_cstring;
-    attr_choices.name.arg = (void*) attr_name_choices;
-    connector_Value choices = {};
-    choices.avalue.funcs.encode = &write_string_array;
-    choices.avalue.arg = curve_selector_names;
-    attr_choices.value = choices;
-    attr_choices.has_value = true;
+    compact_descriptor_Attribute attr_choices = {};
+    attr_choices.type = compact_descriptor_Attribute_Type_Choices;
+    attr_choices.svalue.funcs.encode = &write_string_array;
+    attr_choices.svalue.arg = curve_selector_names;
 
     if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, connector_Attribute_fields, &attr_choices))
+        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_choices))
     {
         return false;
     }
@@ -271,60 +239,48 @@ bool write_port_attributes(pb_ostream_t *stream, const pb_field_t *field, void *
     // put wire Id
     int ivalue = eg_values[tnv->valueIndex];
     if (ivalue > 0) {
-        connector_Attribute attr_wireId = {};
-        attr_wireId.name.funcs.encode = &write_cstring;
-        attr_wireId.name.arg = (void*) attr_name_wireId;
-        connector_Value value = {};
-        value.ivalue = ivalue;
-        value.has_ivalue = true;
-        attr_wireId.value = value;
-        attr_wireId.has_value = true;
+        compact_descriptor_Attribute attr_wireId = {};
+        attr_wireId.type = compact_descriptor_Attribute_Type_WireId;
+        attr_wireId.ivalue = ivalue;
+        attr_wireId.has_ivalue = true;
     
         if (!pb_encode_tag_for_field(stream, field) ||
-            !pb_encode_submessage(stream, connector_Attribute_fields, &attr_wireId))
+            !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_wireId))
         {
             return false;
         }
     }
 
-    const char* direction;
+    compact_descriptor_Attribute_Parameter direction;
     if (tnv->type == InputSignalPort || tnv->type == InputGatePort) {
-        direction = direction_input;
+        direction = compact_descriptor_Attribute_Parameter_DirectionInput;
     }
     else {
-        direction = direction_output;
+        direction = compact_descriptor_Attribute_Parameter_DirectionOutput;
     }
-    connector_Attribute attr_direction = {};
-    attr_direction.name.funcs.encode = &write_cstring;
-    attr_direction.name.arg = (void*) attr_name_direction;
-    connector_Value value = {};
-    value.svalue.funcs.encode = &write_cstring;
-    value.svalue.arg = (void*) direction;
-    attr_direction.value = value;
-    attr_direction.has_value = true;
+    compact_descriptor_Attribute attr_direction = {};
+    attr_direction.type = compact_descriptor_Attribute_Type_Direction;
+    attr_direction.parameter = direction;
+    attr_direction.has_parameter = true;
     if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, connector_Attribute_fields, &attr_direction))
+        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_direction))
     {
         return false;
     }
     
-    const char* signal;
+    compact_descriptor_Attribute_Parameter signal;
     if (tnv->type == InputSignalPort || tnv->type == OutputSignalPort) {
-        signal = signal_value;
+        signal = compact_descriptor_Attribute_Parameter_SignalValue;
     }
     else {
-        signal = signal_note;
+        signal = compact_descriptor_Attribute_Parameter_SignalGate;
     }
-    connector_Attribute attr_signal = {};
-    attr_signal.name.funcs.encode = &write_cstring;
-    attr_signal.name.arg = (void*) attr_name_signal;
-    connector_Value signalValue = {};
-    signalValue.svalue.funcs.encode = &write_cstring;
-    signalValue.svalue.arg = (void*) signal;
-    attr_signal.value = signalValue;
-    attr_signal.has_value = true;
+    compact_descriptor_Attribute attr_signal = {};
+    attr_signal.type = compact_descriptor_Attribute_Type_Signal;
+    attr_signal.parameter = signal;
+    attr_signal.has_parameter = true;
     if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, connector_Attribute_fields, &attr_signal))
+        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_signal))
     {
         return false;
     }
@@ -337,19 +293,18 @@ bool write_subcomponents(pb_ostream_t *stream, const pb_field_t *field, void * c
     Component* components = (Component*) *arg;
     int ic;
     for (ic = 0; components[ic].name != NULL; ++ic) {
-        connector_Component subComponent = {};
+        compact_descriptor_Component subComponent = {};
         subComponent.name.funcs.encode = &write_cstring;
         subComponent.name.arg = (void*) components[ic].name;
         subComponent.id = components[ic].valueIndex;
-        subComponent.has_id = true;
         switch (components[ic].type) {
         case Knob:
-            subComponent.type = connector_Component_Type_Knob;
+            subComponent.type = compact_descriptor_Component_Type_Knob;
             subComponent.attribute.funcs.encode = &write_knob_attributes;
             subComponent.attribute.arg = &components[ic].valueIndex;
             break;
         case Selector:
-            subComponent.type = connector_Component_Type_Selector;
+            subComponent.type = compact_descriptor_Component_Type_Selector;
             subComponent.attribute.funcs.encode = &write_selector_attributes;
             subComponent.attribute.arg = &components[ic].valueIndex;
             break;
@@ -357,18 +312,17 @@ bool write_subcomponents(pb_ostream_t *stream, const pb_field_t *field, void * c
         case OutputSignalPort:
         case InputGatePort:
         case OutputGatePort:
-            subComponent.type = connector_Component_Type_Port;
+            subComponent.type = compact_descriptor_Component_Type_Port;
             TypeAndValue tnv = { components[ic].type, components[ic].valueIndex };
             subComponent.attribute.funcs.encode = &write_port_attributes;
             subComponent.attribute.arg = &tnv;
             break;
         };
-        subComponent.has_type = true;
 
         if (!pb_encode_tag_for_field(stream, field))
             return false;
     
-        if (!pb_encode_submessage(stream, connector_Component_fields, &subComponent)) {
+        if (!pb_encode_submessage(stream, compact_descriptor_Component_fields, &subComponent)) {
             return false;
         }
     }
@@ -378,20 +332,18 @@ bool write_subcomponents(pb_ostream_t *stream, const pb_field_t *field, void * c
 
 bool write_components(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
 {
-    connector_Component component = {};
+    compact_descriptor_Component component = {};
     component.name.funcs.encode = &write_cstring;
     component.name.arg = "eg_nano";
-    component.type = connector_Component_Type_Module;
-    component.has_type = true;
+    component.type = compact_descriptor_Component_Type_Module;
     component.id = 1;
-    component.has_id = true;
     component.sub_component.funcs.encode = &write_subcomponents;
     component.sub_component.arg = eg_components;
 
     if (!pb_encode_tag_for_field(stream, field))
         return false;
     
-    if (!pb_encode_submessage(stream, connector_Component_fields, &component)) {
+    if (!pb_encode_submessage(stream, compact_descriptor_Component_fields, &component)) {
         return false;
     }
     
@@ -417,13 +369,13 @@ void handleI2CInput()
             break;
         }
         case COMMAND_DESCRIBE: {
-            connector_Description description = {};
+            compact_descriptor_Description description = {};
             description.component.funcs.encode = &write_components;
             description.component.arg = NULL;
             // fprintf(stderr, "arg=%p\n", nano_component.name.arg);
 
             pb_ostream_t stream = { &ostream_callback, NULL, 65536, 0 };
-            pb_encode(&stream, connector_Description_fields, &description);
+            pb_encode(&stream, compact_descriptor_Description_fields, &description);
             flush();
 
             break;

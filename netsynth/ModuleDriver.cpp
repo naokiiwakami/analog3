@@ -9,7 +9,13 @@
 
 #include <pb_encode.h>
 #include <pb_decode.h>
-#include "nano_module_descriptor.pb.h"
+
+#include "compact_descriptor.pb.h"
+#include "nano_compact_descriptor.pb.h"
+
+#include <google/protobuf/text_format.h>
+#include <google/protobuf/io/zero_copy_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
 #include <log4cplus/logger.h>
 #include <log4cplus/loggingmacros.h>
@@ -17,6 +23,9 @@
 #include <stdio.h>
 #include <string>
 #include <string.h>
+
+using namespace google::protobuf;
+
 
 static log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("ModuleDriver"));
 
@@ -106,17 +115,24 @@ public:
     {
         fprintf(stderr, "HEY!\n");
 
-        connector_Component nano_component = {};
+        compact_descriptor_Component nano_component = {};
         std::string name = "Module.eg_nano";
         nano_component.name.funcs.encode = &write_string;
         nano_component.name.arg = &name;
-        fprintf(stderr, "arg=%p\n", nano_component.name.arg);
 
         std::string data;
         pb_ostream_t stream = { &ostream_callback, &data, 65536, 0 };
-        pb_encode(&stream, connector_Component_fields, &nano_component);
+        pb_encode(&stream, compact_descriptor_Component_fields, &nano_component);
 
-        component->ParseFromString(data);
+        compact_descriptor::Component comp;
+        comp.ParseFromString(data);
+        
+        std::string dump;
+        io::StringOutputStream output(&dump);
+        TextFormat::Print(comp, &output);
+        LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT("component=" << dump));
+
+        // component->ParseFromString(data);
 
         return true;
     }
