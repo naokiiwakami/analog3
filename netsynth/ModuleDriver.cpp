@@ -1,6 +1,9 @@
 #include "ModuleDriver.h"
 #include "FileModuleDriver.h"
+
+#ifdef __linux
 #include "I2CModuleDriver.h"
+#endif
 
 #include "connector.pb.h"
 
@@ -163,6 +166,7 @@ RackDriver* RackDriver::create(const char* rackURL)
         }
         rackDriver = new FileRackDriver(ptr);
     }
+#ifdef __linux
     else if (strncasecmp(rackURL, "i2c://", 6) == 0) {
         // url = i2c://<deviceName>/<i2c_address>
         char* ptr = strdup(rackURL + 6);
@@ -182,6 +186,7 @@ RackDriver* RackDriver::create(const char* rackURL)
         LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": " << deviceName << ", " << address));
         rackDriver = new I2CRackDriver(deviceName, address);
     }
+#endif
     else if (strncasecmp(rackURL, "stub:", 5) == 0) {
         // url = stub:<type>
         rackDriver = new StubRackDriver(rackURL + 5);
