@@ -110,22 +110,54 @@ public:
         return pb_encode_string(stream, (uint8_t*) value->c_str(), value->size());
     }
 
+    const char* getTypeName(descriptor::Component_Type type)
+    {
+        switch (type) {
+        case descriptor::Component_Type_Rack:
+            return "Rack.";
+        case descriptor::Component_Type_Module:
+            return "Module.";
+        case descriptor::Component_Type_Knob:
+            return "Knob.";
+        case descriptor::Component_Type_Selector:
+            return "Selector.";
+        case descriptor::Component_Type_ValueInputPort:
+        case descriptor::Component_Type_ValueOutputPort:
+        case descriptor::Component_Type_GateInputPort:
+        case descriptor::Component_Type_GateOutputPort:
+            return "Selector.";
+        }
+    }
+
     virtual bool describe(connector::Component* component,
                           std::string* errorMessage)
     {
         fprintf(stderr, "HEY!\n");
 
-        compact_descriptor_Component nano_component = {};
-        std::string name = "Module.eg_nano";
+        descriptor_Component nano_component = {};
+        std::string name = "eg_nano";
         nano_component.name.funcs.encode = &write_string;
         nano_component.name.arg = &name;
+        nano_component.type = descriptor_Component_Type_Module;
+        nano_component.id = 1;
 
         std::string data;
         pb_ostream_t stream = { &ostream_callback, &data, 65536, 0 };
-        pb_encode(&stream, compact_descriptor_Component_fields, &nano_component);
+        pb_encode(&stream, descriptor_Component_fields, &nano_component);
 
-        compact_descriptor::Component comp;
+        descriptor::Component comp;
         comp.ParseFromString(data);
+
+        component->set_name("Rack.stubRack");
+        component->set_type(connector::Component_Type_Rack);
+
+        connector::Component* subComponent = component->add_sub_component();
+        std::string scName = getTypeName(comp.type());
+        scName += comp.name();
+        
+        subComponent->set_name(scName);
+
+        
         
         std::string dump;
         io::StringOutputStream output(&dump);

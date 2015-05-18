@@ -1,4 +1,4 @@
-package descriptor;
+package compact_descriptor;
 
 message Description {
   repeated Component component = 1;
