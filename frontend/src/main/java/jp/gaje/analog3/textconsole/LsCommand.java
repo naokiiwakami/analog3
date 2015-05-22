@@ -76,7 +76,7 @@ public class LsCommand extends Command {
                     } else {
                         System.out.print("> (");
                     }
-                    String wireId = port.getWireId();
+                    Integer wireId = port.getWireId();
                     if (wireId != null) {
                         System.out.print(wireId);
                     }

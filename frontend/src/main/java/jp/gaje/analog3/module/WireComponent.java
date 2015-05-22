@@ -11,7 +11,7 @@ public class WireComponent extends SynthComponent {
     public final static String SOURCE = "source";
     public final static String LISTENERS = "listeners";
     
-    final protected String wireId;
+    final protected Integer wireId;
     final protected Set<String> listeners;
 
     /**
@@ -20,7 +20,7 @@ public class WireComponent extends SynthComponent {
      * 
      * @param wireId
      */
-    WireComponent(String wireId) {
+    WireComponent(Integer wireId) {
         super(TYPE_WIRE, makeWireName(wireId));
 
         this.wireId = wireId;
@@ -37,7 +37,7 @@ public class WireComponent extends SynthComponent {
     /**
      * @return wireId
      */
-    public String getWireId() {
+    public Integer getWireId() {
         return wireId;
     }
 
@@ -135,7 +135,7 @@ public class WireComponent extends SynthComponent {
      * @param wireId
      * @return wire component name.
      */
-    public static String makeWireName(String wireId) {
-        return "w" + wireId;
+    public static String makeWireName(Integer wireId) {
+        return "w" + wireId.toString();
     }
 }

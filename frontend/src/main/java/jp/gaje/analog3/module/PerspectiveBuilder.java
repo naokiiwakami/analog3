@@ -126,7 +126,7 @@ public class PerspectiveBuilder
                 PortComponent port = (PortComponent) component;
 
                 // Put to a wire if wireID is set.
-                String wireId = port.getWireId();
+                Integer wireId = port.getWireId();
                 if (wireId != null) {
                     PortComponent.Direction direction = port.getDirection();
                     String path = port.getPath();

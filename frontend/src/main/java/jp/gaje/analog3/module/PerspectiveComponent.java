@@ -58,16 +58,16 @@ public class PerspectiveComponent extends SynthComponent
      * @return Smallest free wireId. Returns null if no free wireId is
      *         available.
      */
-    String getNextWireId()
+    Integer getNextWireId()
     {
         Integer wireIdInt = 1;
         for (Integer current : usedWireIds.keySet()) {
             if (wireIdInt < current) {
-                return wireIdInt.toString();
+                return wireIdInt;
             }
             wireIdInt = current + 1;
         }
-        return wireIdInt <= MAX_WIREID ? wireIdInt.toString() : null;
+        return wireIdInt <= MAX_WIREID ? wireIdInt : null;
     }
 
     public SynthComponent getWiresRoot()
@@ -110,7 +110,7 @@ public class PerspectiveComponent extends SynthComponent
      *            Wire ID to bind.
      * @return Bound wire component.
      */
-    WireComponent bindWire(String wireId)
+    WireComponent bindWire(Integer wireId)
     {
         String wireName = WireComponent.makeWireName(wireId);
         WireComponent wire = resolveWire(wireName);
@@ -124,7 +124,7 @@ public class PerspectiveComponent extends SynthComponent
 
     void unbindWire(WireComponent wire) throws SynthComponentException
     {
-        String wireId = wire.getWireId();
+        Integer wireId = wire.getWireId();
         removeUsedWireId(wireId);
         getWiresRoot().removeSubComponentPersistent(wire.getName());
     }
@@ -142,13 +142,13 @@ public class PerspectiveComponent extends SynthComponent
      * @return The wireId
      * @throws SynthComponentException
      */
-    public String connect(String sourcePath, String listenerPath) throws SynthComponentException
+    public Integer connect(String sourcePath, String listenerPath) throws SynthComponentException
     {
 
         PortComponent sourcePort = resolveSourcePort(sourcePath, "Connect");
 
         // Determine wireId
-        String wireId = sourcePort.getWireId();
+        Integer wireId = sourcePort.getWireId();
         if (wireId == null) {
             wireId = getNextWireId();
         }
@@ -190,7 +190,7 @@ public class PerspectiveComponent extends SynthComponent
                 throw new SynthComponentException(this, "Connect failure: " + listenerPath
                         + ": Listener must be an input port.");
             }
-            String listenerWireId = listenerPort.getWireId();
+            Integer listenerWireId = listenerPort.getWireId();
             if (listenerWireId != null) {
                 if (listenerWireId.equals(wireId)) {
                     // already connected. finish silently.
@@ -229,13 +229,13 @@ public class PerspectiveComponent extends SynthComponent
      * @return The wireId that was used for connection.
      * @throws SynthComponentException
      */
-    public String disconnect(String sourcePath, String listenerPath) throws SynthComponentException
+    public Integer disconnect(String sourcePath, String listenerPath) throws SynthComponentException
     {
         // Find source port
         PortComponent sourcePort = resolveSourcePort(sourcePath, "Disconnect");
 
         // Resolve wire ID and wire name
-        String wireId = sourcePort.getWireId();
+        Integer wireId = sourcePort.getWireId();
         if (wireId == null) {
             throw new SynthComponentException(this, "Disconnect failure: Source is not wired.");
         }
@@ -322,10 +322,10 @@ public class PerspectiveComponent extends SynthComponent
      * @param wireId
      *            The wire ID.
      */
-    void wireBetweenPorts(String sourcePath, String listenerPath, String wireId) throws SynthComponentException
+    void wireBetweenPorts(String sourcePath, String listenerPath, Integer wireId) throws SynthComponentException
     {
 
-        if (wireId == null || wireId.isEmpty()) {
+        if (wireId == null) {
             throw new SynthComponentException(this, "Ports cannot be connected without wireId.");
         }
 

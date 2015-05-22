@@ -67,7 +67,7 @@ public class PortComponent extends ModulePart
         markReadOnly(ATTR_SIGNAL);
         
         isMandatory = false;
-        setAttribute(ATTR_WIREID, sourceAttributes, isMandatory, String.class);
+        setAttribute(ATTR_WIREID, sourceAttributes, isMandatory, Integer.class);
 
         for (Map.Entry<String, Object> attribute : sourceAttributes.entrySet()) {
             attributes.putIfAbsent(attribute.getKey(), attribute.getValue());
@@ -82,9 +82,9 @@ public class PortComponent extends ModulePart
      *            Wire ID to set.
      * @throws SynthComponentException
      */
-    public void setWireId(String wireId) throws SynthComponentException
+    public void setWireId(Integer wireId) throws SynthComponentException
     {
-        if (wireId == null || wireId.isEmpty()) {
+        if (wireId == null) {
             throw new SynthComponentException(this,
                     "setWireId error. Given wireId is null or empty.");
         }
@@ -94,14 +94,14 @@ public class PortComponent extends ModulePart
         setAttributePersistent("wireId", wireId);
     }
 
-    public String getWireId()
+    public Integer getWireId()
     {
-        return getAttribute("wireId");
+        return getAttributeInteger(ATTR_WIREID);
     }
 
     public void removeWireId() throws SynthComponentException
     {
-        unsetAttributePersistent("wireId");
+        unsetAttributePersistent(ATTR_WIREID);
     }
 
     public Direction getDirection()

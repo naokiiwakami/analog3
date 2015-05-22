@@ -185,7 +185,7 @@ public class SynthComponent {
      * @param attributeName Parameter Name.
      * @param value The value.
      */
-    public void addAttribute(String attributeName, String value) {
+    public void addAttribute(String attributeName, Object value) {
         attributes.put(attributeName, value);
     }
     
@@ -194,8 +194,12 @@ public class SynthComponent {
         attributes.putAll(newAttributes);
     }
 
-    public String getAttribute(String name) {
-        return (String) attributes.get(name);
+    public <T> T getAttribute(String name) {
+        return (T) attributes.get(name);
+    }
+    
+    public Integer getAttributeInteger(String name) {
+        return (Integer) attributes.get(name);
     }
     
     void unsetAttribute(String name) {
@@ -204,7 +208,7 @@ public class SynthComponent {
     
     void unsetAttributePersistent(String attributeName) throws SynthComponentException {
         
-        String value = getAttribute(attributeName);
+        Object value = getAttribute(attributeName);
         
         try {
             unsetAttribute(attributeName);

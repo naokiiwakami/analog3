@@ -26,7 +26,7 @@ public class Wires implements UserInterfaceComponent
     }
 
     @Override
-    public void notifyParameterRemoved(final String attributeName, String value)
+    public void notifyParameterRemoved(final String attributeName, final Object value)
     {
         // TODO Auto-generated method stub
 

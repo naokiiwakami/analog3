@@ -64,7 +64,7 @@ public class ConnectCommand extends Command {
         }
 
         try {
-            String wireId = ((PerspectiveComponent) perspective).connect(source.getPath(), listener.getPath());
+            Integer wireId = ((PerspectiveComponent) perspective).connect(source.getPath(), listener.getPath());
             System.out.println("wireId=" + wireId);
         } catch (SynthComponentException ex) {
             System.err.println(ex.getMessage());

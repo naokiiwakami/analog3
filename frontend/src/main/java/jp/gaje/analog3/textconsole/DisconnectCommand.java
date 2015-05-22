@@ -64,7 +64,7 @@ public class DisconnectCommand extends Command {
         }
 
         try {
-            String wireId = ((PerspectiveComponent) perspective).disconnect(source.getPath(), listener.getPath());
+            Integer wireId = ((PerspectiveComponent) perspective).disconnect(source.getPath(), listener.getPath());
             System.out.println("wireId=" + wireId);
         } catch (SynthComponentException ex) {
             System.err.println(ex.getMessage());

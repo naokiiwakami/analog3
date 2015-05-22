@@ -4,7 +4,7 @@ import java.util.Map;
 
 public class ModuleComponent extends SynthComponent
 {
-    public final static String ATTR_MODULE_TYPE = "Metadata.moduleType"; 
+    public final static String ATTR_MODULE_TYPE = "moduleType"; 
     private final RackComponent rack;
 
     public ModuleComponent(String name, String moduleType, RackComponent rack)

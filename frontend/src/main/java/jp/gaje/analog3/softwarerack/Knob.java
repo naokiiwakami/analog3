@@ -369,7 +369,7 @@ public class Knob extends GridPane implements Pluggable, UserInterfaceComponent 
     }
 
     @Override
-    public void notifyParameterRemoved(String attributeName, String value) {
+    public void notifyParameterRemoved(String attributeName, final Object value) {
         // TODO Auto-generated method stub
         
     }

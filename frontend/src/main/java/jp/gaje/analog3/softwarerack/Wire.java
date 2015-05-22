@@ -169,7 +169,7 @@ public class Wire extends Group implements UserInterfaceComponent
     }
 
     @Override
-    public void notifyParameterRemoved(String attributeName, final String value)
+    public void notifyParameterRemoved(String attributeName, final Object value)
     {
         if (!Platform.isFxApplicationThread()
                 && attributeName.equals(WireComponent.LISTENERS)) {
@@ -177,7 +177,7 @@ public class Wire extends Group implements UserInterfaceComponent
                 @Override
                 public void run()
                 {
-                    removeConnection(value);
+                    removeConnection((String) value);
                 }
             });
         }

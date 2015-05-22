@@ -64,7 +64,7 @@ public class PerspectiveImplConnectTest {
 
         try {
             // make one connection
-            assertEquals("1", perspective.connect(sourcePathMidiNote1, listenerPathLfoGate));
+            assertEquals(Integer.valueOf(1), perspective.connect(sourcePathMidiNote1, listenerPathLfoGate));
             WireComponent wire = perspective.resolveWire("w1");
             assertNotNull(wire);
             assertEquals(sourcePathMidiNote1, wire.getSourcePath());
@@ -72,7 +72,7 @@ public class PerspectiveImplConnectTest {
 
             // connect to another listener from the same source
             String listenerPathVcoNote = "/perspective/rack/vco/note";
-            assertEquals("1", perspective.connect(sourcePathMidiNote1, listenerPathVcoNote));
+            assertEquals(Integer.valueOf(1), perspective.connect(sourcePathMidiNote1, listenerPathVcoNote));
             assertNotNull(perspective.resolveWire("w1"));
             assertNull(perspective.resolveWire("w2"));
             assertEquals(2, wire.getListenerPaths().size());
@@ -80,23 +80,23 @@ public class PerspectiveImplConnectTest {
             assertTrue(wire.getListenerPaths().contains(listenerPathVcoNote));
 
             // connect from a port to a knob
-            assertEquals("2", perspective.connect(sourcePathLfoWave, listenerPathVcoFrequency));
+            assertEquals(Integer.valueOf(2), perspective.connect(sourcePathLfoWave, listenerPathVcoFrequency));
             WireComponent wire2 = perspective.resolveWire("w2");
             assertNotNull(wire2);
             assertEquals(sourcePathLfoWave, wire2.getSourcePath());
             assertTrue(wire2.getListenerPaths().contains(listenerPathVcoFrequency + "/w2"));
             assertNotNull(perspective.resolve(listenerPathVcoFrequency + "/w2"));
-            assertEquals("2", ((PortComponent) perspective.resolve(listenerPathVcoFrequency + "/w2")).getWireId());
+            assertEquals(Integer.valueOf(2), ((PortComponent) perspective.resolve(listenerPathVcoFrequency + "/w2")).getWireId());
 
             // connect to the same knob
-            assertEquals("3", perspective.connect(sourcePathEgOut, listenerPathVcoFrequency));
+            assertEquals(Integer.valueOf(3), perspective.connect(sourcePathEgOut, listenerPathVcoFrequency));
             WireComponent wire3 = perspective.resolveWire("w3");
             assertNotNull(wire3);
             assertEquals(sourcePathEgOut, wire3.getSourcePath());
             assertTrue(wire3.getListenerPaths().contains(listenerPathVcoFrequency + "/w3"));
             
             // connect from a port to a knob that is already connected.
-            assertEquals("2", perspective.connect(sourcePathLfoWave, listenerPathVcoFrequency));
+            assertEquals(Integer.valueOf(2), perspective.connect(sourcePathLfoWave, listenerPathVcoFrequency));
             assertNull(perspective.resolveWire("w4"));
             
         } catch (SynthComponentException e) {

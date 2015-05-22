@@ -28,7 +28,7 @@ public interface UserInterfaceComponent
      * @param value
      *            Parameter value to remove.
      */
-    public void notifyParameterRemoved(final String attributeName, final String value);
+    public void notifyParameterRemoved(final String attributeName, final Object value);
 
     /**
      * This method is called back from SynthComponent when a sub-component is
