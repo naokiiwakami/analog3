@@ -1,6 +1,6 @@
 {
   "Module.eg1": {
-    "Metadata.moduleType": "ADSR",
+    "moduleType": "ADSR",
     "Knob.attack": {
       "scale": 1023,
       "value": 547
@@ -35,7 +35,7 @@
     "Port.note": {
       "direction": "INPUT",
       "signal": "note",
-      "wireId": "1"
+      "wireId": 1
     },
     "Port.envelope": {
       "direction": "OUTPUT",

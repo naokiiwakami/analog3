@@ -1,6 +1,6 @@
 {
   "Module.lfo02": {
-    "Metadata.moduleType": "LFO",
+    "moduleType": "LFO",
     "Knob.frequency": {
       "scale": 1023,
       "value": 568
