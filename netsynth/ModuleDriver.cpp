@@ -110,23 +110,24 @@ public:
         return pb_encode_string(stream, (uint8_t*) value->c_str(), value->size());
     }
 
-    const char* getTypeName(descriptor::Component_Type type)
+    const char* getTypeName(compact_descriptor::Component_Type type)
     {
         switch (type) {
-        case descriptor::Component_Type_Rack:
+        case compact_descriptor::Component_Type_Rack:
             return "Rack.";
-        case descriptor::Component_Type_Module:
+        case compact_descriptor::Component_Type_Module:
             return "Module.";
-        case descriptor::Component_Type_Knob:
+        case compact_descriptor::Component_Type_Knob:
             return "Knob.";
-        case descriptor::Component_Type_Selector:
+        case compact_descriptor::Component_Type_Selector:
             return "Selector.";
-        case descriptor::Component_Type_ValueInputPort:
-        case descriptor::Component_Type_ValueOutputPort:
-        case descriptor::Component_Type_GateInputPort:
-        case descriptor::Component_Type_GateOutputPort:
+        case compact_descriptor::Component_Type_ValueInputPort:
+        case compact_descriptor::Component_Type_ValueOutputPort:
+        case compact_descriptor::Component_Type_GateInputPort:
+        case compact_descriptor::Component_Type_GateOutputPort:
             return "Selector.";
         }
+        return "";
     }
 
     virtual bool describe(connector::Component* component,
@@ -134,18 +135,18 @@ public:
     {
         fprintf(stderr, "HEY!\n");
 
-        descriptor_Component nano_component = {};
+        compact_descriptor_Component nano_component = {};
         std::string name = "eg_nano";
         nano_component.name.funcs.encode = &write_string;
         nano_component.name.arg = &name;
-        nano_component.type = descriptor_Component_Type_Module;
+        nano_component.type = compact_descriptor_Component_Type_Module;
         nano_component.id = 1;
 
         std::string data;
         pb_ostream_t stream = { &ostream_callback, &data, 65536, 0 };
-        pb_encode(&stream, descriptor_Component_fields, &nano_component);
+        pb_encode(&stream, compact_descriptor_Component_fields, &nano_component);
 
-        descriptor::Component comp;
+        compact_descriptor::Component comp;
         comp.ParseFromString(data);
 
         component->set_name("Rack.stubRack");
@@ -224,15 +225,9 @@ RackDriver* RackDriver::create(const char* rackURL)
             return NULL;
         }
         std::string deviceName = tmp;
-        tmp = strtok(NULL, "/");
-        if (tmp == NULL) {
-            LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT(fname << ": " << rackURL << ": i2c address is missing"));
-            return NULL;
-        }
-        std::string address(tmp);
         free(ptr);
-        LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": " << deviceName << ", " << address));
-        rackDriver = new I2CRackDriver(deviceName, address);
+        LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": " << deviceName));
+        rackDriver = new I2CRackDriver(deviceName);
     }
 #endif
     else if (strncasecmp(rackURL, "stub:", 5) == 0) {

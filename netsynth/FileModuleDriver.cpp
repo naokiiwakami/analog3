@@ -363,6 +363,7 @@ FileModuleDriver::flush(std::string* errorMessage)
 
     LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": new JSON=" << buffer.GetString()));
 
+    buffer.Put('\n');
     if (::write(fd, buffer.GetString(), buffer.GetSize()) < 0) {
         *errorMessage = fname + ": write error: ";
         *errorMessage += strerror(errno);

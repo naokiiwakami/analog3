@@ -1,14 +1,14 @@
 {
   "Module.vco01": {
-    "Metadata.moduleType": "VCO",
+    "moduleType": "VCO",
     "Knob.frequency": {
       "scale": 1023,
       "value": 582,
-      "Port.w3": {
+      "Port.w1": {
         "direction": "INPUT",
         "signal": "value",
         "level": 800,
-        "wireId": "3"
+        "wireId": 3
       }
     },
     "Knob.pulseWidth": {
@@ -44,7 +44,7 @@
     "Port.note": {
       "direction": "INPUT",
       "signal": "note",
-      "wireId": "1"
+      "wireId": 1
     }
   }
 }

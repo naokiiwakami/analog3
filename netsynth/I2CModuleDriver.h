@@ -6,17 +6,16 @@
 class I2CRackDriver : public RackDriver
 {
 public:
-    I2CRackDriver(const std::string& deviceName, const std::string& slaveAddress);
+    I2CRackDriver(const std::string& deviceName);
 
     bool discover(std::list<ModuleDriver*>* modulesList);
 
 protected:
-    bool setupAddress();
+    bool setupAddress(int slaveAddress);
     bool sendCommand(const std::string& command, std::string* response = NULL);
 
 protected:
     std::string m_device;
-    int m_slaveAddress;
     int m_fd;
 };
 
@@ -25,7 +24,7 @@ class I2CModuleDriverData;
 class I2CModuleDriver : public ModuleDriver
 {
 public:
-    I2CModuleDriver(const std::string& deviceName, const std::string& slaveAddress);
+    I2CModuleDriver();
     virtual ~I2CModuleDriver();
 
     const std::string& getName();
@@ -44,6 +43,7 @@ public:
     bool removeSubComponent(const connector::Request& request,
                             std::string* errorMessage);
 
+    I2CModuleDriverData* m_data;
 };
 
 #endif
