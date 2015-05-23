@@ -194,12 +194,9 @@ public class SynthComponent {
         attributes.putAll(newAttributes);
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T getAttribute(String name) {
         return (T) attributes.get(name);
-    }
-    
-    public Integer getAttributeInteger(String name) {
-        return (Integer) attributes.get(name);
     }
     
     void unsetAttribute(String name) {

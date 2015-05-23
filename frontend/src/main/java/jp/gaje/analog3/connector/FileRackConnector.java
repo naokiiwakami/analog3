@@ -223,7 +223,7 @@ public class FileRackConnector extends RackConnector
             choices.add(ja.get(i).getAsString());
         }
         je = jo.get("value");
-        String initial = (je != null) ? je.getAsString() : null;
+        Integer initial = (je != null) ? je.getAsInt() : null;
         SelectorComponent selector = new SelectorComponent(words[1], choices, initial, rack);
 
         return selector;

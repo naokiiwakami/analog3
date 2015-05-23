@@ -96,7 +96,7 @@ public class PortComponent extends ModulePart
 
     public Integer getWireId()
     {
-        return getAttributeInteger(ATTR_WIREID);
+        return getAttribute(ATTR_WIREID);
     }
 
     public void removeWireId() throws SynthComponentException
