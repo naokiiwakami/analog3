@@ -31,6 +31,7 @@ message Attribute {
     WireId = 3;
     Direction = 4;
     Signal = 5;
+    ModuleType = 6;
   }
 
   required Type type = 1;

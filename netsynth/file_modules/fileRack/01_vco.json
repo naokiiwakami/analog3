@@ -22,14 +22,14 @@
       "value": 0
     },
     "Selector.sync": {
-      "value": "off",
+      "value": 0,
       "choices": [
         "off",
         "on"
       ]
     },
     "Selector.gateSync": {
-      "value": "on",
+      "value": 1,
       "choices": [
         "off",
         "on"

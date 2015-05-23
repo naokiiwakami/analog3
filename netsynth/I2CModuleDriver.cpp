@@ -37,9 +37,8 @@ using namespace google::protobuf;
 
 static log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("I2CModuleDriver"));
 
-class AttributeValue
+struct AttributeValue
 {
-public:
     int ivalue;
     bool has_ivalue;
     std::vector<std::string> svalue;
@@ -69,7 +68,8 @@ struct I2cComponent
     std::string fullName;
     int id;
     std::map<std::string, AttributeValue> attributes;
-    std::map<std::string, I2cComponent*> subComponents;
+    std::map<std::string, I2cComponent*> subComponentsDict;
+    std::vector<I2cComponent*> subComponents;
 
     I2cComponent()
         : id(0)
@@ -77,10 +77,10 @@ struct I2cComponent
 
     ~I2cComponent()
     {
-        std::map<std::string, I2cComponent*>::iterator it = subComponents.begin();
-        std::map<std::string, I2cComponent*>::iterator end = subComponents.end();
+        std::vector<I2cComponent*>::iterator it = subComponents.begin();
+        std::vector<I2cComponent*>::iterator end = subComponents.end();
         for (; it != end; ++it) {
-            delete it->second;
+            delete *it;
         }
     }
 };
@@ -102,7 +102,8 @@ public:
         for (int ic = 0; ic < numSubComponent; ++ic) {
             const compact_descriptor::Component& scDescriptor = moduleDescriptor.sub_component(ic);
             I2cComponent* subComponent = createComponent(scDescriptor);
-            data->m_component->subComponents[subComponent->fullName] = subComponent;
+            data->m_component->subComponentsDict[subComponent->fullName] = subComponent;
+            data->m_component->subComponents.push_back(subComponent);
         }
 
         return data;
@@ -115,7 +116,6 @@ public:
         compact_descriptor::Component_Type componentType = componentDesc.type();
         component->fullName = componentTypes[componentType];
         component->fullName += component->name;
-
         component->id = componentDesc.id();
 
         int numAttributes = componentDesc.attribute_size();
@@ -168,6 +168,12 @@ public:
             component->attributes[attrTypes[compact_descriptor::Attribute_Type_Signal]].svalue.push_back(signal);
         }
 
+        const char* attrName = attrTypes[compact_descriptor::Attribute_Type_ModuleType];
+        if (componentType == compact_descriptor::Component_Type_Module &&
+            component->attributes.find(attrName) == component->attributes.end()) {
+            component->attributes[attrName].svalue.push_back(component->name);
+        }
+
         return component;
     }
 
@@ -204,10 +210,8 @@ public:
         }
 
         // sub components
-        std::map<std::string, I2cComponent*>::iterator it_cmp = component->subComponents.begin();
-        std::map<std::string, I2cComponent*>::iterator it_cmpEnd = component->subComponents.end();
-        for (; it_cmp != it_cmpEnd; ++it_cmp) {
-            if (!convert(pbComponent->add_sub_component(), it_cmp->second, errorMessage)) {
+        for (size_t i = 0; i < component->subComponents.size(); ++i) {
+            if (!convert(pbComponent->add_sub_component(), component->subComponents[i], errorMessage)) {
                 return false;
             }
         }
@@ -257,8 +261,9 @@ const char* I2CModuleDriverData::attrTypes[] = {
     "wireId",
     "direction",
     "signal",
+    "moduleType",
 };
-const int I2CModuleDriverData::NumAttributeTypes = 6;
+const int I2CModuleDriverData::NumAttributeTypes = 7;
 
 const char* I2CModuleDriverData::directionInput = "INPUT";
 const char* I2CModuleDriverData::directionOutput = "OUTPUT";
@@ -275,6 +280,18 @@ I2CRackDriver::I2CRackDriver(const std::string& deviceName)
 
 }
 
+/**
+ * Discover the modules that are linked to the I2C network.
+ * Strategy:
+ *   - Scan through device addresses from 0x08 to 0x80 (128)
+ *     by sending PING ('p') commands.
+ *   - If you get a response at an address, send DESCRIBE command
+ *     ('d') to the device.
+ *   - Make I2CModuleDriver objects by parsing the response.
+ *     The module descriptions are in Protocol Buffers compact_descriptor
+ *     form, the process decodes the protocol buffer message first,
+ *     the convert is to a driver object.
+ */
 bool I2CRackDriver::discover(std::list<ModuleDriver*>* modulesList)
 {
     static const std::string fname = "I2CRackDriver::discover()";
@@ -289,8 +306,8 @@ bool I2CRackDriver::discover(std::list<ModuleDriver*>* modulesList)
 
     // detect devices and retrieve module descriptions
     char command = 'p'; // TODO: make command table
-    const int start = 8; // slave address to start
-    const int end = 128; // slave address to end
+    const int start = 0x08; // slave address to start
+    const int end = 0x80; // slave address to end
 
     for (int slaveAddress = start; slaveAddress < end; ++slaveAddress)
     {

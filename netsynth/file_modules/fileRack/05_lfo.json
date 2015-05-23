@@ -10,7 +10,7 @@
       "value": 110
     },
     "Selector.waveform": {
-      "value": "triangle",
+      "value": 1,
       "choices": [
         "sine",
         "triangle",
@@ -19,7 +19,7 @@
       ]
     },
     "Selector.gateSync": {
-      "value": "off",
+      "value": 0,
       "choices": [
         "off",
         "0 degree",
