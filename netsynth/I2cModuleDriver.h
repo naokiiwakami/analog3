@@ -3,10 +3,10 @@
 
 #include "ModuleDriver.h"
 
-class I2CRackDriver : public RackDriver
+class I2cRackDriver : public RackDriver
 {
 public:
-    I2CRackDriver(const std::string& deviceName);
+    I2cRackDriver(const std::string& deviceName);
 
     bool discover(std::list<ModuleDriver*>* modulesList);
 
@@ -19,13 +19,13 @@ protected:
     int m_fd;
 };
 
-class I2CModuleDriverData;
+class I2cModuleDriverData;
 
-class I2CModuleDriver : public ModuleDriver
+class I2cModuleDriver : public ModuleDriver
 {
 public:
-    I2CModuleDriver();
-    virtual ~I2CModuleDriver();
+    I2cModuleDriver();
+    virtual ~I2cModuleDriver();
 
     const std::string& getName();
 
@@ -43,7 +43,7 @@ public:
     bool removeSubComponent(const connector::Request& request,
                             std::string* errorMessage);
 
-    I2CModuleDriverData* m_data;
+    I2cModuleDriverData* m_data;
 };
 
 #endif

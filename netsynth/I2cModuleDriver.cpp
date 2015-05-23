@@ -1,6 +1,6 @@
 #ifdef __linux // feature available only on Raspberry Pi
 
-#include "I2CModuleDriver.h"
+#include "I2cModuleDriver.h"
 #include "ModuleRecognitionException.h"
 
 #include "connector.pb.h"
@@ -35,7 +35,7 @@
 using namespace rapidjson;
 using namespace google::protobuf;
 
-static log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("I2CModuleDriver"));
+static log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("I2cModuleDriver"));
 
 struct AttributeValue
 {
@@ -85,13 +85,13 @@ struct I2cComponent
     }
 };
 
-class I2CModuleDriverData
+class I2cModuleDriverData
 {
 public:
-    static I2CModuleDriverData* create(I2CRackDriver* rackDriver, int slaveAddress,
+    static I2cModuleDriverData* create(I2cRackDriver* rackDriver, int slaveAddress,
                                        const compact_descriptor::Component& moduleDescriptor)
     {
-        I2CModuleDriverData* data = new I2CModuleDriverData();
+        I2cModuleDriverData* data = new I2cModuleDriverData();
 
         data->m_rackDriver = rackDriver;
         data->m_i2cSlaveAddress = slaveAddress;
@@ -219,16 +219,16 @@ public:
         return true;
     }
 
-    ~I2CModuleDriverData() {}
+    ~I2cModuleDriverData() {}
 
     I2cComponent* m_component;
 
-    I2CRackDriver* m_rackDriver;
+    I2cRackDriver* m_rackDriver;
     int m_i2cSlaveAddress;
     int m_componentId;
 
 private:
-    I2CModuleDriverData()
+    I2cModuleDriverData()
         : m_component(NULL)
     {}
 
@@ -242,7 +242,7 @@ private:
     static const char* signalGate;
 };
 
-const char* I2CModuleDriverData::componentTypes[] = {
+const char* I2cModuleDriverData::componentTypes[] = {
     "Rack.",
     "Module.",
     "Knob.",
@@ -252,9 +252,9 @@ const char* I2CModuleDriverData::componentTypes[] = {
     "Port.",
     "Port.",
 };
-const int I2CModuleDriverData::NumComponentTypes = 8;
+const int I2cModuleDriverData::NumComponentTypes = 8;
 
-const char* I2CModuleDriverData::attrTypes[] = {
+const char* I2cModuleDriverData::attrTypes[] = {
     "value",
     "scale",
     "choices",
@@ -263,17 +263,17 @@ const char* I2CModuleDriverData::attrTypes[] = {
     "signal",
     "moduleType",
 };
-const int I2CModuleDriverData::NumAttributeTypes = 7;
+const int I2cModuleDriverData::NumAttributeTypes = 7;
 
-const char* I2CModuleDriverData::directionInput = "INPUT";
-const char* I2CModuleDriverData::directionOutput = "OUTPUT";
-const char* I2CModuleDriverData::signalValue = "value";
-const char* I2CModuleDriverData::signalGate = "note";
+const char* I2cModuleDriverData::directionInput = "INPUT";
+const char* I2cModuleDriverData::directionOutput = "OUTPUT";
+const char* I2cModuleDriverData::signalValue = "value";
+const char* I2cModuleDriverData::signalGate = "note";
 
 
-I2CRackDriver::I2CRackDriver(const std::string& deviceName)
+I2cRackDriver::I2cRackDriver(const std::string& deviceName)
 {
-    const static std::string fname = "I2CRackDriver::I2CRackDriver()";
+    const static std::string fname = "I2cRackDriver::I2cRackDriver()";
 
     m_device = "/dev/";
     m_device += deviceName;
@@ -281,20 +281,20 @@ I2CRackDriver::I2CRackDriver(const std::string& deviceName)
 }
 
 /**
- * Discover the modules that are linked to the I2C network.
+ * Discover the modules that are linked to the I2c network.
  * Strategy:
  *   - Scan through device addresses from 0x08 to 0x80 (128)
  *     by sending PING ('p') commands.
  *   - If you get a response at an address, send DESCRIBE command
  *     ('d') to the device.
- *   - Make I2CModuleDriver objects by parsing the response.
+ *   - Make I2cModuleDriver objects by parsing the response.
  *     The module descriptions are in Protocol Buffers compact_descriptor
  *     form, the process decodes the protocol buffer message first,
  *     the convert is to a driver object.
  */
-bool I2CRackDriver::discover(std::list<ModuleDriver*>* modulesList)
+bool I2cRackDriver::discover(std::list<ModuleDriver*>* modulesList)
 {
-    static const std::string fname = "I2CRackDriver::discover()";
+    static const std::string fname = "I2cRackDriver::discover()";
 
     m_fd = open(m_device.c_str(), O_RDWR);
     if (m_fd < 0) {
@@ -336,9 +336,9 @@ bool I2CRackDriver::discover(std::list<ModuleDriver*>* modulesList)
             // Make module drivers from module descriptors.
             int numModules = description.component_size();
             for (int ic = 0; ic < numModules; ++ic) {
-                I2CModuleDriver* driver = new I2CModuleDriver();
+                I2cModuleDriver* driver = new I2cModuleDriver();
                 const compact_descriptor::Component& module = description.component(ic);
-                driver->m_data = I2CModuleDriverData::create(this, slaveAddress, module);
+                driver->m_data = I2cModuleDriverData::create(this, slaveAddress, module);
                 if (driver->m_data == NULL) {
                     LOG4CPLUS_ERROR(logger,
                                     LOG4CPLUS_TEXT(fname << ": Failed to read module. "
@@ -355,9 +355,9 @@ bool I2CRackDriver::discover(std::list<ModuleDriver*>* modulesList)
     return true;
 }
 
-bool I2CRackDriver::setupAddress(int slaveAddress)
+bool I2cRackDriver::setupAddress(int slaveAddress)
 {
-    const static std::string fname = "I2CRackDriver::setupAddress()";
+    const static std::string fname = "I2cRackDriver::setupAddress()";
 
     bool result = (ioctl(m_fd, I2C_SLAVE, slaveAddress) >= 0);
     if (!result) {
@@ -367,9 +367,9 @@ bool I2CRackDriver::setupAddress(int slaveAddress)
     return result;
 }
 
-bool I2CRackDriver::sendCommand(const std::string& command, std::string* response)
+bool I2cRackDriver::sendCommand(const std::string& command, std::string* response)
 {
-    const static std::string fname = "I2CRackDriver::sendCommand()";
+    const static std::string fname = "I2cRackDriver::sendCommand()";
 
     write(m_fd, command.c_str(), command.size());
 
@@ -408,51 +408,51 @@ bool I2CRackDriver::sendCommand(const std::string& command, std::string* respons
     return true;
 }
 
-I2CModuleDriver::I2CModuleDriver()
+I2cModuleDriver::I2cModuleDriver()
     : m_data(NULL)
 {
 }
 
-I2CModuleDriver::~I2CModuleDriver()
+I2cModuleDriver::~I2cModuleDriver()
 {
     delete m_data;
 }
 
 const std::string&
-I2CModuleDriver::getName()
+I2cModuleDriver::getName()
 {
     return m_data->m_component->name;
 }
 
 const std::string&
-I2CModuleDriver::getFullName()
+I2cModuleDriver::getFullName()
 {
     return m_data->m_component->fullName;
 }
 
 bool
-I2CModuleDriver::describe(connector::Component* component,
+I2cModuleDriver::describe(connector::Component* component,
                           std::string* errorMessage)
 {
     return m_data->convertToProtocolBuf(component, errorMessage);
 }
 
 bool
-I2CModuleDriver::modifyAttribute(const connector::Request& request,
+I2cModuleDriver::modifyAttribute(const connector::Request& request,
                                   std::string* errorMessage)
 {
     return true;
 }
 
 bool
-I2CModuleDriver::addSubComponent(const connector::Request& request,
+I2cModuleDriver::addSubComponent(const connector::Request& request,
                                   std::string* errorMessage)
 {
     return true;
 }
 
 bool
-I2CModuleDriver::removeSubComponent(const connector::Request& request,
+I2cModuleDriver::removeSubComponent(const connector::Request& request,
                                      std::string* errorMessage)
 {
     return true;
