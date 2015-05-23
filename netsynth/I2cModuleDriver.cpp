@@ -1,10 +1,11 @@
 #ifdef __linux // feature available only on Raspberry Pi
 
 #include "I2cModuleDriver.h"
+
+#include "Component.h"
 #include "ModuleRecognitionException.h"
 
 #include "connector.pb.h"
-
 #include "compact_descriptor.pb.h"
 
 #include "rapidjson/document.h"
@@ -37,54 +38,6 @@ using namespace google::protobuf;
 
 static log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("I2cModuleDriver"));
 
-struct AttributeValue
-{
-    int ivalue;
-    bool has_ivalue;
-    std::vector<std::string> svalue;
-
-    AttributeValue()
-        : ivalue(0), has_ivalue(false)
-    {}
-
-    ~AttributeValue()
-    {}
-
-    void setInt(int value)
-    {
-        ivalue = value;
-        has_ivalue = true;
-    }
-
-    void addString(const std::string& value)
-    {
-        svalue.push_back(value);
-    }
-};
-
-struct I2cComponent
-{
-    std::string name;
-    std::string fullName;
-    int id;
-    std::map<std::string, AttributeValue> attributes;
-    std::map<std::string, I2cComponent*> subComponentsDict;
-    std::vector<I2cComponent*> subComponents;
-
-    I2cComponent()
-        : id(0)
-    {}
-
-    ~I2cComponent()
-    {
-        std::vector<I2cComponent*>::iterator it = subComponents.begin();
-        std::vector<I2cComponent*>::iterator end = subComponents.end();
-        for (; it != end; ++it) {
-            delete *it;
-        }
-    }
-};
-
 class I2cModuleDriverData
 {
 public:
@@ -96,132 +49,19 @@ public:
         data->m_rackDriver = rackDriver;
         data->m_i2cSlaveAddress = slaveAddress;
 
-        data->m_component = createComponent(moduleDescriptor);
-
-        int numSubComponent = moduleDescriptor.sub_component_size();
-        for (int ic = 0; ic < numSubComponent; ++ic) {
-            const compact_descriptor::Component& scDescriptor = moduleDescriptor.sub_component(ic);
-            I2cComponent* subComponent = createComponent(scDescriptor);
-            data->m_component->subComponentsDict[subComponent->fullName] = subComponent;
-            data->m_component->subComponents.push_back(subComponent);
-        }
+        data->m_component = Component::create(moduleDescriptor);
 
         return data;
     }
 
-    static I2cComponent* createComponent(const compact_descriptor::Component& componentDesc)
-    {
-        I2cComponent* component = new I2cComponent();
-        component->name = componentDesc.name();
-        compact_descriptor::Component_Type componentType = componentDesc.type();
-        component->fullName = componentTypes[componentType];
-        component->fullName += component->name;
-        component->id = componentDesc.id();
-
-        int numAttributes = componentDesc.attribute_size();
-        for (int iattr = 0; iattr < numAttributes; ++iattr) {
-            const compact_descriptor::Attribute& attribute = componentDesc.attribute(iattr);
-            if (attribute.type() < NumAttributeTypes) {
-                std::string name = attrTypes[attribute.type()];
-                AttributeValue value;
-                if (attribute.has_ivalue()) {
-                    value.setInt(attribute.ivalue());
-                }
-
-                int nstr = attribute.svalue_size();
-                for (int istr = 0; istr < nstr; ++istr) {
-                    value.addString(attribute.svalue(istr));
-                }
-                component->attributes[name] = value;
-            }
-        }
-
-        // Special attributes
-        const char* direction = NULL;
-        const char* signal = NULL;
-        switch (componentType) {
-        case compact_descriptor::Component_Type_ValueInputPort:
-            direction = directionInput;
-            signal = signalValue;
-            break;
-        case compact_descriptor::Component_Type_ValueOutputPort:
-            direction = directionOutput;
-            signal = signalValue;
-            break;
-        case compact_descriptor::Component_Type_GateInputPort:
-            direction = directionInput;
-            signal = signalGate;
-            break;
-        case compact_descriptor::Component_Type_GateOutputPort:
-            direction = directionOutput;
-            signal = signalGate;
-            break;
-        default:
-            // do nothing
-            break;
-        }
-
-        if (direction != NULL) {
-            component->attributes[attrTypes[compact_descriptor::Attribute_Type_Direction]].svalue.push_back(direction);
-        }
-        if (signal != NULL) {
-            component->attributes[attrTypes[compact_descriptor::Attribute_Type_Signal]].svalue.push_back(signal);
-        }
-
-        const char* attrName = attrTypes[compact_descriptor::Attribute_Type_ModuleType];
-        if (componentType == compact_descriptor::Component_Type_Module &&
-            component->attributes.find(attrName) == component->attributes.end()) {
-            component->attributes[attrName].svalue.push_back(component->name);
-        }
-
-        return component;
-    }
-
     bool convertToProtocolBuf(connector::Component* pbComponent, std::string* errorMessage)
     {
-        return convert(pbComponent, m_component, errorMessage);
-    }
-
-    bool convert(connector::Component* pbComponent, I2cComponent* component, std::string* errorMessage)
-    {
-        pbComponent->set_name(component->fullName);
-        pbComponent->set_id(component->id);
-
-        // attributes
-        std::map<std::string, AttributeValue>::iterator it_attr = component->attributes.begin();
-        std::map<std::string, AttributeValue>::iterator it_attrEnd = component->attributes.end();
-        for (; it_attr != it_attrEnd; ++it_attr) {
-            connector::Attribute* pbAttribute = pbComponent->add_attribute();
-            pbAttribute->set_name(it_attr->first);
-            connector::Value* pbValue = pbAttribute->mutable_value();
-            AttributeValue& value = it_attr->second;
-            if (value.has_ivalue) {
-                pbValue->set_ivalue(value.ivalue);
-            }
-            else if (value.svalue.size() == 1) {
-                pbValue->set_svalue(value.svalue[0]);
-            }
-            else if (value.svalue.size() > 1) {
-                for (size_t iv = 0; iv < value.svalue.size(); ++iv) {
-                    connector::Value* avalue = pbValue->add_avalue();
-                    avalue->set_svalue(value.svalue[iv]);
-                }
-            }
-        }
-
-        // sub components
-        for (size_t i = 0; i < component->subComponents.size(); ++i) {
-            if (!convert(pbComponent->add_sub_component(), component->subComponents[i], errorMessage)) {
-                return false;
-            }
-        }
-
-        return true;
+        return m_component->convertToProtocolBuf(pbComponent, errorMessage);
     }
 
     ~I2cModuleDriverData() {}
 
-    I2cComponent* m_component;
+    Component* m_component;
 
     I2cRackDriver* m_rackDriver;
     int m_i2cSlaveAddress;
@@ -232,43 +72,7 @@ private:
         : m_component(NULL)
     {}
 
-    static const char* componentTypes[];
-    static const int NumComponentTypes;
-    static const char* attrTypes[];
-    static const int NumAttributeTypes;
-    static const char* directionInput;
-    static const char* directionOutput;
-    static const char* signalValue;
-    static const char* signalGate;
 };
-
-const char* I2cModuleDriverData::componentTypes[] = {
-    "Rack.",
-    "Module.",
-    "Knob.",
-    "Selector.",
-    "Port.",
-    "Port.",
-    "Port.",
-    "Port.",
-};
-const int I2cModuleDriverData::NumComponentTypes = 8;
-
-const char* I2cModuleDriverData::attrTypes[] = {
-    "value",
-    "scale",
-    "choices",
-    "wireId",
-    "direction",
-    "signal",
-    "moduleType",
-};
-const int I2cModuleDriverData::NumAttributeTypes = 7;
-
-const char* I2cModuleDriverData::directionInput = "INPUT";
-const char* I2cModuleDriverData::directionOutput = "OUTPUT";
-const char* I2cModuleDriverData::signalValue = "value";
-const char* I2cModuleDriverData::signalGate = "note";
 
 
 I2cRackDriver::I2cRackDriver(const std::string& deviceName)
@@ -421,13 +225,13 @@ I2cModuleDriver::~I2cModuleDriver()
 const std::string&
 I2cModuleDriver::getName()
 {
-    return m_data->m_component->name;
+    return m_data->m_component->getName();
 }
 
 const std::string&
 I2cModuleDriver::getFullName()
 {
-    return m_data->m_component->fullName;
+    return m_data->m_component->getFullName();
 }
 
 bool

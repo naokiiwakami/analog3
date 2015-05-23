@@ -25,6 +25,7 @@ OBJS = \
 	pb_common.o \
 	pb_encode.o \
 	pb_decode.o \
+	Component.o \
 	FileModuleDriver.o \
 	I2cModuleDriver.o \
 	Listener.o \
