@@ -11,9 +11,7 @@
 */
 #include <project.h>
 
-#include <pb_encode.h>
-#include <pb_decode.h>
-#include "nano_compact_descriptor.pb.h"
+#include "module_encode.h"
 
 ////////////////////
 // I2C
@@ -85,48 +83,14 @@ bool ostream_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count)
     return true;
 }
 
-bool write_cstring(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
-{
-    const char* text = (const char*) *arg;
-    if (!pb_encode_tag_for_field(stream, field)) {
-        return false;
-    }
-    return pb_encode_string(stream, (uint8_t*) text, strlen(text));
-}
-
-bool write_string_array(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
-{
-    char** string_list = (char**) *arg;
-    
-    int ii;
-    for (ii = 0; string_list[ii] != NULL; ++ii) {
-        char* text = string_list[ii];
-        if (!pb_encode_tag_for_field(stream, field) ||
-            !pb_encode_string(stream, (uint8_t*) text, strlen(text)))
-        {
-            return false;
-        }
-    }
-    
-    return true;
-}
-
-// Values table
-typedef enum _ValueIndex {
-    IndexAttack,
-    IndexDecay,
-    IndexSustain,
-    IndexRelease,
-    IndexCurve,
-    IndexGate,
-    IndexOutput,
-    NumIndexes
-} ValueIndex;
-
 // TODO: load them from flash on startup
-uint16_t eg_values[NumIndexes] = {
-    72, 128, 720, 340, 0, 0, 0
-};
+uint16_t attack = 72;
+uint16_t decay = 128;
+uint16_t sustain = 720;
+uint16_t release = 340;
+uint8_t indexCurve = 1;
+uint8_t wireIdGate = 0;
+uint8_t wireIdOutput = 0;
 
 // Selector names table
 enum SelectorNameIndex {
@@ -134,198 +98,32 @@ enum SelectorNameIndex {
     Exponential,
 };
 
-// schema.  better to have it on eeprom
-#define Knob compact_descriptor_Component_Type_Knob
-#define Selector compact_descriptor_Component_Type_Selector
-#define ValueInputPort compact_descriptor_Component_Type_ValueInputPort
-#define ValueOutputPort compact_descriptor_Component_Type_ValueOutputPort
-#define GateInputPort compact_descriptor_Component_Type_GateInputPort
-#define GateOutputPort compact_descriptor_Component_Type_GateOutputPort
-
-typedef struct Component {
-    const char* name;
-    uint8_t type;
-    ValueIndex valueIndex;
-} Component;
-
 const char* curve_selector_names[] = {
     "linear",
     "exponential",
     NULL
 };
 
-Component eg_components[] = {
-    { "attackTime", Knob, IndexAttack },
-    { "decayTime", Knob, IndexDecay },
-    { "sustainLevel", Knob, IndexSustain },
-    { "releaseTime", Knob, IndexRelease },
-    { "curve", Selector, IndexCurve },
-    { "gate", GateInputPort, IndexGate },
-    { "output", ValueOutputPort, IndexOutput },
-    { NULL }
+SelectorAttributes curveAttr = {
+    &indexCurve,
+    curve_selector_names,
 };
 
-typedef struct _ModuleInfo {
-    const char* name;
-    Component* subComponents;
-    uint16_t* valuesTable;
-} ModuleInfo;
+Component eg_components[] = {
+    { "attackTime", Knob, &attack },
+    { "decayTime", Knob, &decay },
+    { "sustainLevel", Knob, &sustain },
+    { "releaseTime", Knob, &release },
+    { "curve", Selector, &curveAttr },
+    { "gate", GateInputPort, &wireIdGate },
+    { "output", ValueOutputPort, &wireIdOutput },
+    { NULL }
+};
 
 ModuleInfo modules[] = {
-    { "EG", eg_components, eg_values },
+    { "EG", eg_components },
     { NULL }
 };
-
-typedef struct _ValueInfo {
-    const uint16_t* table;
-    uint8_t index;
-} ValueInfo;
-
-const uint16_t SCALE = 1023;
-
-bool write_knob_attributes(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
-{
-    ValueInfo* info = (ValueInfo*) *arg;
-
-    compact_descriptor_Attribute attr_value = {};
-    attr_value.type = compact_descriptor_Attribute_Type_Value;
-    attr_value.ivalue = info->table[info->index];
-    attr_value.has_ivalue = true;
-    
-    if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_value))
-    {
-        return false;
-    }
-
-    compact_descriptor_Attribute attr_scale = {};
-    attr_scale.type = compact_descriptor_Attribute_Type_Scale;
-    attr_scale.ivalue = SCALE;
-    attr_scale.has_ivalue = true;
-    
-    if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_scale))
-    {
-        return false;
-    }
-
-    return true;
-}
-
-bool write_selector_attributes(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
-{
-    ValueInfo* info = (ValueInfo*) *arg;
-    
-    compact_descriptor_Attribute attr_value = {};
-    attr_value.type = compact_descriptor_Attribute_Type_Value;
-    attr_value.ivalue = info->table[info->index];
-    attr_value.has_ivalue = true;
-    
-    if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_value))
-    {
-        return false;
-    }
-    
-    compact_descriptor_Attribute attr_choices = {};
-    attr_choices.type = compact_descriptor_Attribute_Type_Choices;
-    attr_choices.svalue.funcs.encode = &write_string_array;
-    attr_choices.svalue.arg = curve_selector_names;
-
-    if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_choices))
-    {
-        return false;
-    }
-
-    return true;
-}
-
-bool write_port_attributes(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
-{
-    ValueInfo* info = (ValueInfo*) *arg;
-    
-    // put wire Id
-    uint16_t ivalue = info->table[info->index];
-    if (ivalue > 0) {
-        compact_descriptor_Attribute attr_wireId = {};
-        attr_wireId.type = compact_descriptor_Attribute_Type_WireId;
-        attr_wireId.ivalue = ivalue;
-        attr_wireId.has_ivalue = true;
-    
-        if (!pb_encode_tag_for_field(stream, field) ||
-            !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_wireId))
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-bool write_subcomponents(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
-{
-    ModuleInfo* moduleInfo = (ModuleInfo*) *arg;
-    Component* components = moduleInfo->subComponents;
-    int ic;
-    for (ic = 0; components[ic].name != NULL; ++ic) {
-        compact_descriptor_Component subComponent = {};
-        subComponent.name.funcs.encode = &write_cstring;
-        subComponent.name.arg = (void*) components[ic].name;
-        subComponent.id = components[ic].valueIndex;
-        subComponent.type = components[ic].type;
-        ValueInfo info = { moduleInfo->valuesTable, components[ic].valueIndex };
-        subComponent.attribute.arg = &info;
-        switch (components[ic].type) {
-        case Knob:
-            subComponent.attribute.funcs.encode = &write_knob_attributes;
-            break;
-        case Selector:
-            subComponent.attribute.funcs.encode = &write_selector_attributes;
-            break;
-        case ValueInputPort:
-        case ValueOutputPort:
-        case GateInputPort:
-        case GateOutputPort:
-            subComponent.attribute.funcs.encode = &write_port_attributes;
-            break;
-        };
-
-        if (!pb_encode_tag_for_field(stream, field))
-            return false;
-    
-        if (!pb_encode_submessage(stream, compact_descriptor_Component_fields, &subComponent)) {
-            return false;
-        }
-    }
-    
-    return true;
-}
-
-bool write_modules(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
-{
-    ModuleInfo* moduleInfo = (ModuleInfo*) *arg;
-
-    int imod = 0;
-    for (imod = 0; moduleInfo[imod].name != NULL; ++imod) {
-        compact_descriptor_Component component = {};
-        component.name.funcs.encode = &write_cstring;
-        component.name.arg = (void*) moduleInfo[imod].name;
-        component.type = compact_descriptor_Component_Type_Module;
-        component.id = imod + 1;
-        component.sub_component.funcs.encode = &write_subcomponents;
-        component.sub_component.arg = moduleInfo;
-
-        if (!pb_encode_tag_for_field(stream, field))
-            return false;
-    
-        if (!pb_encode_submessage(stream, compact_descriptor_Component_fields, &component)) {
-            return false;
-        }
-    }
-
-    return true;
-}
 
 void handleI2CInput()
 {
