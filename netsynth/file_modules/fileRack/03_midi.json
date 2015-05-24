@@ -3,7 +3,7 @@
     "moduleType": "midicv",
     "id": "2",
     "Selector.channels": {
-      "value": "1",
+      "value": 0,
       "choices": [
         "1",
         "2",

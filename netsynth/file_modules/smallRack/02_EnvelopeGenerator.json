@@ -18,7 +18,7 @@
       "value": 185
     },
     "Selector.curve": {
-      "value": "linear",
+      "value": 0,
       "choices": [
         "linear",
         "exponential"

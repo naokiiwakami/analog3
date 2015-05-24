@@ -2,7 +2,7 @@
 #include "FileModuleDriver.h"
 
 #ifdef __linux
-#include "I2CModuleDriver.h"
+#include "I2cModuleDriver.h"
 #endif
 
 #include "connector.pb.h"
@@ -227,7 +227,7 @@ RackDriver* RackDriver::create(const char* rackURL)
         std::string deviceName = tmp;
         free(ptr);
         LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": " << deviceName));
-        rackDriver = new I2CRackDriver(deviceName);
+        rackDriver = new I2cRackDriver(deviceName);
     }
 #endif
     else if (strncasecmp(rackURL, "stub:", 5) == 0) {

@@ -7,6 +7,7 @@ TARGET = netsynth
 CLEANFILES = *.o *~ core* $(TARGET)
 CLEANESTFILES = $(CLEANFILES) *.d depend *.pb.* *_pb2.* *.pb
 
+CC = gcc
 CPP = g++
 LD  = g++
 CFLAGS = -I../nanopb
@@ -24,8 +25,9 @@ OBJS = \
 	pb_common.o \
 	pb_encode.o \
 	pb_decode.o \
+	Component.o \
 	FileModuleDriver.o \
-	I2CModuleDriver.o \
+	I2cModuleDriver.o \
 	Listener.o \
 	ModuleDriver.o \
 	Session.o \
@@ -68,6 +70,15 @@ nano_compact_descriptor.pb.c : ../protobuf/compact_descriptor.proto
 	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
 	  sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
 	@rm -f $*.d.tmp
+
+pb_common.o: ../nanopb/pb_common.c
+	$(CC) -c -o pb_common.o $(CFLAGS) ../nanopb/pb_common.c
+
+pb_encode.o: ../nanopb/pb_encode.c
+	$(CC) -c -o pb_encode.o $(CFLAGS) ../nanopb/pb_encode.c
+
+pb_decode.o: ../nanopb/pb_decode.c
+	$(CC) -c -o pb_decode.o $(CFLAGS) ../nanopb/pb_decode.c
 
 connector_pb2.py: ../protobuf/connector.proto module_descriptor_pb2.py
 	protoc -I../protobuf --python_out=. ../protobuf/connector.proto
