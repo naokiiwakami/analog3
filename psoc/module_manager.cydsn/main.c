@@ -30,6 +30,7 @@ volatile uint8_t rb_in_use;
 #define COMMAND_PING     'p'
 #define COMMAND_NAME     'n'
 #define COMMAND_DESCRIBE 'd'
+#define COMMAND_MODIFY   'm'
 #define COMMAND_SEND 's'
 #define COMMAND_SET_WIREID 'w'
 #define COMMAND_GET_WIREID 'W'
@@ -133,7 +134,7 @@ void handleI2CInput()
         uint8_t command = i2cSlaveWriteBuf[idata++];
         switch(command) {
         case COMMAND_PING:
-            Pin_LED_BLUE_Write(0);
+            Pin_LED_Blue_Write(0);
             ledTimer = 0x1ffff;
             break;
         case COMMAND_NAME: {
@@ -153,6 +154,28 @@ void handleI2CInput()
             pb_encode(&stream, compact_descriptor_Description_fields, &description);
             flush();
 
+            break;
+        }
+        case COMMAND_MODIFY: {
+            // usage: 'm' <uint8_t:moduleId> <uint8_t:componentId> <uint16_t:value>
+            uint8_t moduleId = i2cSlaveWriteBuf[idata++];
+            uint8_t componentId = i2cSlaveWriteBuf[idata++];
+            uint16_t value = i2cSlaveWriteBuf[idata++];
+            value <<= 8;
+            value += i2cSlaveWriteBuf[idata++];
+            Component* subComponent = &modules[moduleId - 1].subComponents[componentId - 1];
+            switch (subComponent->type) {
+            case Knob:
+                * (uint16_t*) subComponent->attributes = value;
+                break;
+            case Selector:
+                * (uint8_t*) subComponent->attributes = value;
+                break;
+            }
+            
+            PWM_1_WriteCompare1(attack);
+            PWM_1_WriteCompare2(decay);
+        
             break;
         }
             /*
@@ -179,6 +202,10 @@ int main()
     /* Place your initialization/startup code here (e.g. MyInst_Start()) */
 
     CyGlobalIntEnable; /* Uncomment this line to enable global interrupts. */
+    
+    PWM_1_Start();
+    PWM_1_WriteCompare1(attack);
+    PWM_1_WriteCompare2(decay);
    
     rb_ptr = 1;
     rb_in_use = 0;
@@ -186,7 +213,7 @@ int main()
     I2C_S_I2CSlaveInitWriteBuf(i2cSlaveWriteBuf, BUFFER_SIZE_WRITE);
     I2C_S_Start();
     
-    Pin_LED_BLUE_Write(1);
+    Pin_LED_Blue_Write(1);
     
     for(;;)
     {
@@ -211,7 +238,7 @@ int main()
         */
         if (ledTimer > 0) {
             if (--ledTimer == 0) {
-                Pin_LED_BLUE_Write(1);
+                Pin_LED_Blue_Write(1);
             }
         }
         
