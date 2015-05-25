@@ -121,92 +121,6 @@ static bool write_port_attributes(pb_ostream_t *stream, const pb_field_t *field,
     return true;
 }
 
-#if 0
-static bool write_subcomponents(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
-{
-    ModuleInfo* moduleInfo = (ModuleInfo*) *arg;
-    Component* components = moduleInfo->subComponents;
-    int ic;
-    for (ic = 0; components[ic].name != NULL; ++ic) {
-        compact_descriptor_Component subComponent = {};
-        subComponent.name.funcs.encode = &write_cstring;
-        subComponent.name.arg = (void*) components[ic].name;
-        subComponent.id = ic + 1;
-        subComponent.type = components[ic].type;
-        subComponent.attribute.arg = components[ic].attributes;
-        switch (components[ic].type) {
-        case Knob:
-            subComponent.attribute.funcs.encode = &write_knob_attributes;
-            break;
-        case Selector:
-            subComponent.attribute.funcs.encode = &write_selector_attributes;
-            break;
-        case ValueInputPort:
-        case ValueOutputPort:
-        case GateInputPort:
-        case GateOutputPort:
-            subComponent.attribute.funcs.encode = &write_port_attributes;
-            break;
-        };
-
-        if (!pb_encode_tag_for_field(stream, field))
-            return false;
-    
-        if (!pb_encode_submessage(stream, compact_descriptor_Component_fields, &subComponent)) {
-            return false;
-        }
-    }
-    
-    return true;
-}
-#endif
-
-#if 0
-static bool write_device(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
-{
-    ComponentDef* def = (ComponentDef*) *arg;
-
-    Component* components = def->subComponents;
-    ComponentNode* nodes = def->nodes;
-    uint8_t currentIndex = def->index;
-    while (components[currentIndex].name != NULL) {
-        compact_descriptor_Component componentDesc = {};
-        componentDesc.name.funcs.encode = &write_cstring;
-        componentDesc.name.arg = (void*) components[ic].name;
-        componentDesc.id = currentIndex;
-        componentDesc.type = components[currentIndex].type;
-        componentDesc.attribute.arg = components[currentIndex].attributes;
-        if (componentDesc.attribute.arg != NULL) {
-            switch (components[currentIndex].type) {
-            case Knob:
-                subComponent.attribute.funcs.encode = &write_knob_attributes;
-                break;
-            case Selector:
-                subComponent.attribute.funcs.encode = &write_selector_attributes;
-                break;
-            case ValueInputPort:
-            case ValueOutputPort:
-            case GateInputPort:
-            case GateOutputPort:
-                subComponent.attribute.funcs.encode = &write_port_attributes;
-                break;
-            };
-        }
-
-        if (!pb_encode_tag_for_field(stream, field))
-            return false;
-    
-        if (!pb_encode_submessage(stream, compact_descriptor_Component_fields, &subComponent)) {
-            return false;
-        }
-        
-        currentIndex = modes->next;
-    }
-    
-    return true;
-}
-#endif
-
 bool write_component(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
 {
     ComponentDef* def = (ComponentDef*) *arg;
@@ -224,7 +138,7 @@ bool write_component(pb_ostream_t *stream, const pb_field_t *field, void * const
         component.name.funcs.encode = &write_cstring;
         component.name.arg = (void*) components[index].name;
         component.type = components[index].type;
-        component.id = index;
+        component.id = index + 1;
         
         component.attribute.arg = components[index].attributes;
         if (component.attribute.arg != NULL) {
@@ -262,32 +176,5 @@ bool write_component(pb_ostream_t *stream, const pb_field_t *field, void * const
 
     return true;
 }
-
-#if 0
-bool write_modules(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
-{
-    ModuleInfo* moduleInfo = (ModuleInfo*) *arg;
-
-    int imod = 0;
-    for (imod = 0; moduleInfo[imod].name != NULL; ++imod) {
-        compact_descriptor_Component component = {};
-        component.name.funcs.encode = &write_cstring;
-        component.name.arg = (void*) moduleInfo[imod].name;
-        component.type = compact_descriptor_Component_Type_Module;
-        component.id = imod + 1;
-        component.sub_component.funcs.encode = &write_subcomponents;
-        component.sub_component.arg = moduleInfo;
-
-        if (!pb_encode_tag_for_field(stream, field))
-            return false;
-    
-        if (!pb_encode_submessage(stream, compact_descriptor_Component_fields, &component)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-#endif
 
 /* [] END OF FILE */

@@ -177,14 +177,12 @@ void handleI2CInput()
             break;
         }
         case COMMAND_MODIFY: {
-#if 0
             // usage: 'm' <uint8_t:moduleId> <uint8_t:componentId> <uint16_t:value>
-            uint8_t moduleId = i2cSlaveWriteBuf[idata++];
             uint8_t componentId = i2cSlaveWriteBuf[idata++];
             uint16_t value = i2cSlaveWriteBuf[idata++];
             value <<= 8;
             value += i2cSlaveWriteBuf[idata++];
-            Component* subComponent = &modules[moduleId - 1].subComponents[componentId - 1];
+            Component* subComponent = &components[componentId - 1];
             switch (subComponent->type) {
             case Knob:
                 * (uint16_t*) subComponent->attributes = value;
@@ -198,7 +196,6 @@ void handleI2CInput()
             PWM_1_WriteCompare2(decay);
         
             break;
-#endif
         }
             /*
         case COMMAND_SEND:
