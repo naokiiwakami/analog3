@@ -121,6 +121,7 @@ static bool write_port_attributes(pb_ostream_t *stream, const pb_field_t *field,
     return true;
 }
 
+#if 0
 static bool write_subcomponents(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
 {
     ModuleInfo* moduleInfo = (ModuleInfo*) *arg;
@@ -158,7 +159,111 @@ static bool write_subcomponents(pb_ostream_t *stream, const pb_field_t *field, v
     
     return true;
 }
+#endif
 
+#if 0
+static bool write_device(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
+{
+    ComponentDef* def = (ComponentDef*) *arg;
+
+    Component* components = def->subComponents;
+    ComponentNode* nodes = def->nodes;
+    uint8_t currentIndex = def->index;
+    while (components[currentIndex].name != NULL) {
+        compact_descriptor_Component componentDesc = {};
+        componentDesc.name.funcs.encode = &write_cstring;
+        componentDesc.name.arg = (void*) components[ic].name;
+        componentDesc.id = currentIndex;
+        componentDesc.type = components[currentIndex].type;
+        componentDesc.attribute.arg = components[currentIndex].attributes;
+        if (componentDesc.attribute.arg != NULL) {
+            switch (components[currentIndex].type) {
+            case Knob:
+                subComponent.attribute.funcs.encode = &write_knob_attributes;
+                break;
+            case Selector:
+                subComponent.attribute.funcs.encode = &write_selector_attributes;
+                break;
+            case ValueInputPort:
+            case ValueOutputPort:
+            case GateInputPort:
+            case GateOutputPort:
+                subComponent.attribute.funcs.encode = &write_port_attributes;
+                break;
+            };
+        }
+
+        if (!pb_encode_tag_for_field(stream, field))
+            return false;
+    
+        if (!pb_encode_submessage(stream, compact_descriptor_Component_fields, &subComponent)) {
+            return false;
+        }
+        
+        currentIndex = modes->next;
+    }
+    
+    return true;
+}
+#endif
+
+bool write_component(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
+{
+    ComponentDef* def = (ComponentDef*) *arg;
+    
+    Component* components = def->components;
+    ComponentNode* nodes = def->nodes;
+    uint8_t index = def->index;
+    
+    ComponentDef subDef;
+    subDef.components = components;
+    subDef.nodes = nodes;
+
+    while (components[index].name != NULL) {
+        compact_descriptor_Component component = {};
+        component.name.funcs.encode = &write_cstring;
+        component.name.arg = (void*) components[index].name;
+        component.type = components[index].type;
+        component.id = index;
+        
+        component.attribute.arg = components[index].attributes;
+        if (component.attribute.arg != NULL) {
+            switch (components[index].type) {
+            case Knob:
+                component.attribute.funcs.encode = &write_knob_attributes;
+                break;
+            case Selector:
+                component.attribute.funcs.encode = &write_selector_attributes;
+                break;
+            case ValueInputPort:
+            case ValueOutputPort:
+            case GateInputPort:
+            case GateOutputPort:
+                component.attribute.funcs.encode = &write_port_attributes;
+                break;
+            };
+        }
+
+        if (components[nodes[index].sub].name != NULL) {
+            subDef.index = nodes[index].sub;
+            component.sub_component.funcs.encode = &write_component;
+            component.sub_component.arg = &subDef;
+        }
+
+        if (!pb_encode_tag_for_field(stream, field))
+            return false;
+    
+        if (!pb_encode_submessage(stream, compact_descriptor_Component_fields, &component)) {
+            return false;
+        }
+        
+        index = nodes[index].next;
+    }
+
+    return true;
+}
+
+#if 0
 bool write_modules(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
 {
     ModuleInfo* moduleInfo = (ModuleInfo*) *arg;
@@ -183,5 +288,6 @@ bool write_modules(pb_ostream_t *stream, const pb_field_t *field, void * const *
 
     return true;
 }
+#endif
 
 /* [] END OF FILE */

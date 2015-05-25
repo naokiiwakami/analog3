@@ -110,7 +110,20 @@ SelectorAttributes curveAttr = {
     curve_selector_names,
 };
 
-Component eg_components[] = {
+enum {
+    IndexEG,
+    IndexAttack,
+    IndexDecay,
+    IndexSustain,
+    IndexRelease,
+    IndexCurve,
+    IndexGate,
+    IndexOutput,
+    IndexNull
+};
+
+Component components[] = {
+    { "EG", Module, NULL },
     { "attackTime", Knob, &attack },
     { "decayTime", Knob, &decay },
     { "sustainLevel", Knob, &sustain },
@@ -118,11 +131,6 @@ Component eg_components[] = {
     { "curve", Selector, &curveAttr },
     { "gate", GateInputPort, &wireIdGate },
     { "output", ValueOutputPort, &wireIdOutput },
-    { NULL }
-};
-
-ModuleInfo modules[] = {
-    { "EG", eg_components },
     { NULL }
 };
 
@@ -145,18 +153,31 @@ void handleI2CInput()
             break;
         }
         case COMMAND_DESCRIBE: {
-            compact_descriptor_Description description = {};
-            description.component.funcs.encode = &write_modules;
-            description.component.arg = modules;
+            ComponentNode nodes[] = {
+                { IndexNull, IndexAttack },  // IndexEG
+                { IndexDecay, IndexNull },   // IndexAttack
+                { IndexSustain, IndexNull }, // IndexDecay
+                { IndexRelease, IndexNull }, // IndexSustain
+                { IndexGate, IndexNull },    // IndexRelease
+                { IndexOutput, IndexNull },  // IndexGate
+                { IndexNull, IndexNull },    // IndexOutput
+            };
+            
+            ComponentDef def = { components, nodes, IndexEG };
+            
+            compact_descriptor_Description deviceDesc = {};
+            deviceDesc.component.funcs.encode = &write_component;
+            deviceDesc.component.arg = &def;
             // fprintf(stderr, "arg=%p\n", nano_component.name.arg);
 
             pb_ostream_t stream = { &ostream_callback, NULL, 65536, 0 };
-            pb_encode(&stream, compact_descriptor_Description_fields, &description);
+            pb_encode(&stream, compact_descriptor_Description_fields, &deviceDesc);
             flush();
 
             break;
         }
         case COMMAND_MODIFY: {
+#if 0
             // usage: 'm' <uint8_t:moduleId> <uint8_t:componentId> <uint16_t:value>
             uint8_t moduleId = i2cSlaveWriteBuf[idata++];
             uint8_t componentId = i2cSlaveWriteBuf[idata++];
@@ -177,6 +198,7 @@ void handleI2CInput()
             PWM_1_WriteCompare2(decay);
         
             break;
+#endif
         }
             /*
         case COMMAND_SEND:
