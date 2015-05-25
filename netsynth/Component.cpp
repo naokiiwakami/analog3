@@ -56,7 +56,15 @@ Component::getFullName() {
 }
 
 Component*
-Component::create(const compact_descriptor::Component& componentDesc)
+Component::findSubComponent(const std::string& name)
+{
+    std::map<std::string, Component*>::iterator it = subComponentsDict.find(name);
+    return (it != subComponentsDict.end()) ? it->second : NULL;
+}
+
+Component*
+Component::create(const compact_descriptor::Component& componentDesc,
+                  std::map<int, Component*>* idTable)
 {
     Component* component = new Component();
     component->name = componentDesc.name();
@@ -64,6 +72,10 @@ Component::create(const compact_descriptor::Component& componentDesc)
     component->fullName = componentTypes[componentType];
     component->fullName += component->name;
     component->id = componentDesc.id();
+
+    if (idTable != NULL && component->id > 0) {
+        (*idTable)[component->id] = component;
+    }
 
     int numAttributes = componentDesc.attribute_size();
     for (int iattr = 0; iattr < numAttributes; ++iattr) {
@@ -124,7 +136,7 @@ Component::create(const compact_descriptor::Component& componentDesc)
     int numSubComponent = componentDesc.sub_component_size();
     for (int ic = 0; ic < numSubComponent; ++ic) {
         const compact_descriptor::Component& scDescriptor = componentDesc.sub_component(ic);
-        Component* subComponent = Component::create(scDescriptor);
+        Component* subComponent = Component::create(scDescriptor, idTable);
         component->subComponentsDict[subComponent->fullName] = subComponent;
         component->subComponents.push_back(subComponent);
     }

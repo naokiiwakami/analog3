@@ -49,19 +49,18 @@ public:
         data->m_rackDriver = rackDriver;
         data->m_i2cSlaveAddress = slaveAddress;
 
-        data->m_component = Component::create(moduleDescriptor);
+        data->m_component = Component::create(moduleDescriptor, &data->m_idTable);
 
         return data;
     }
 
-    bool convertToProtocolBuf(connector::Component* pbComponent, std::string* errorMessage)
-    {
-        return m_component->convertToProtocolBuf(pbComponent, errorMessage);
+    ~I2cModuleDriverData() {
+        delete m_component;
     }
 
-    ~I2cModuleDriverData() {}
-
     Component* m_component;
+    std::map<std::string, Component*> m_nameTable;
+    std::map<int, Component*> m_idTable;
 
     I2cRackDriver* m_rackDriver;
     int m_i2cSlaveAddress;
@@ -238,13 +237,32 @@ bool
 I2cModuleDriver::describe(connector::Component* component,
                           std::string* errorMessage)
 {
-    return m_data->convertToProtocolBuf(component, errorMessage);
+    return m_data->m_component->convertToProtocolBuf(component, errorMessage);
 }
 
 bool
 I2cModuleDriver::modifyAttribute(const connector::Request& request,
                                   std::string* errorMessage)
 {
+    static const std::string fname = "I2cModuleDriver::modifyAttribute()";
+    LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": module " << m_data->m_component->getFullName() << " enter"));
+
+    int num_paths = request.path_size();
+    if (num_paths < 2) {
+        *errorMessage = fname + ": Invalid request: target path is incomplete";
+        return false;
+    }
+
+    Component* component = m_data->m_component;
+    for (int level = 1; level < num_paths; ++level) {
+        const std::string& name = request.path(level);
+        component = component->findSubComponent(name);
+        if (component == NULL) {
+            *errorMessage = fname + ": target component " + name + " not found";
+            return false;
+        }
+    }
+
     return true;
 }
 

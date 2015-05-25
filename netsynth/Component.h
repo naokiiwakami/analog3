@@ -45,11 +45,14 @@ public:
 
     virtual ~Component();
 
+    static Component* create(const compact_descriptor::Component& componentDesc,
+                             std::map<int, Component*>* idTable = NULL);
+
     const std::string& getName();
 
     const std::string& getFullName();
 
-    static Component* create(const compact_descriptor::Component& componentDesc);
+    Component* findSubComponent(const std::string& name);
 
     bool convertToProtocolBuf(connector::Component* pbComponent, std::string* errorMessage);
 
