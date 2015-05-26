@@ -151,8 +151,8 @@ bool write_component(pb_ostream_t *stream, const pb_field_t *field, void * const
                 break;
             case ValueInputPort:
             case ValueOutputPort:
-            case GateInputPort:
-            case GateOutputPort:
+            case NoteInputPort:
+            case NoteOutputPort:
                 component.attribute.funcs.encode = &write_port_attributes;
                 break;
             };

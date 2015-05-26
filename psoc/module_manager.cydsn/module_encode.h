@@ -22,8 +22,8 @@
 #define Selector compact_descriptor_Component_Type_Selector
 #define ValueInputPort compact_descriptor_Component_Type_ValueInputPort
 #define ValueOutputPort compact_descriptor_Component_Type_ValueOutputPort
-#define GateInputPort compact_descriptor_Component_Type_GateInputPort
-#define GateOutputPort compact_descriptor_Component_Type_GateOutputPort
+#define NoteInputPort compact_descriptor_Component_Type_NoteInputPort
+#define NoteOutputPort compact_descriptor_Component_Type_NoteOutputPort
 
 typedef struct _SelectorAttributes {
     uint8_t* index;

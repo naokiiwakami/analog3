@@ -12,8 +12,8 @@ message Component {
     Selector = 3;
     ValueInputPort = 4;
     ValueOutputPort = 5;
-    GateInputPort = 6;
-    GateOutputPort = 7;
+    NoteInputPort = 6;
+    NoteOutputPort = 7;
   }
 
   required string name = 1;

@@ -21,7 +21,6 @@
 #define BUFFER_SIZE_READ      (0x10u)
 #define BUFFER_SIZE_WRITE     (0x08u)
 uint8 i2cSlaveReadBufNotReady[1] = { 0xff };
-uint8 i2cSlaveReadBufDeviceName[] = { 10, 'P', 'S', 'o', 'C', '_', 'r', 'a', 'c', 'k', ETX };
 uint8 i2cSlaveWriteBuf[BUFFER_SIZE_WRITE];
 uint8 i2cSlaveReadBuf[BUFFER_SIZE_READ];
 volatile uint8_t rb_ptr;
@@ -93,21 +92,24 @@ uint8_t indexCurve = 1;
 uint8_t wireIdGate = 0;
 uint8_t wireIdOutput = 0;
 
+uint8_t midiChannel = 1;
+
 // Selector names table
 enum SelectorNameIndex {
     Linear,
     Exponential,
 };
 
-const char* curve_selector_names[] = {
-    "linear",
-    "exponential",
-    NULL
-};
-
 SelectorAttributes curveAttr = {
     &indexCurve,
-    curve_selector_names,
+    NULL
+    // curve_selector_names,
+};
+
+SelectorAttributes midiChannelAttr = {
+    &indexCurve,
+    NULL
+    // midiChannel_choices,
 };
 
 enum {
@@ -119,6 +121,11 @@ enum {
     IndexCurve,
     IndexGate,
     IndexOutput,
+    //
+    IndexMidi,
+    IndexMidiChannel,
+    IndexMidiOutput,
+    //
     IndexNull
 };
 
@@ -129,8 +136,12 @@ Component components[] = {
     { "sustainLevel", Knob, &sustain },
     { "releaseTime", Knob, &release },
     { "curve", Selector, &curveAttr },
-    { "gate", GateInputPort, &wireIdGate },
+    { "gate", NoteInputPort, &wireIdGate },
     { "output", ValueOutputPort, &wireIdOutput },
+    //
+    { "midi/cv", Module, NULL },
+    { "channel", Selector, &midiChannelAttr },
+    { "output", NoteOutputPort, &wireIdOutput },
     { NULL }
 };
 
@@ -154,15 +165,32 @@ void handleI2CInput()
         }
         case COMMAND_DESCRIBE: {
             ComponentNode nodes[] = {
-                { IndexNull, IndexAttack },  // IndexEG
+                { IndexMidi, IndexAttack },  // IndexEG
                 { IndexDecay, IndexNull },   // IndexAttack
                 { IndexSustain, IndexNull }, // IndexDecay
                 { IndexRelease, IndexNull }, // IndexSustain
-                { IndexGate, IndexNull },    // IndexRelease
+                { IndexCurve, IndexNull },   // IndexRelease
+                { IndexGate, IndexNull },    // IndexCurve
                 { IndexOutput, IndexNull },  // IndexGate
                 { IndexNull, IndexNull },    // IndexOutput
+                { IndexNull, IndexMidiChannel }, // IndexMidi
+                { IndexMidiOutput, IndexNull },  // IndexMidiChannel
+                { IndexNull, IndexNull }         // IndexMidiOutput
             };
             
+            const char* curve_selector_names[] = {
+                "linear",
+                "exponential",
+                NULL
+            };
+            curveAttr.choices = curve_selector_names;
+            
+            const char* midiChannel_choices[] = {
+                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16",
+                NULL
+            };
+            midiChannelAttr.choices = midiChannel_choices;
+
             ComponentDef def = { components, nodes, IndexEG };
             
             compact_descriptor_Description deviceDesc = {};
@@ -188,7 +216,7 @@ void handleI2CInput()
                 * (uint16_t*) subComponent->attributes = value;
                 break;
             case Selector:
-                * (uint8_t*) subComponent->attributes = value;
+                *((SelectorAttributes*) subComponent->attributes)->index = value;
                 break;
             }
             
