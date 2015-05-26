@@ -189,6 +189,7 @@ Session::modifyAttribute(const connector::Request& request, connector::Reply* re
     catch(Error& ex) {
         LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT(fname << ": " << ex.message));
         reply->set_status(connector::Reply::ERROR);
+        reply->set_message(ex.message);
     }
 }
 

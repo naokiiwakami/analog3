@@ -55,6 +55,29 @@ Component::getFullName() {
     return fullName;
 }
 
+bool
+Component::hasAttribute(const std::string& name)
+{
+    std::map<std::string, AttributeValue>::iterator it = attributes.find(name);
+    return (it != attributes.end());
+}
+
+bool
+Component::setAttribute(const std::string& name, int value, bool force)
+{
+    if (force) {
+        attributes[name].setInt(value);
+    }
+    else {
+        std::map<std::string, AttributeValue>::iterator it = attributes.find(name);
+        if (it == attributes.end()) {
+            return false;
+        }
+        it->second.setInt(value);
+    }
+    return true;
+}
+
 Component*
 Component::findSubComponent(const std::string& name)
 {
@@ -107,11 +130,11 @@ Component::create(const compact_descriptor::Component& componentDesc,
         direction = directionOutput;
         signal = signalValue;
         break;
-    case compact_descriptor::Component_Type_GateInputPort:
+    case compact_descriptor::Component_Type_NoteInputPort:
         direction = directionInput;
         signal = signalGate;
         break;
-    case compact_descriptor::Component_Type_GateOutputPort:
+    case compact_descriptor::Component_Type_NoteOutputPort:
         direction = directionOutput;
         signal = signalGate;
         break;

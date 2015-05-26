@@ -123,8 +123,8 @@ public:
             return "Selector.";
         case compact_descriptor::Component_Type_ValueInputPort:
         case compact_descriptor::Component_Type_ValueOutputPort:
-        case compact_descriptor::Component_Type_GateInputPort:
-        case compact_descriptor::Component_Type_GateOutputPort:
+        case compact_descriptor::Component_Type_NoteInputPort:
+        case compact_descriptor::Component_Type_NoteOutputPort:
             return "Selector.";
         }
         return "";

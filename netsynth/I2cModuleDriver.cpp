@@ -242,11 +242,12 @@ I2cModuleDriver::describe(connector::Component* component,
 
 bool
 I2cModuleDriver::modifyAttribute(const connector::Request& request,
-                                  std::string* errorMessage)
+                                 std::string* errorMessage)
 {
     static const std::string fname = "I2cModuleDriver::modifyAttribute()";
     LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": module " << m_data->m_component->getFullName() << " enter"));
 
+    // Find the target component
     int num_paths = request.path_size();
     if (num_paths < 2) {
         *errorMessage = fname + ": Invalid request: target path is incomplete";
@@ -262,6 +263,39 @@ I2cModuleDriver::modifyAttribute(const connector::Request& request,
             return false;
         }
     }
+
+    // Read the request
+    if (!request.has_attribute()) {
+        *errorMessage = fname + ": ModifyAttribute: Mandatory parameter \"attribute\" is missing.";
+        return false;
+    }
+    const connector::Attribute& attr = request.attribute();
+    if (!attr.has_value()) {
+        *errorMessage = fname + ": ModifyAttribute: Value in attribute is missing.";
+        return false;
+    }
+
+    int16_t value = 0;
+    if (attr.value().has_ivalue()) {
+        value = attr.value().ivalue();
+    }
+
+    // Make command parameters
+    std::string command;
+    command += 'm';
+    uint8_t id = component->getId();
+    command += (char) id;
+    uint8_t temp = 0xff & (value >> 8);
+    command += (char) temp;
+    temp = value & 0xff;
+    command += (char) value;
+    if (!m_data->m_rackDriver->setupAddress(m_data->m_i2cSlaveAddress) ||
+        !m_data->m_rackDriver->sendCommand(command)) {
+        *errorMessage = fname + " ModifyAttribute: command execution failed";
+    }
+
+    // Update cache
+    component->setAttribute(attr.name(), value);
 
     return true;
 }

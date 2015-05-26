@@ -10,8 +10,26 @@ public:
 
     bool discover(std::list<ModuleDriver*>* modulesList);
 
-protected:
+    /**
+     * Set slave address to the opened I2C session.
+     *
+     * @param slaveAddress Slave address.  The range should be greater than 0 and smaller than 128.
+     *
+     * @return True on successful execution.  False otherwise.
+     */
     bool setupAddress(int slaveAddress);
+
+    /**
+     * Send command to the device via I2C and receives the response if necessary.
+     * The target slave address must be set before this method is called using
+     * setupAddress().
+     * @param command Command byte array.
+     * @param response Ponter to a byte array where you receive the response.
+     *                 The method does not read response from the slave when the
+     *                 response pointer is NULL.
+     *
+     * @return Tru on successful execution.  False otherwise.
+     */
     bool sendCommand(const std::string& command, std::string* response = NULL);
 
 protected:

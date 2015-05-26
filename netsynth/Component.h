@@ -52,6 +52,14 @@ public:
 
     const std::string& getFullName();
 
+    int getId() {
+        return id;
+    }
+
+    bool hasAttribute(const std::string& name);
+
+    bool setAttribute(const std::string& name, int value, bool force = true);
+
     Component* findSubComponent(const std::string& name);
 
     bool convertToProtocolBuf(connector::Component* pbComponent, std::string* errorMessage);
