@@ -27,4 +27,5 @@ message Reply {
 
   required Status status = 1;
   repeated Component component = 2;
+  optional string message = 3;
 }

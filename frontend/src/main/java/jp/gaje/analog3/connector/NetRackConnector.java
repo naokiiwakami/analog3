@@ -130,8 +130,15 @@ public class NetRackConnector extends RackConnector
             Request request = requestBuilder.build();
             sendRequest(request);
 
-            // TODO: handle errors
             Reply reply = receiveReply();
+            if (reply.getStatus() == Reply.Status.ERROR) {
+                // TODO: This exception is inappropriate
+                String message = "attribute modify error";
+                if (reply.hasMessage()) {
+                    message += ": " + reply.getMessage();
+                }
+                throw new SynthComponentException(null, message);
+            }
 
         } catch (IOException ex) {
             throw new SynthComponentException(null,
