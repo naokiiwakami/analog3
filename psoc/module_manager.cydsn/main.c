@@ -84,66 +84,116 @@ bool ostream_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count)
 }
 
 // TODO: load them from flash on startup
-uint16_t attack = 72;
-uint16_t decay = 128;
-uint16_t sustain = 720;
-uint16_t release = 340;
-uint8_t indexCurve = 1;
-uint8_t wireIdGate = 0;
-uint8_t wireIdOutput = 0;
+typedef struct _Variables {
+    uint16_t attack;
+    uint16_t decay;
+    uint16_t sustain;
+    uint16_t release;
+    uint8_t curveIndex;
+    const char** curveChoices;
+    uint8_t egGateWireId;
+    uint8_t egOutputWireId;
 
-uint8_t midiChannel = 1;
+    uint8_t midiChannel;
+    const char** midiChannels;
+    uint8_t midiOutputWireId;
+    
+    uint16_t scale;
+} Variables;
 
-// Selector names table
-enum SelectorNameIndex {
-    Linear,
-    Exponential,
-};
-
-SelectorAttributes curveAttr = {
-    &indexCurve,
-    NULL
-    // curve_selector_names,
-};
-
-SelectorAttributes midiChannelAttr = {
-    &indexCurve,
-    NULL
-    // midiChannel_choices,
-};
+Variables data = { 72, 128, 720, 340, 1, NULL, 0, 0, 0, NULL, 0, 1023 };
 
 enum {
-    IndexEG,
-    IndexAttack,
-    IndexDecay,
-    IndexSustain,
-    IndexRelease,
-    IndexCurve,
-    IndexGate,
-    IndexOutput,
+    IndexComponentEG,
+    IndexComponentAttack,
+    IndexComponentDecay,
+    IndexComponentSustain,
+    IndexComponentRelease,
+    IndexComponentCurve,
+    IndexComponentGate,
+    IndexComponentOutput,
     //
-    IndexMidi,
-    IndexMidiChannel,
-    IndexMidiOutput,
+    IndexComponentMidi,
+    IndexComponentMidiChannel,
+    IndexComponentMidiOutput,
     //
-    IndexNull
+    IndexComponentNull
+};
+
+AttributeInfo attrs[] = {
+    /* 0 */ { offsetof(Variables, attack), AttributeTypeValue, 11 },
+    /* 1 */ { offsetof(Variables, decay), AttributeTypeValue, 10 },
+    /* 2 */ { offsetof(Variables, sustain), AttributeTypeValue, 9 },
+    /* 3 */ { offsetof(Variables, release), AttributeTypeValue, 8 },
+    /* 4 */ { offsetof(Variables, curveIndex), AttributeTypeSelectorIndex, 1 },
+    /* 5 */ { offsetof(Variables, curveChoices), AttributeTypeChoices, 0 },
+    /* 6 */ { offsetof(Variables, egGateWireId), AttributeTypeWireId, 0 },
+    /* 7 */ { offsetof(Variables, egOutputWireId), AttributeTypeWireId, 0 },
+    /* 8 */ { offsetof(Variables, midiChannel), AttributeTypeSelectorIndex, 1 },
+    /* 9 */ { offsetof(Variables, midiChannels), AttributeTypeChoices, 0 },
+    /* 10 */ { offsetof(Variables, midiOutputWireId), AttributeTypeWireId, 0 },
+    /* 11 */ { offsetof(Variables, scale), AttributeTypeScale, 0 }
 };
 
 Component components[] = {
-    { "EG", Module, NULL },
-    { "attackTime", Knob, &attack },
-    { "decayTime", Knob, &decay },
-    { "sustainLevel", Knob, &sustain },
-    { "releaseTime", Knob, &release },
-    { "curve", Selector, &curveAttr },
-    { "gate", NoteInputPort, &wireIdGate },
-    { "output", ValueOutputPort, &wireIdOutput },
+    { "EG", Module, 0xff },
+    { "attackTime", Knob, 0 },
+    { "decayTime", Knob, 1 },
+    { "sustainLevel", Knob, 2 },
+    { "releaseTime", Knob, 3 },
+    { "curve", Selector, 4 },
+    { "gate", NoteInputPort, 6 },
+    { "output", ValueOutputPort, 7 },
     //
-    { "midi/cv", Module, NULL },
-    { "channel", Selector, &midiChannelAttr },
-    { "output", NoteOutputPort, &wireIdOutput },
+    { "midi-cv", Module, 0xff },
+    { "channel", Selector, 8 },
+    { "output", NoteOutputPort, 10 },
     { NULL }
 };
+
+void describe()
+{
+   ComponentNode nodes[] = {
+        { IndexComponentMidi, IndexComponentAttack },  // IndexComponentEG
+        { IndexComponentDecay, IndexComponentNull },   // IndexComponentAttack
+        { IndexComponentSustain, IndexComponentNull }, // IndexComponentDecay
+        { IndexComponentRelease, IndexComponentNull }, // IndexComponentSustain
+        { IndexComponentCurve, IndexComponentNull },   // IndexComponentRelease
+        { IndexComponentGate, IndexComponentNull },    // IndexComponentCurve
+        { IndexComponentOutput, IndexComponentNull },  // IndexComponentGate
+        { IndexComponentNull, IndexComponentNull },    // IndexComponentOutput
+        { IndexComponentNull, IndexComponentMidiChannel }, // IndexComponentMidi
+        { IndexComponentMidiOutput, IndexComponentNull },  // IndexComponentMidiChannel
+        { IndexComponentNull, IndexComponentNull }         // IndexComponentMidiOutput
+    };
+    
+    const char* curve_selector_names[] = {
+        "linear",
+        "exponential",
+        NULL
+    };
+    data.curveChoices = curve_selector_names;
+    // curveAttr.choices = curve_selector_names;
+    
+    const char* midiChannel_choices[] = {
+        "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16",
+        NULL
+    };
+    data.midiChannels = midiChannel_choices;
+    // midiChannelAttr.choices = midiChannel_choices;
+
+    ComponentDef def = { components, nodes, attrs, (uint8_t*) &data, IndexComponentEG };
+    
+    compact_descriptor_Description deviceDesc = {};
+    deviceDesc.component.funcs.encode = &write_component;
+    deviceDesc.component.arg = &def;
+    // fprintf(stderr, "arg=%p\n", nano_component.name.arg);
+
+    pb_ostream_t stream = { &ostream_callback, NULL, 65536, 0 };
+    pb_encode(&stream, compact_descriptor_Description_fields, &deviceDesc);
+    flush();
+
+}
 
 void handleI2CInput()
 {
@@ -163,49 +213,12 @@ void handleI2CInput()
             flush();
             break;
         }
-        case COMMAND_DESCRIBE: {
-            ComponentNode nodes[] = {
-                { IndexMidi, IndexAttack },  // IndexEG
-                { IndexDecay, IndexNull },   // IndexAttack
-                { IndexSustain, IndexNull }, // IndexDecay
-                { IndexRelease, IndexNull }, // IndexSustain
-                { IndexCurve, IndexNull },   // IndexRelease
-                { IndexGate, IndexNull },    // IndexCurve
-                { IndexOutput, IndexNull },  // IndexGate
-                { IndexNull, IndexNull },    // IndexOutput
-                { IndexNull, IndexMidiChannel }, // IndexMidi
-                { IndexMidiOutput, IndexNull },  // IndexMidiChannel
-                { IndexNull, IndexNull }         // IndexMidiOutput
-            };
-            
-            const char* curve_selector_names[] = {
-                "linear",
-                "exponential",
-                NULL
-            };
-            curveAttr.choices = curve_selector_names;
-            
-            const char* midiChannel_choices[] = {
-                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16",
-                NULL
-            };
-            midiChannelAttr.choices = midiChannel_choices;
-
-            ComponentDef def = { components, nodes, IndexEG };
-            
-            compact_descriptor_Description deviceDesc = {};
-            deviceDesc.component.funcs.encode = &write_component;
-            deviceDesc.component.arg = &def;
-            // fprintf(stderr, "arg=%p\n", nano_component.name.arg);
-
-            pb_ostream_t stream = { &ostream_callback, NULL, 65536, 0 };
-            pb_encode(&stream, compact_descriptor_Description_fields, &deviceDesc);
-            flush();
-
+        case COMMAND_DESCRIBE:
+            describe(); 
             break;
-        }
         case COMMAND_MODIFY: {
             // usage: 'm' <uint8_t:moduleId> <uint8_t:componentId> <uint16_t:value>
+            #if 0
             uint8_t componentId = i2cSlaveWriteBuf[idata++];
             uint16_t value = i2cSlaveWriteBuf[idata++];
             value <<= 8;
@@ -218,10 +231,16 @@ void handleI2CInput()
             case Selector:
                 *((SelectorAttributes*) subComponent->attributes)->index = value;
                 break;
+            case ValueInputPort:
+            case ValueOutputPort:
+            case NoteInputPort:
+            case NoteOutputPort:
+                * (uint8_t*) subComponent->attributes = value;
             }
             
-            PWM_1_WriteCompare1(attack);
-            PWM_1_WriteCompare2(decay);
+            PWM_1_WriteCompare1(data.attack);
+            PWM_1_WriteCompare2(data.decay);
+            #endif
         
             break;
         }
@@ -251,8 +270,8 @@ int main()
     CyGlobalIntEnable; /* Uncomment this line to enable global interrupts. */
     
     PWM_1_Start();
-    PWM_1_WriteCompare1(attack);
-    PWM_1_WriteCompare2(decay);
+    PWM_1_WriteCompare1(data.attack);
+    PWM_1_WriteCompare2(data.decay);
    
     rb_ptr = 1;
     rb_in_use = 0;

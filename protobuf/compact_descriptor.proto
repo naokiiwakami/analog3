@@ -18,7 +18,7 @@ message Component {
 
   required string name = 1;
   required Type type = 2;
-  required uint32 id = 3;
+  optional uint32 id = 3;
   repeated Attribute attribute = 4;
   repeated Component sub_component = 5;
 }
@@ -32,9 +32,11 @@ message Attribute {
     Direction = 4;
     Signal = 5;
     ModuleType = 6;
+    SelectorIndex = 7;
   }
 
   required Type type = 1;
   optional uint32 ivalue = 2;
   repeated string svalue = 3;
+  optional uint32 id = 4;
 }
