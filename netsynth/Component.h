@@ -5,11 +5,15 @@
 #include <vector>
 #include <map>
 
+#include "compact_descriptor.pb.h"
+
 struct AttributeValue
 {
+    compact_descriptor::Attribute::Type attributeType;
     int ivalue;
     bool has_ivalue;
     std::vector<std::string> svalue;
+    int id;
 
     AttributeValue()
         : ivalue(0), has_ivalue(false)
@@ -57,6 +61,8 @@ public:
     }
 
     bool hasAttribute(const std::string& name);
+
+    const AttributeValue* getAttribute(const std::string& name);
 
     bool setAttribute(const std::string& name, int value, bool force = true);
 

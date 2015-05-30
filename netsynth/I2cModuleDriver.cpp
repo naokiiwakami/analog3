@@ -275,6 +275,12 @@ I2cModuleDriver::modifyAttribute(const connector::Request& request,
         return false;
     }
 
+    const AttributeValue* attributeValue = component->getAttribute(attr.name());
+    if (attributeValue == NULL) {
+        *errorMessage = fname + ": ModifyAttribute: " + attr.name() + ": no such attribute with component " + component->getName();
+        return false;
+    }
+
     int16_t value = 0;
     if (attr.value().has_ivalue()) {
         value = attr.value().ivalue();
@@ -283,7 +289,9 @@ I2cModuleDriver::modifyAttribute(const connector::Request& request,
     // Make command parameters
     std::string command;
     command += 'm';
-    uint8_t id = component->getId();
+    uint8_t attributeType = attributeValue->attributeType;
+    command += (char) attributeType;
+    uint8_t id = attributeValue->id;
     command += (char) id;
     uint8_t temp = 0xff & (value >> 8);
     command += (char) temp;
