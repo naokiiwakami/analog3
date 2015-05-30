@@ -83,7 +83,6 @@ bool ostream_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count)
     return true;
 }
 
-// TODO: load them from flash on startup
 typedef struct _Variables {
     uint16_t attack;
     uint16_t decay;
@@ -101,92 +100,78 @@ typedef struct _Variables {
     uint16_t scale;
 } Variables;
 
+// TODO: load them from flash on startup
 Variables data = { 72, 128, 720, 340, 1, NULL, 0, 0, 0, NULL, 0, 1023 };
-
-enum {
-    IndexComponentEG,
-    IndexComponentAttack,
-    IndexComponentDecay,
-    IndexComponentSustain,
-    IndexComponentRelease,
-    IndexComponentCurve,
-    IndexComponentGate,
-    IndexComponentOutput,
-    //
-    IndexComponentMidi,
-    IndexComponentMidiChannel,
-    IndexComponentMidiOutput,
-    //
-    IndexComponentNull
-};
-
-AttributeInfo attrs[] = {
-    /* 0 */ { offsetof(Variables, attack), AttributeTypeValue, 11 },
-    /* 1 */ { offsetof(Variables, decay), AttributeTypeValue, 10 },
-    /* 2 */ { offsetof(Variables, sustain), AttributeTypeValue, 9 },
-    /* 3 */ { offsetof(Variables, release), AttributeTypeValue, 8 },
-    /* 4 */ { offsetof(Variables, curveIndex), AttributeTypeSelectorIndex, 1 },
-    /* 5 */ { offsetof(Variables, curveChoices), AttributeTypeChoices, 0 },
-    /* 6 */ { offsetof(Variables, egGateWireId), AttributeTypeWireId, 0 },
-    /* 7 */ { offsetof(Variables, egOutputWireId), AttributeTypeWireId, 0 },
-    /* 8 */ { offsetof(Variables, midiChannel), AttributeTypeSelectorIndex, 1 },
-    /* 9 */ { offsetof(Variables, midiChannels), AttributeTypeChoices, 0 },
-    /* 10 */ { offsetof(Variables, midiOutputWireId), AttributeTypeWireId, 0 },
-    /* 11 */ { offsetof(Variables, scale), AttributeTypeScale, 0 }
-};
-
-Component components[] = {
-    { "EG", Module, 0xff },
-    { "attackTime", Knob, 0 },
-    { "decayTime", Knob, 1 },
-    { "sustainLevel", Knob, 2 },
-    { "releaseTime", Knob, 3 },
-    { "curve", Selector, 4 },
-    { "gate", NoteInputPort, 6 },
-    { "output", ValueOutputPort, 7 },
-    //
-    { "midi-cv", Module, 0xff },
-    { "channel", Selector, 8 },
-    { "output", NoteOutputPort, 10 },
-    { NULL }
-};
 
 void describe()
 {
-   ComponentNode nodes[] = {
-        { IndexComponentMidi, IndexComponentAttack },  // IndexComponentEG
-        { IndexComponentDecay, IndexComponentNull },   // IndexComponentAttack
-        { IndexComponentSustain, IndexComponentNull }, // IndexComponentDecay
-        { IndexComponentRelease, IndexComponentNull }, // IndexComponentSustain
-        { IndexComponentCurve, IndexComponentNull },   // IndexComponentRelease
-        { IndexComponentGate, IndexComponentNull },    // IndexComponentCurve
-        { IndexComponentOutput, IndexComponentNull },  // IndexComponentGate
-        { IndexComponentNull, IndexComponentNull },    // IndexComponentOutput
-        { IndexComponentNull, IndexComponentMidiChannel }, // IndexComponentMidi
-        { IndexComponentMidiOutput, IndexComponentNull },  // IndexComponentMidiChannel
-        { IndexComponentNull, IndexComponentNull }         // IndexComponentMidiOutput
+    AttributeInfo attrs[] = {
+        /*  0 */ { offsetof(Variables, attack), AttributeTypeValue, 11 },
+        /*  1 */ { offsetof(Variables, decay), AttributeTypeValue, 10 },
+        /*  2 */ { offsetof(Variables, sustain), AttributeTypeValue, 9 },
+        /*  3 */ { offsetof(Variables, release), AttributeTypeValue, 8 },
+        /*  4 */ { offsetof(Variables, curveIndex), AttributeTypeSelectorIndex, 1 },
+        /*  5 */ { offsetof(Variables, curveChoices), AttributeTypeChoices, 0 },
+        /*  6 */ { offsetof(Variables, egGateWireId), AttributeTypeWireId, 0 },
+        /*  7 */ { offsetof(Variables, egOutputWireId), AttributeTypeWireId, 0 },
+        /*  8 */ { offsetof(Variables, midiChannel), AttributeTypeSelectorIndex, 1 },
+        /*  9 */ { offsetof(Variables, midiChannels), AttributeTypeChoices, 0 },
+        /* 10 */ { offsetof(Variables, midiOutputWireId), AttributeTypeWireId, 0 },
+        /* 11 */ { offsetof(Variables, scale), AttributeTypeScale, 0 }
     };
-    
+
+    enum {
+        IndexComponentEG,
+        IndexComponentAttack,
+        IndexComponentDecay,
+        IndexComponentSustain,
+        IndexComponentRelease,
+        IndexComponentCurve,
+        IndexComponentGate,
+        IndexComponentOutput,
+
+        IndexComponentMidi,
+        IndexComponentMidiChannel,
+        IndexComponentMidiOutput,
+
+        IndexComponentNull
+    };
+
+    Component components[] = {
+        { "EG",           Module,         NA, IndexComponentMidi,    IndexComponentAttack },
+        { "attackTime",   Knob,            0, IndexComponentDecay,   IndexComponentNull },
+        { "decayTime",    Knob,            1, IndexComponentSustain, IndexComponentNull },
+        { "sustainLevel", Knob,            2, IndexComponentRelease, IndexComponentNull },
+        { "releaseTime",  Knob,            3, IndexComponentCurve,   IndexComponentNull },
+        { "curve",        Selector,        4, IndexComponentGate,    IndexComponentNull },
+        { "gate",         NoteInputPort,   6, IndexComponentOutput,  IndexComponentNull },
+        { "output",       ValueOutputPort, 7, IndexComponentNull,    IndexComponentNull },
+
+        { "midi-cv",      Module,         NA, IndexComponentNull,    IndexComponentMidiChannel },
+        { "channel",      Selector,        8, IndexComponentMidiOutput, IndexComponentNull },
+        { "output",       NoteOutputPort, 10, IndexComponentNull,    IndexComponentNull },
+
+        { NULL }
+    };
+
     const char* curve_selector_names[] = {
         "linear",
         "exponential",
         NULL
     };
     data.curveChoices = curve_selector_names;
-    // curveAttr.choices = curve_selector_names;
     
     const char* midiChannel_choices[] = {
         "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16",
         NULL
     };
     data.midiChannels = midiChannel_choices;
-    // midiChannelAttr.choices = midiChannel_choices;
 
-    ComponentDef def = { components, nodes, attrs, (uint8_t*) &data, IndexComponentEG };
+    DeviceDescriptor desc = { components, attrs, (uint8_t*) &data, IndexComponentEG };
     
     compact_descriptor_Description deviceDesc = {};
     deviceDesc.component.funcs.encode = &write_component;
-    deviceDesc.component.arg = &def;
+    deviceDesc.component.arg = &desc;
     // fprintf(stderr, "arg=%p\n", nano_component.name.arg);
 
     pb_ostream_t stream = { &ostream_callback, NULL, 65536, 0 };
@@ -235,24 +220,7 @@ void handleI2CInput()
                 dataBlock[attributeId] = value;
                 break;
             }
-            
-            /*
-            Component* subComponent = &components[componentId - 1];
-            switch (subComponent->type) {
-            case Knob:
-                * (uint16_t*) subComponent->attributes = value;
-                break;
-            case Selector:
-                *((SelectorAttributes*) subComponent->attributes)->index = value;
-                break;
-            case ValueInputPort:
-            case ValueOutputPort:
-            case NoteInputPort:
-            case NoteOutputPort:
-                * (uint8_t*) subComponent->attributes = value;
-            }
-            */
-            
+                        
             PWM_1_WriteCompare1(data.attack);
             PWM_1_WriteCompare2(data.decay);
         
