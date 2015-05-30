@@ -264,16 +264,12 @@ I2cModuleDriver::modifyAttribute(const connector::Request& request,
         }
     }
 
-    // Read the request
+    // Read the request and make command parameters
     if (!request.has_attribute()) {
         *errorMessage = fname + ": ModifyAttribute: Mandatory parameter \"attribute\" is missing.";
         return false;
     }
     const connector::Attribute& attr = request.attribute();
-    if (!attr.has_value()) {
-        *errorMessage = fname + ": ModifyAttribute: Value in attribute is missing.";
-        return false;
-    }
 
     const AttributeValue* attributeValue = component->getAttribute(attr.name());
     if (attributeValue == NULL) {
@@ -281,24 +277,52 @@ I2cModuleDriver::modifyAttribute(const connector::Request& request,
         return false;
     }
 
+    const char command = 'm';
+    compact_descriptor::Attribute::Type attributeType = attributeValue->attributeType;
+    uint8_t id = attributeValue->id;
+
     int16_t value = 0;
-    if (attr.value().has_ivalue()) {
-        value = attr.value().ivalue();
+
+    switch (request.command()) {
+    case connector::Request::SET_ATTRIBUTE: {
+        if (!attr.has_value()) {
+            *errorMessage = fname + ": ModifyAttribute: Value in attribute is missing.";
+            return false;
+        }
+        if (attr.value().has_ivalue()) {
+            value = attr.value().ivalue();
+        }
+        else {
+            *errorMessage = fname + ": ModifyAttribute: " + attr.name() + ": modifying value must be integer.";
+            return false;
+        }
+        break;
+    }
+    case connector::Request::UNSET_ATTRIBUTE:
+        if (attributeType != compact_descriptor::Attribute::WireId) {
+            *errorMessage = fname + ": MudifyAttribute: " + compact_descriptor::Attribute::Type_Name(attributeType) + ": unset value is not supported";
+            return false;
+        }
+        value = 0;
+        break;
+    default:
+        // Unknown command. Do nothing.
+        LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": " << connector::Request::Command_Name(request.command()) << ": unknown command"));
+        return true;
     }
 
     // Make command parameters
-    std::string command;
-    command += 'm';
-    uint8_t attributeType = attributeValue->attributeType;
-    command += (char) attributeType;
-    uint8_t id = attributeValue->id;
-    command += (char) id;
+    std::string message;
+    message += command;
+    message += (char) attributeType;
+    message += (char) id;
     uint8_t temp = 0xff & (value >> 8);
-    command += (char) temp;
+    message += (char) temp;
     temp = value & 0xff;
-    command += (char) value;
+    message += (char) value;
+
     if (!m_data->m_rackDriver->setupAddress(m_data->m_i2cSlaveAddress) ||
-        !m_data->m_rackDriver->sendCommand(command)) {
+        !m_data->m_rackDriver->sendCommand(message)) {
         *errorMessage = fname + " ModifyAttribute: command execution failed";
     }
 

@@ -412,7 +412,7 @@ FileModuleDriver::modifyAttribute(const connector::Request& request,
     const std::string& attributeName = request.attribute().name();
     
     switch (request.command()) {
-    case connector::Request_Command_SET_ATTRIBUTE: {
+    case connector::Request::SET_ATTRIBUTE: {
         // get new value
         const connector::Value* inputValue = request.attribute().has_value() ? &request.attribute().value() : NULL;
         Value newValue;
@@ -459,7 +459,7 @@ FileModuleDriver::modifyAttribute(const connector::Request& request,
         }
         break;
     }
-    case connector::Request_Command_UNSET_ATTRIBUTE: {
+    case connector::Request::UNSET_ATTRIBUTE: {
         Value::MemberIterator it_attr = component->FindMember(attributeName.c_str());
         if (it_attr == component->MemberEnd()) {
             *errorMessage = fname + ": " + *componentName + ": " + attributeName + ": attribute not found";
