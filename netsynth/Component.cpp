@@ -1,7 +1,6 @@
 #include "Component.h"
 
 #include "connector.pb.h"
-#include "compact_descriptor.pb.h"
 
 const char* Component::componentTypes[] = {
     "Rack.",
@@ -16,15 +15,16 @@ const char* Component::componentTypes[] = {
 const int Component::NumComponentTypes = 8;
 
 const char* Component::attrTypes[] = {
-    "value",
-    "scale",
-    "choices",
-    "wireId",
-    "direction",
-    "signal",
-    "moduleType",
+    "value",      // Attribute::Value
+    "scale",      // Attribute::Scale
+    "choices",    // Attribute::Choices
+    "wireId",     // Attribute::WireId
+    "direction",  // Attribute::Direction
+    "signal",     // Attribute::Signal
+    "moduleType", // Attribute::ModuleType
+    "value",      // Attribute::SelectorIndex
 };
-const int Component::NumAttributeTypes = 7;
+const int Component::NumAttributeTypes = 8;
 
 const char* Component::directionInput = "INPUT";
 const char* Component::directionOutput = "OUTPUT";
@@ -62,6 +62,18 @@ Component::hasAttribute(const std::string& name)
     return (it != attributes.end());
 }
 
+const AttributeValue*
+Component::getAttribute(const std::string& name)
+{
+    std::map<std::string, AttributeValue>::iterator it = attributes.find(name);
+    if (it != attributes.end()) {
+        return &it->second;
+    }
+    else {
+        return NULL;
+    }
+}
+
 bool
 Component::setAttribute(const std::string& name, int value, bool force)
 {
@@ -91,7 +103,7 @@ Component::create(const compact_descriptor::Component& componentDesc,
 {
     Component* component = new Component();
     component->name = componentDesc.name();
-    compact_descriptor::Component_Type componentType = componentDesc.type();
+    compact_descriptor::Component::Type componentType = componentDesc.type();
     component->fullName = componentTypes[componentType];
     component->fullName += component->name;
     component->id = componentDesc.id();
@@ -103,9 +115,14 @@ Component::create(const compact_descriptor::Component& componentDesc,
     int numAttributes = componentDesc.attribute_size();
     for (int iattr = 0; iattr < numAttributes; ++iattr) {
         const compact_descriptor::Attribute& attribute = componentDesc.attribute(iattr);
-        if (attribute.type() < NumAttributeTypes) {
-            std::string name = attrTypes[attribute.type()];
+        compact_descriptor::Attribute::Type type = attribute.type();
+        if (type < NumAttributeTypes) {
             AttributeValue value;
+
+            std::string name = attrTypes[type];
+            value.attributeType = type;
+            value.id = attribute.id();
+
             if (attribute.has_ivalue()) {
                 value.setInt(attribute.ivalue());
             }
@@ -114,6 +131,7 @@ Component::create(const compact_descriptor::Component& componentDesc,
             for (int istr = 0; istr < nstr; ++istr) {
                 value.addString(attribute.svalue(istr));
             }
+
             component->attributes[name] = value;
         }
     }
@@ -122,19 +140,19 @@ Component::create(const compact_descriptor::Component& componentDesc,
     const char* direction = NULL;
     const char* signal = NULL;
     switch (componentType) {
-    case compact_descriptor::Component_Type_ValueInputPort:
+    case compact_descriptor::Component::ValueInputPort:
         direction = directionInput;
         signal = signalValue;
         break;
-    case compact_descriptor::Component_Type_ValueOutputPort:
+    case compact_descriptor::Component::ValueOutputPort:
         direction = directionOutput;
         signal = signalValue;
         break;
-    case compact_descriptor::Component_Type_NoteInputPort:
+    case compact_descriptor::Component::NoteInputPort:
         direction = directionInput;
         signal = signalGate;
         break;
-    case compact_descriptor::Component_Type_NoteOutputPort:
+    case compact_descriptor::Component::NoteOutputPort:
         direction = directionOutput;
         signal = signalGate;
         break;
@@ -144,14 +162,14 @@ Component::create(const compact_descriptor::Component& componentDesc,
     }
 
     if (direction != NULL) {
-        component->attributes[attrTypes[compact_descriptor::Attribute_Type_Direction]].svalue.push_back(direction);
+        component->attributes[attrTypes[compact_descriptor::Attribute::Direction]].svalue.push_back(direction);
     }
     if (signal != NULL) {
-        component->attributes[attrTypes[compact_descriptor::Attribute_Type_Signal]].svalue.push_back(signal);
+        component->attributes[attrTypes[compact_descriptor::Attribute::Signal]].svalue.push_back(signal);
     }
 
-    const char* attrName = attrTypes[compact_descriptor::Attribute_Type_ModuleType];
-    if (componentType == compact_descriptor::Component_Type_Module &&
+    const char* attrName = attrTypes[compact_descriptor::Attribute::ModuleType];
+    if (componentType == compact_descriptor::Component::Module &&
         component->attributes.find(attrName) == component->attributes.end()) {
         component->attributes[attrName].svalue.push_back(component->name);
     }
@@ -171,16 +189,25 @@ bool
 Component::convertToProtocolBuf(connector::Component* pbComponent, std::string* errorMessage)
 {
     pbComponent->set_name(fullName);
-    pbComponent->set_id(id);
+    // pbComponent->set_id(id);
 
     // attributes
     std::map<std::string, AttributeValue>::iterator it_attr = attributes.begin();
     std::map<std::string, AttributeValue>::iterator it_attrEnd = attributes.end();
+
     for (; it_attr != it_attrEnd; ++it_attr) {
+        
+        AttributeValue& value = it_attr->second;
+
+        // make NIL wireId invisible.
+        if (value.attributeType == compact_descriptor::Attribute::WireId && value.ivalue == 0) {
+            continue;
+        }
+
+        // Convert attribute to protocol buffers
         connector::Attribute* pbAttribute = pbComponent->add_attribute();
         pbAttribute->set_name(it_attr->first);
         connector::Value* pbValue = pbAttribute->mutable_value();
-        AttributeValue& value = it_attr->second;
         if (value.has_ivalue) {
             pbValue->set_ivalue(value.ivalue);
         }
