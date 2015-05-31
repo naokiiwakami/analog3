@@ -40,91 +40,6 @@ static bool write_string_array(pb_ostream_t *stream, const pb_field_t *field, vo
     return true;
 }
 
-/*
-static bool write_knob_attributes(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
-{
-    uint16_t ivalue = *(uint16_t*) *arg;
-
-    compact_descriptor_Attribute attr_value = {};
-    attr_value.type = compact_descriptor_Attribute_Type_Value;
-    attr_value.ivalue = ivalue;
-    attr_value.has_ivalue = true;
-    
-    if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_value))
-    {
-        return false;
-    }
-
-    compact_descriptor_Attribute attr_scale = {};
-    attr_scale.type = compact_descriptor_Attribute_Type_Scale;
-    attr_scale.ivalue = SCALE;
-    attr_scale.has_ivalue = true;
-    
-    if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_scale))
-    {
-        return false;
-    }
-
-    return true;
-}
-*/
-
-/*
-static bool write_selector_attributes(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
-{
-    SelectorAttributes* attr = (SelectorAttributes*) *arg;
-
-    // encode index
-    compact_descriptor_Attribute attr_value = {};
-    attr_value.type = compact_descriptor_Attribute_Type_Value;
-    attr_value.ivalue = *attr->index;
-    attr_value.has_ivalue = true;
-    
-    if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_value))
-    {
-        return false;
-    }
-    
-    // encode choices
-    compact_descriptor_Attribute attr_choices = {};
-    attr_choices.type = compact_descriptor_Attribute_Type_Choices;
-    attr_choices.svalue.funcs.encode = &write_string_array;
-    attr_choices.svalue.arg = attr->choices;
-
-    if (!pb_encode_tag_for_field(stream, field) ||
-        !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_choices))
-    {
-        return false;
-    }
-
-    return true;
-}
-
-static bool write_port_attributes(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
-{
-    uint8_t ivalue = *(uint8_t*) *arg;
-    
-    // put wire Id
-    if (ivalue > 0) {
-        compact_descriptor_Attribute attr_wireId = {};
-        attr_wireId.type = compact_descriptor_Attribute_Type_WireId;
-        attr_wireId.ivalue = ivalue;
-        attr_wireId.has_ivalue = true;
-    
-        if (!pb_encode_tag_for_field(stream, field) ||
-            !pb_encode_submessage(stream, compact_descriptor_Attribute_fields, &attr_wireId))
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-*/
-
 typedef struct _AttributeDef {
     uint8_t* data;
     AttributeInfo* info;
@@ -173,10 +88,10 @@ static bool write_attributes(pb_ostream_t *stream, const pb_field_t *field, void
             return false;
         }
         
-        if (attrDef->info[i].hasNext == 0) {
+        if (attrDef->info[i].next == 0) {
             break;
         }
-        i += attrDef->info[i].hasNext;
+        i += attrDef->info[i].next;
 
     }
     
@@ -185,58 +100,37 @@ static bool write_attributes(pb_ostream_t *stream, const pb_field_t *field, void
 
 bool write_component(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
 {
-    ComponentDef* def = (ComponentDef*) *arg;
+    DeviceDescriptor* desc = (DeviceDescriptor*) *arg;
     
-    Component* components = def->components;
-    ComponentNode* nodes = def->nodes;
-    uint8_t index = def->index;
+    Component* components = desc->components;
+
+    uint8_t index = desc->index;
     
-    ComponentDef subDef;
-    subDef.components = components;
-    subDef.nodes = nodes;
-    subDef.attrs = def->attrs;
-    subDef.data = def->data;
+    DeviceDescriptor subDesc;
+    subDesc.components = components;
+    subDesc.attrs = desc->attrs;
+    subDesc.data = desc->data;
 
     while (components[index].name != NULL) {
         compact_descriptor_Component component = {};
         component.name.funcs.encode = &write_cstring;
         component.name.arg = (void*) components[index].name;
         component.type = components[index].type;
-        // component.id = index + 1;
         
         AttributeDef attributeDef;
-        uint8_t offset = components[index].offset;
-        if (offset != 0xff) {
-            attributeDef.data = def->data;
-            attributeDef.info = &def->attrs[offset];
+        uint8_t attributeIndex = components[index].attributeIndex;
+        if (attributeIndex != NA) {
+            attributeDef.data = desc->data;
+            attributeDef.info = &desc->attrs[attributeIndex];
         
             component.attribute.arg = &attributeDef;
             component.attribute.funcs.encode = &write_attributes;
         }
-        /*
-        // component.attribute.arg = components[index].attributes;
-        if (component.attribute.arg != NULL) {
-            switch (components[index].type) {
-            case Knob:
-                component.attribute.funcs.encode = &write_knob_attributes;
-                break;
-            case Selector:
-                component.attribute.funcs.encode = &write_selector_attributes;
-                break;
-            case ValueInputPort:
-            case ValueOutputPort:
-            case NoteInputPort:
-            case NoteOutputPort:
-                component.attribute.funcs.encode = &write_port_attributes;
-                break;
-            };
-        }
-        */
 
-        if (components[nodes[index].sub].name != NULL) {
-            subDef.index = nodes[index].sub;
+        if (components[components[index].sub].name != NULL) {
+            subDesc.index = components[index].sub;
             component.sub_component.funcs.encode = &write_component;
-            component.sub_component.arg = &subDef;
+            component.sub_component.arg = &subDesc;
         }
 
         if (!pb_encode_tag_for_field(stream, field))
@@ -246,7 +140,7 @@ bool write_component(pb_ostream_t *stream, const pb_field_t *field, void * const
             return false;
         }
         
-        index = nodes[index].next;
+        index = components[index].next;
     }
 
     return true;
