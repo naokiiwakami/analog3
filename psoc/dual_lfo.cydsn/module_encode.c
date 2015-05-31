@@ -102,7 +102,7 @@ bool write_component(pb_ostream_t *stream, const pb_field_t *field, void * const
 {
     DeviceDescriptor* desc = (DeviceDescriptor*) *arg;
     
-    Component* components = desc->components;
+    ComponentInfo* components = desc->components;
 
     uint8_t index = desc->index;
     
@@ -116,6 +116,10 @@ bool write_component(pb_ostream_t *stream, const pb_field_t *field, void * const
         component.name.funcs.encode = &write_cstring;
         component.name.arg = (void*) components[index].name;
         component.type = components[index].type;
+        if (components[index].id != NA) {
+            component.id = components[index].id;
+            component.has_id = true;
+        }
         
         AttributeDef attributeDef;
         uint8_t attributeIndex = components[index].attributeIndex;

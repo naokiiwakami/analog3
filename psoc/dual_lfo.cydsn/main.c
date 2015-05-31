@@ -83,34 +83,61 @@ bool ostream_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count)
     return true;
 }
 
+typedef struct _FreePort {
+    uint8_t wireId;
+    uint16_t value;
+    uint8_t listener;
+} FreePort;
+
 typedef struct _Variables {
+    uint16_t scale;
+
+    // LFO1
     uint16_t lfo1_frequency;
     uint16_t lfo1_delay;
     uint8_t lfo1_waveFormIndex;
     const char** lfo1_waveForms;
     uint8_t lfo1_gateWireId;
     uint8_t lfo1_outputWireId;
-
+    // LFO2
     uint16_t lfo2_frequency;
     uint16_t lfo2_delay;
     uint8_t lfo2_waveFormIndex;
     const char** lfo2_waveForms;
     uint8_t lfo2_gateWireId;
     uint8_t lfo2_outputWireId;
-
+    // midi-cv
     uint8_t midiChannel;
     const char** midiChannels;
     uint8_t midiOutputWireId;
-    
-    uint16_t scale;
+
+    // freePorts
+    FreePort freePort1;
+    FreePort freePort2;
 } Variables;
 
 // TODO: load them from flash on startup
 Variables data = { 
+    1023, // scale
     72, 10, 0, NULL, 0, 0, // lfo1
-    320, 1, 1, NULL, 0, 0, // lfo2
+    320, 1, 1, NULL, 0, 1, // lfo2
     0, NULL, 0, // midi-cv
-    1023 // scale
+    { 1, 256,  1, }, // freePort1
+    { 0, 256, NA, }, // freePort2
+};
+
+typedef struct _Component {
+    uint8_t componentType;
+    void* data;
+} Component;
+
+Component components[6] = {
+    { Knob, NULL },
+    { Knob, NULL },
+    { Knob, NULL },
+    { Knob, NULL },
+    { ValueInputPort, &data.freePort1 },
+    { ValueInputPort, &data.freePort2 },
 };
 
 void describe()
@@ -135,6 +162,12 @@ void describe()
         /* 13 */ { offsetof(Variables, midiChannel), AttributeTypeSelectorIndex, 1 },
         /* 14 */ { offsetof(Variables, midiChannels), AttributeTypeChoices, 0 },
         /* 15 */ { offsetof(Variables, midiOutputWireId), AttributeTypeWireId, 0 },
+        
+        /* 16 */ { offsetof(Variables, freePort1) + offsetof(FreePort, wireId), AttributeTypeWireId, 1 },
+        /* 17 */ { offsetof(Variables, freePort1) + offsetof(FreePort, value), AttributeTypeValue, -17},
+        
+        /* 18 */ { offsetof(Variables, freePort2) + offsetof(FreePort, wireId), AttributeTypeWireId, 1 },
+        /* 19 */ { offsetof(Variables, freePort2) + offsetof(FreePort, value), AttributeTypeValue, -19},
     };
 
     enum {
@@ -155,28 +188,34 @@ void describe()
         IndexComponentMidi,
         IndexComponentMidiChannel,
         IndexComponentMidiOutput,
+        
+        IndexComponentFreePort1,
+        IndexComponentFreePort2,
 
-        IndexComponentNull
+        IndexComponentNull,
     };
 
-    Component components[] = {
-        { "LFO1",         Module,          NA, IndexComponentLfo2,         IndexComponentLfo1Freq },
-        { "frequency",    Knob,             1, IndexComponentLfo1Delay,    IndexComponentNull },
-        { "delay",        Knob,             2, IndexComponentLfo1WaveForm, IndexComponentNull },
-        { "waveForm",     Selector,         3, IndexComponentLfo1Gate,     IndexComponentNull },
-        { "gate",         NoteInputPort,    5, IndexComponentLfo1Output,   IndexComponentNull },
-        { "output",       ValueOutputPort,  6, IndexComponentNull,         IndexComponentNull },
+    ComponentInfo components[] = {
+        { "LFO1",         Module,          NA, NA, IndexComponentLfo2,         IndexComponentLfo1Freq },
+        { "frequency",    Knob,             1,  1, IndexComponentLfo1Delay,    IndexComponentNull },
+        { "delay",        Knob,             2,  2, IndexComponentLfo1WaveForm, IndexComponentNull },
+        { "waveForm",     Selector,        NA,  3, IndexComponentLfo1Gate,     IndexComponentNull },
+        { "gate",         NoteInputPort,   NA,  5, IndexComponentLfo1Output,   IndexComponentNull },
+        { "output",       ValueOutputPort, NA,  6, IndexComponentNull,         IndexComponentNull },
 
-        { "LFO2",         Module,          NA, IndexComponentMidi,         IndexComponentLfo2Freq },
-        { "frequency",    Knob,             7, IndexComponentLfo2Delay,    IndexComponentNull },
-        { "delay",        Knob,             8, IndexComponentLfo2WaveForm, IndexComponentNull },
-        { "waveForm",     Selector,         9, IndexComponentLfo2Gate,     IndexComponentNull },
-        { "gate",         NoteInputPort,   11, IndexComponentLfo2Output,   IndexComponentNull },
-        { "output",       ValueOutputPort, 12, IndexComponentNull,         IndexComponentNull },
+        { "LFO2",         Module,          NA, NA, IndexComponentMidi,         IndexComponentLfo2Freq },
+        { "frequency",    Knob,             3,  7, IndexComponentLfo2Delay,    IndexComponentNull },
+        { "delay",        Knob,             4,  8, IndexComponentLfo2WaveForm, IndexComponentNull },
+        { "waveForm",     Selector,        NA,  9, IndexComponentLfo2Gate,     IndexComponentNull },
+        { "gate",         NoteInputPort,   NA, 11, IndexComponentLfo2Output,   IndexComponentNull },
+        { "output",       ValueOutputPort, NA, 12, IndexComponentNull,         IndexComponentNull },
 
-        { "midi-cv",      Module,          NA, IndexComponentNull,         IndexComponentMidiChannel },
-        { "channel",      Selector,        13, IndexComponentMidiOutput,   IndexComponentNull },
-        { "output",       NoteOutputPort,  15, IndexComponentNull,         IndexComponentNull },
+        { "midi-cv",      Module,          NA, NA, IndexComponentNull,         IndexComponentMidiChannel },
+        { "channel",      Selector,        NA, 13, IndexComponentMidiOutput,   IndexComponentNull },
+        { "output",       NoteOutputPort,  NA, 15, IndexComponentNull,         IndexComponentNull },
+
+        { NULL,           ValueInputPort,   5, 16, IndexComponentNull,         IndexComponentNull },
+        { NULL,           ValueInputPort,   6, 18, IndexComponentNull,         IndexComponentNull },
 
         { NULL }
     };
@@ -196,6 +235,37 @@ void describe()
         NULL
     };
     data.midiChannels = midiChannel_choices;
+    
+    char nameBuf1[5];
+    char nameBuf2[5];
+    
+    if (data.freePort1.wireId != 0) {
+        nameBuf1[0] = 'w';
+        nameBuf1[1] = data.freePort1.wireId + '0';
+        nameBuf1[2] = '\0';
+        components[IndexComponentFreePort1].name = nameBuf1;
+    }
+    
+    if (data.freePort2.wireId != 0) {
+        nameBuf2[0] = 'w';
+        nameBuf2[1] = data.freePort2.wireId + '0';
+        nameBuf2[2] = '\0';
+        components[IndexComponentFreePort2].name = nameBuf2;
+    }
+    
+    int i;
+    for (i = 0; i < IndexComponentNull; ++i) {
+        uint8_t id = components[i].id;
+        if (id == NA) {
+            continue;
+        }
+        if (id == data.freePort1.listener) {
+            components[i].sub = IndexComponentFreePort1;
+        }
+        if (id == data.freePort2.listener) {
+            components[i].sub = IndexComponentFreePort2;
+        }
+    }
 
     DeviceDescriptor desc = { components, attrs, (uint8_t*) &data, IndexComponentLfo1 };
     

@@ -59,13 +59,14 @@ typedef struct _AttributeInfo {
 /*
  * Struct used for describing components.
  */
-typedef struct _Component {
+typedef struct _ComponentInfo {
     const char* name;       // component name
     uint8_t type;           // component type represented by compact descriptor enum.
+    uint8_t id;             // component ID.  Set NA if no ID is assigned.
     uint8_t attributeIndex; // index of attribute info. assign NA if there is no attribute.
     uint8_t next;           // index for next component descriptor in the module.
     uint8_t sub;            // index for descriptor of sub component.
-} Component;
+} ComponentInfo;
 
 #define NA 0xff
 
@@ -73,7 +74,7 @@ typedef struct _Component {
  * The device descriptor
  */
 typedef struct _DeviceDescriptor {
-    Component* components; // component description table
+    ComponentInfo* components; // component description table
     AttributeInfo* attrs;  // attribute description table
     uint8_t* data;         // pointer to the attribute data block
     uint8_t index;         // index for the component to describe
