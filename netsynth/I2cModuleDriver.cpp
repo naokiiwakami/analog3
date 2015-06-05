@@ -248,20 +248,10 @@ I2cModuleDriver::modifyAttribute(const connector::Request& request,
     LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": module " << m_data->m_component->getFullName() << " enter"));
 
     // Find the target component
-    int num_paths = request.path_size();
-    if (num_paths < 2) {
-        *errorMessage = fname + ": Invalid request: target path is incomplete";
+    Component* component = resolveComponent(request, errorMessage);
+    if (component == NULL) {
+        *errorMessage = fname + " - " + *errorMessage;
         return false;
-    }
-
-    Component* component = m_data->m_component;
-    for (int level = 1; level < num_paths; ++level) {
-        const std::string& name = request.path(level);
-        component = component->findSubComponent(name);
-        if (component == NULL) {
-            *errorMessage = fname + ": target component " + name + " not found";
-            return false;
-        }
     }
 
     // Read the request and make command parameters
@@ -279,7 +269,7 @@ I2cModuleDriver::modifyAttribute(const connector::Request& request,
 
     const char command = 'm';
     compact_descriptor::Attribute::Type attributeType = attributeValue->attributeType;
-    uint8_t id = attributeValue->id;
+    uint8_t attributeId = attributeValue->id;
 
     int16_t value = 0;
 
@@ -315,7 +305,7 @@ I2cModuleDriver::modifyAttribute(const connector::Request& request,
     std::string message;
     message += command;
     message += (char) attributeType;
-    message += (char) id;
+    message += (char) attributeId;
     uint8_t temp = 0xff & (value >> 8);
     message += (char) temp;
     temp = value & 0xff;
@@ -324,6 +314,7 @@ I2cModuleDriver::modifyAttribute(const connector::Request& request,
     if (!m_data->m_rackDriver->setupAddress(m_data->m_i2cSlaveAddress) ||
         !m_data->m_rackDriver->sendCommand(message)) {
         *errorMessage = fname + " ModifyAttribute: command execution failed";
+        return false;
     }
 
     // Update cache
@@ -343,7 +334,63 @@ bool
 I2cModuleDriver::removeSubComponent(const connector::Request& request,
                                      std::string* errorMessage)
 {
+    static const std::string fname = "I2cModuleDriver::removeSubComponent()";
+    LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": module " << m_data->m_component->getFullName() << " enter"));
+
+    // Resolve the component to remove
+    Component* component = resolveComponent(request, errorMessage);
+    if (component == NULL) {
+        *errorMessage = fname + " - " + *errorMessage;
+        return false;
+    }
+    if (component->hasSubComponent()) {
+        *errorMessage = fname + ": " + component->getName() + ": Subcomponents not empty";
+        return false;
+    }
+
+    // Send command message
+    const char command = 'm';
+    uint8_t componentId = component->getId();
+    std::string message;
+    message += command;
+    message += (char) componentId;
+
+    if (!m_data->m_rackDriver->setupAddress(m_data->m_i2cSlaveAddress) ||
+        !m_data->m_rackDriver->sendCommand(message)) {
+        *errorMessage = fname + " RemoveSubComponent: command execution failed";
+        return false;
+    }
+
+    // Update cache
+    component->remove();
+    delete component;
+
     return true;
+}
+
+Component*
+I2cModuleDriver::resolveComponent(const connector::Request& request,
+                                  std::string* errorMessage)
+{
+    static const std::string fname = "I2cModuleDriver::resolveComponent()";
+
+    int num_paths = request.path_size();
+    if (num_paths < 2) {
+        *errorMessage = fname + ": Invalid request: target path is incomplete";
+        return NULL;
+    }
+
+    Component* component = m_data->m_component;
+    for (int level = 1; level < num_paths; ++level) {
+        const std::string& name = request.path(level);
+        component = component->findSubComponent(name);
+        if (component == NULL) {
+            *errorMessage = fname + ": target component " + name + " not found";
+            return NULL;
+        }
+    }
+
+    return component;
 }
 
 #endif

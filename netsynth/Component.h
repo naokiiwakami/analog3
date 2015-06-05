@@ -68,6 +68,12 @@ public:
 
     Component* findSubComponent(const std::string& name);
 
+    bool hasSubComponent() {
+        return !subComponents.empty();
+    }
+
+    void remove();
+
     bool convertToProtocolBuf(connector::Component* pbComponent, std::string* errorMessage);
 
 private:
@@ -75,6 +81,8 @@ private:
     std::string fullName;
     int id;
     std::map<std::string, AttributeValue> attributes;
+
+    Component* parent;
     std::map<std::string, Component*> subComponentsDict;
     std::vector<Component*> subComponents;
 

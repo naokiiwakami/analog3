@@ -38,6 +38,7 @@ protected:
 };
 
 class I2cModuleDriverData;
+class Component;
 
 class I2cModuleDriver : public ModuleDriver
 {
@@ -62,6 +63,11 @@ public:
                             std::string* errorMessage);
 
     I2cModuleDriverData* m_data;
+
+protected:
+    Component* resolveComponent(const connector::Request& request,
+                                std::string* errorMessage);
+
 };
 
 #endif
