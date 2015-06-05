@@ -30,6 +30,7 @@ volatile uint8_t rb_in_use;
 #define COMMAND_NAME     'n'
 #define COMMAND_DESCRIBE 'd'
 #define COMMAND_MODIFY   'm'
+#define COMMAND_REMOVE   'r'
 #define COMMAND_SEND 's'
 #define COMMAND_SET_WIREID 'w'
 #define COMMAND_GET_WIREID 'W'
@@ -131,7 +132,8 @@ typedef struct _Component {
     void* data;
 } Component;
 
-Component components[6] = {
+#define ComponentsResolverSize 6
+Component components[ComponentsResolverSize] = {
     { Knob, NULL },
     { Knob, NULL },
     { Knob, NULL },
@@ -324,6 +326,16 @@ void handleI2CInput()
             PWM_1_WriteCompare1(data.lfo1_frequency);
             PWM_1_WriteCompare2(data.lfo2_frequency);
         
+            break;
+        }
+        case COMMAND_REMOVE: {
+            uint8_t componentId = i2cSlaveWriteBuf[idata++];
+            if (componentId < ComponentsResolverSize && components[componentId].componentType == ValueInputPort) {
+                FreePort* port = (FreePort*) components[componentId].data;
+                port->listener = NA;
+                // TODO: remove the port from the knob.
+            }
+            // TODO: else return error
             break;
         }
             /*
