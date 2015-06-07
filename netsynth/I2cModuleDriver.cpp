@@ -248,32 +248,18 @@ I2cModuleDriver::modifyAttribute(const connector::Request& request,
     LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": module " << m_data->m_component->getFullName() << " enter"));
 
     // Find the target component
-    int num_paths = request.path_size();
-    if (num_paths < 2) {
-        *errorMessage = fname + ": Invalid request: target path is incomplete";
+    Component* component = resolveComponent(request, errorMessage);
+    if (component == NULL) {
+        *errorMessage = fname + " - " + *errorMessage;
         return false;
     }
 
-    Component* component = m_data->m_component;
-    for (int level = 1; level < num_paths; ++level) {
-        const std::string& name = request.path(level);
-        component = component->findSubComponent(name);
-        if (component == NULL) {
-            *errorMessage = fname + ": target component " + name + " not found";
-            return false;
-        }
-    }
-
-    // Read the request
+    // Read the request and make command parameters
     if (!request.has_attribute()) {
         *errorMessage = fname + ": ModifyAttribute: Mandatory parameter \"attribute\" is missing.";
         return false;
     }
     const connector::Attribute& attr = request.attribute();
-    if (!attr.has_value()) {
-        *errorMessage = fname + ": ModifyAttribute: Value in attribute is missing.";
-        return false;
-    }
 
     const AttributeValue* attributeValue = component->getAttribute(attr.name());
     if (attributeValue == NULL) {
@@ -281,25 +267,54 @@ I2cModuleDriver::modifyAttribute(const connector::Request& request,
         return false;
     }
 
+    const char command = 'm';
+    compact_descriptor::Attribute::Type attributeType = attributeValue->attributeType;
+    uint8_t attributeId = attributeValue->id;
+
     int16_t value = 0;
-    if (attr.value().has_ivalue()) {
-        value = attr.value().ivalue();
+
+    switch (request.command()) {
+    case connector::Request::SET_ATTRIBUTE: {
+        if (!attr.has_value()) {
+            *errorMessage = fname + ": ModifyAttribute: Value in attribute is missing.";
+            return false;
+        }
+        if (attr.value().has_ivalue()) {
+            value = attr.value().ivalue();
+        }
+        else {
+            *errorMessage = fname + ": ModifyAttribute: " + attr.name() + ": modifying value must be integer.";
+            return false;
+        }
+        break;
+    }
+    case connector::Request::UNSET_ATTRIBUTE:
+        if (attributeType != compact_descriptor::Attribute::WireId) {
+            *errorMessage = fname + ": MudifyAttribute: " + compact_descriptor::Attribute::Type_Name(attributeType) + ": unset value is not supported";
+            return false;
+        }
+        value = 0;
+        break;
+    default:
+        // Unknown command. Do nothing.
+        LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": " << connector::Request::Command_Name(request.command()) << ": unknown command"));
+        return true;
     }
 
     // Make command parameters
-    std::string command;
-    command += 'm';
-    uint8_t attributeType = attributeValue->attributeType;
-    command += (char) attributeType;
-    uint8_t id = attributeValue->id;
-    command += (char) id;
+    std::string message;
+    message += command;
+    message += (char) attributeType;
+    message += (char) attributeId;
     uint8_t temp = 0xff & (value >> 8);
-    command += (char) temp;
+    message += (char) temp;
     temp = value & 0xff;
-    command += (char) value;
+    message += (char) value;
+
     if (!m_data->m_rackDriver->setupAddress(m_data->m_i2cSlaveAddress) ||
-        !m_data->m_rackDriver->sendCommand(command)) {
+        !m_data->m_rackDriver->sendCommand(message)) {
         *errorMessage = fname + " ModifyAttribute: command execution failed";
+        return false;
     }
 
     // Update cache
@@ -310,8 +325,92 @@ I2cModuleDriver::modifyAttribute(const connector::Request& request,
 
 bool
 I2cModuleDriver::addSubComponent(const connector::Request& request,
-                                  std::string* errorMessage)
+                                 std::string* errorMessage)
 {
+    static const std::string fname = "I2cModuleDriver::addSubComponent()";
+    LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": module " << m_data->m_component->getFullName() << " enter"));
+
+    // Resolve the parent component
+    Component* component = resolveComponent(request, errorMessage);
+    if (component == NULL) {
+        *errorMessage = fname + " - " + *errorMessage;
+        return false;
+    }
+    uint8_t parentComponentId = component->getId();
+    if (parentComponentId == 0) {
+        *errorMessage = fname + ": parent component " + component->getName() + " does not have an ID.";
+        return false;
+    }
+
+    if (request.has_component()) {
+        const connector::Component& newComponent = request.component();
+        const char command = 'a';
+        const std::string& fullName = newComponent.name();
+        std::string name;
+        size_t pos;
+        if (!fullName.empty() && (pos = fullName.find('.')) != std::string::npos) {
+            name = fullName.substr(pos + 1);
+        }
+        else {
+            // TODO: error
+        }
+        uint8_t nameLen = name.size();
+        uint8_t wireId = 0;
+        uint16_t value = 0;
+        int num_attributes = newComponent.attribute_size();
+        for (int iattr = 0; iattr < num_attributes; ++iattr) {
+            const connector::Attribute& attribute = newComponent.attribute(iattr);
+            if (attribute.name() == "wireId") {
+                wireId = attribute.value().ivalue();
+            }
+            else if (attribute.name() == "value") {
+                value = attribute.value().ivalue();
+            }
+        }
+        std::string message;
+        message += command;
+        message += (char) parentComponentId;
+        message += (char) nameLen;
+        message += name;
+        message += wireId;
+        message += (char) ((value << 8) & 0xff);
+        message += (char) (value & 0xff);
+
+        std::string data;
+        if (!m_data->m_rackDriver->setupAddress(m_data->m_i2cSlaveAddress) ||
+            !m_data->m_rackDriver->sendCommand(message, &data)) {
+            *errorMessage = fname + " AddSubComponent: command execution failed";
+            return false;
+        }
+
+        // Parse the command response to get module descriptors.
+        compact_descriptor::Description description;
+        description.ParseFromString(data);
+
+        if (logger.getLogLevel() <= log4cplus::DEBUG_LOG_LEVEL) {    
+            std::string dump;
+            io::StringOutputStream output(&dump);
+            TextFormat::Print(description, &output);
+            LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": created=" << dump));
+        }
+
+        if (description.component_size() == 0) {
+            *errorMessage = fname + ": no component returned from device";
+            return false;
+        }
+        const compact_descriptor::Component& createComponentDesc = description.component(0);
+        Component* createdComponent = Component::create(createComponentDesc, &m_data->m_idTable);
+        if (createdComponent == 0) {
+            *errorMessage = fname + ": failed building created component";
+            return false;
+        }
+        component->addSubComponent(createdComponent);
+    }
+    else {
+        *errorMessage = fname + ": invalid component specification";
+        return false;
+    }
+
     return true;
 }
 
@@ -319,7 +418,63 @@ bool
 I2cModuleDriver::removeSubComponent(const connector::Request& request,
                                      std::string* errorMessage)
 {
+    static const std::string fname = "I2cModuleDriver::removeSubComponent()";
+    LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": module " << m_data->m_component->getFullName() << " enter"));
+
+    // Resolve the component to remove
+    Component* component = resolveComponent(request, errorMessage);
+    if (component == NULL) {
+        *errorMessage = fname + " - " + *errorMessage;
+        return false;
+    }
+    if (component->hasSubComponent()) {
+        *errorMessage = fname + ": " + component->getName() + ": Subcomponents not empty";
+        return false;
+    }
+
+    // Send command message
+    const char command = 'm';
+    uint8_t componentId = component->getId();
+    std::string message;
+    message += command;
+    message += (char) componentId;
+
+    if (!m_data->m_rackDriver->setupAddress(m_data->m_i2cSlaveAddress) ||
+        !m_data->m_rackDriver->sendCommand(message)) {
+        *errorMessage = fname + " RemoveSubComponent: command execution failed";
+        return false;
+    }
+
+    // Update cache
+    component->remove();
+    delete component;
+
     return true;
+}
+
+Component*
+I2cModuleDriver::resolveComponent(const connector::Request& request,
+                                  std::string* errorMessage)
+{
+    static const std::string fname = "I2cModuleDriver::resolveComponent()";
+
+    int num_paths = request.path_size();
+    if (num_paths < 2) {
+        *errorMessage = fname + ": Invalid request: target path is incomplete";
+        return NULL;
+    }
+
+    Component* component = m_data->m_component;
+    for (int level = 1; level < num_paths; ++level) {
+        const std::string& name = request.path(level);
+        component = component->findSubComponent(name);
+        if (component == NULL) {
+            *errorMessage = fname + ": target component " + name + " not found";
+            return NULL;
+        }
+    }
+
+    return component;
 }
 
 #endif

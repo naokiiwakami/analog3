@@ -32,7 +32,7 @@ const char* Component::signalValue = "value";
 const char* Component::signalGate = "note";
 
 Component::Component()
-    : id(0)
+    : id(0), parent(NULL)
 {}
 
 Component::~Component()
@@ -180,9 +180,34 @@ Component::create(const compact_descriptor::Component& componentDesc,
         Component* subComponent = Component::create(scDescriptor, idTable);
         component->subComponentsDict[subComponent->fullName] = subComponent;
         component->subComponents.push_back(subComponent);
+        subComponent->parent = component;
     }
 
     return component;
+}
+
+void
+Component::addSubComponent(Component* sub)
+{
+    sub->parent = this;
+    subComponentsDict[sub->fullName] = sub;
+    subComponents.push_back(sub);
+}
+
+void
+Component::remove()
+{
+    if (parent != NULL) {
+        parent->subComponentsDict.erase(getFullName());
+        std::vector<Component*>::iterator it = parent->subComponents.begin();
+        std::vector<Component*>::iterator end = parent->subComponents.end();
+        for (; it != end; ++it) {
+            if (*it == this) {
+                parent->subComponents.erase(it);
+                break;
+            }
+        }
+    }
 }
 
 bool
