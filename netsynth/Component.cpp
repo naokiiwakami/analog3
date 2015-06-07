@@ -187,6 +187,14 @@ Component::create(const compact_descriptor::Component& componentDesc,
 }
 
 void
+Component::addSubComponent(Component* sub)
+{
+    sub->parent = this;
+    subComponentsDict[sub->fullName] = sub;
+    subComponents.push_back(sub);
+}
+
+void
 Component::remove()
 {
     if (parent != NULL) {

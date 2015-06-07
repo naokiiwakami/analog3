@@ -72,6 +72,8 @@ public:
         return !subComponents.empty();
     }
 
+    void addSubComponent(Component* sub);
+
     void remove();
 
     bool convertToProtocolBuf(connector::Component* pbComponent, std::string* errorMessage);

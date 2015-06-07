@@ -325,8 +325,92 @@ I2cModuleDriver::modifyAttribute(const connector::Request& request,
 
 bool
 I2cModuleDriver::addSubComponent(const connector::Request& request,
-                                  std::string* errorMessage)
+                                 std::string* errorMessage)
 {
+    static const std::string fname = "I2cModuleDriver::addSubComponent()";
+    LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": module " << m_data->m_component->getFullName() << " enter"));
+
+    // Resolve the parent component
+    Component* component = resolveComponent(request, errorMessage);
+    if (component == NULL) {
+        *errorMessage = fname + " - " + *errorMessage;
+        return false;
+    }
+    uint8_t parentComponentId = component->getId();
+    if (parentComponentId == 0) {
+        *errorMessage = fname + ": parent component " + component->getName() + " does not have an ID.";
+        return false;
+    }
+
+    if (request.has_component()) {
+        const connector::Component& newComponent = request.component();
+        const char command = 'a';
+        const std::string& fullName = newComponent.name();
+        std::string name;
+        size_t pos;
+        if (!fullName.empty() && (pos = fullName.find('.')) != std::string::npos) {
+            name = fullName.substr(pos + 1);
+        }
+        else {
+            // TODO: error
+        }
+        uint8_t nameLen = name.size();
+        uint8_t wireId = 0;
+        uint16_t value = 0;
+        int num_attributes = newComponent.attribute_size();
+        for (int iattr = 0; iattr < num_attributes; ++iattr) {
+            const connector::Attribute& attribute = newComponent.attribute(iattr);
+            if (attribute.name() == "wireId") {
+                wireId = attribute.value().ivalue();
+            }
+            else if (attribute.name() == "value") {
+                value = attribute.value().ivalue();
+            }
+        }
+        std::string message;
+        message += command;
+        message += (char) parentComponentId;
+        message += (char) nameLen;
+        message += name;
+        message += wireId;
+        message += (char) ((value << 8) & 0xff);
+        message += (char) (value & 0xff);
+
+        std::string data;
+        if (!m_data->m_rackDriver->setupAddress(m_data->m_i2cSlaveAddress) ||
+            !m_data->m_rackDriver->sendCommand(message, &data)) {
+            *errorMessage = fname + " AddSubComponent: command execution failed";
+            return false;
+        }
+
+        // Parse the command response to get module descriptors.
+        compact_descriptor::Description description;
+        description.ParseFromString(data);
+
+        if (logger.getLogLevel() <= log4cplus::DEBUG_LOG_LEVEL) {    
+            std::string dump;
+            io::StringOutputStream output(&dump);
+            TextFormat::Print(description, &output);
+            LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT(fname << ": created=" << dump));
+        }
+
+        if (description.component_size() == 0) {
+            *errorMessage = fname + ": no component returned from device";
+            return false;
+        }
+        const compact_descriptor::Component& createComponentDesc = description.component(0);
+        Component* createdComponent = Component::create(createComponentDesc, &m_data->m_idTable);
+        if (createdComponent == 0) {
+            *errorMessage = fname + ": failed building created component";
+            return false;
+        }
+        component->addSubComponent(createdComponent);
+    }
+    else {
+        *errorMessage = fname + ": invalid component specification";
+        return false;
+    }
+
     return true;
 }
 
