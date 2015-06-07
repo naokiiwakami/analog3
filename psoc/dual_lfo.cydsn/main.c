@@ -19,18 +19,19 @@
 #define ETX 0x03 // end of text
 #define FF 0x0c // form feed
 #define BUFFER_SIZE_READ      (0x10u)
-#define BUFFER_SIZE_WRITE     (0x08u)
+#define BUFFER_SIZE_WRITE     (0x10u)
 uint8 i2cSlaveReadBufNotReady[1] = { 0xff };
 uint8 i2cSlaveWriteBuf[BUFFER_SIZE_WRITE];
 uint8 i2cSlaveReadBuf[BUFFER_SIZE_READ];
 volatile uint8_t rb_ptr;
 volatile uint8_t rb_in_use;
 
-#define COMMAND_PING     'p'
-#define COMMAND_NAME     'n'
-#define COMMAND_DESCRIBE 'd'
-#define COMMAND_MODIFY   'm'
-#define COMMAND_REMOVE   'r'
+#define COMMAND_PING             'p'
+#define COMMAND_NAME             'n'
+#define COMMAND_DESCRIBE         'd'
+#define COMMAND_MODIFY_ATTRIBUTE 'm'
+#define COMMAND_ADD_PORT         'a'
+#define COMMAND_REMOVE_PORT      'r'
 #define COMMAND_SEND 's'
 #define COMMAND_SET_WIREID 'w'
 #define COMMAND_GET_WIREID 'W'
@@ -88,6 +89,7 @@ typedef struct _FreePort {
     uint8_t wireId;
     uint16_t value;
     uint8_t listener;
+    char name[16];
 } FreePort;
 
 typedef struct _Variables {
@@ -121,10 +123,10 @@ typedef struct _Variables {
 Variables data = { 
     1023, // scale
     72, 10, 0, NULL, 0, 0, // lfo1
-    320, 1, 1, NULL, 0, 1, // lfo2
+    320, 1, 1, NULL, 0, 138, // lfo2
     0, NULL, 0, // midi-cv
-    { 1, 256,  1, }, // freePort1
-    { 0, 256, NA, }, // freePort2
+    { 138, 256,  1, {'0'}, }, // freePort1
+    { 0, 256, NA, {'0'}, }, // freePort2
 };
 
 typedef struct _Component {
@@ -132,7 +134,15 @@ typedef struct _Component {
     void* data;
 } Component;
 
-#define ComponentsResolverSize 6
+enum {
+    ComponentIdLfo1Freq = 1,
+    ComponentIdLfo1Delay,
+    ComponentIdLfo2Freq,
+    ComponentIdLfo2Delay,
+    ComponentIdFreePort1,
+    ComponentIdFreePort2,
+};
+#define ComponentsResolverSize ComponentIdFreePort2
 Component components[ComponentsResolverSize] = {
     { Knob, NULL },
     { Knob, NULL },
@@ -141,6 +151,32 @@ Component components[ComponentsResolverSize] = {
     { ValueInputPort, &data.freePort1 },
     { ValueInputPort, &data.freePort2 },
 };
+
+/*
+ * This function makes a port name 'w<n>' from given wireId n.
+ */
+void makePortName(char* name, uint8_t wireId)
+{
+    name[0] = 'w';
+    
+    // Strategy:
+    //  - Convert a decimal to a numeric string in reverse order.
+    //  - Reverse the numeric string.
+    int nch = 0;
+    while (wireId > 0) {
+        name[1 + nch++] = wireId % 10 + '0';
+        wireId /= 10;
+    }
+    name[1 + nch] = '\0';
+    
+    int ich;
+    char temp;
+    for (ich = 0; ich < nch / 2; ++ich) {
+        temp = name[nch - ich];
+        name[nch - ich] = name[1 + ich];
+        name[1 + ich] = temp;
+    }
+}
 
 void describe()
 {
@@ -198,26 +234,26 @@ void describe()
     };
 
     ComponentInfo components[] = {
-        { "LFO1",         Module,          NA, NA, IndexComponentLfo2,         IndexComponentLfo1Freq },
-        { "frequency",    Knob,             1,  1, IndexComponentLfo1Delay,    IndexComponentNull },
-        { "delay",        Knob,             2,  2, IndexComponentLfo1WaveForm, IndexComponentNull },
-        { "waveForm",     Selector,        NA,  3, IndexComponentLfo1Gate,     IndexComponentNull },
-        { "gate",         NoteInputPort,   NA,  5, IndexComponentLfo1Output,   IndexComponentNull },
-        { "output",       ValueOutputPort, NA,  6, IndexComponentNull,         IndexComponentNull },
+        { "LFO1",         Module,                 NA, NA, IndexComponentLfo2,         IndexComponentLfo1Freq },
+        { "frequency",    Knob,  ComponentIdLfo1Freq,  1, IndexComponentLfo1Delay,    IndexComponentNull },
+        { "delay",        Knob, ComponentIdLfo1Delay,  2, IndexComponentLfo1WaveForm, IndexComponentNull },
+        { "waveForm",     Selector,               NA,  3, IndexComponentLfo1Gate,     IndexComponentNull },
+        { "gate",         NoteInputPort,          NA,  5, IndexComponentLfo1Output,   IndexComponentNull },
+        { "output",       ValueOutputPort,        NA,  6, IndexComponentNull,         IndexComponentNull },
 
-        { "LFO2",         Module,          NA, NA, IndexComponentMidi,         IndexComponentLfo2Freq },
-        { "frequency",    Knob,             3,  7, IndexComponentLfo2Delay,    IndexComponentNull },
-        { "delay",        Knob,             4,  8, IndexComponentLfo2WaveForm, IndexComponentNull },
-        { "waveForm",     Selector,        NA,  9, IndexComponentLfo2Gate,     IndexComponentNull },
-        { "gate",         NoteInputPort,   NA, 11, IndexComponentLfo2Output,   IndexComponentNull },
-        { "output",       ValueOutputPort, NA, 12, IndexComponentNull,         IndexComponentNull },
+        { "LFO2",         Module,                 NA, NA, IndexComponentMidi,         IndexComponentLfo2Freq },
+        { "frequency",    Knob,  ComponentIdLfo2Freq,  7, IndexComponentLfo2Delay,    IndexComponentNull },
+        { "delay",        Knob, ComponentIdLfo2Delay,  8, IndexComponentLfo2WaveForm, IndexComponentNull },
+        { "waveForm",     Selector,               NA,  9, IndexComponentLfo2Gate,     IndexComponentNull },
+        { "gate",         NoteInputPort,          NA, 11, IndexComponentLfo2Output,   IndexComponentNull },
+        { "output",       ValueOutputPort,        NA, 12, IndexComponentNull,         IndexComponentNull },
 
         { "midi-cv",      Module,          NA, NA, IndexComponentNull,         IndexComponentMidiChannel },
         { "channel",      Selector,        NA, 13, IndexComponentMidiOutput,   IndexComponentNull },
         { "output",       NoteOutputPort,  NA, 15, IndexComponentNull,         IndexComponentNull },
 
-        { NULL,           ValueInputPort,   5, 16, IndexComponentNull,         IndexComponentNull },
-        { NULL,           ValueInputPort,   6, 18, IndexComponentNull,         IndexComponentNull },
+        { NULL,           ValueInputPort, ComponentIdFreePort1, 16, IndexComponentNull,         IndexComponentNull },
+        { NULL,           ValueInputPort, ComponentIdFreePort2, 18, IndexComponentNull,         IndexComponentNull },
 
         { NULL }
     };
@@ -238,21 +274,18 @@ void describe()
     };
     data.midiChannels = midiChannel_choices;
     
-    char nameBuf1[5];
-    char nameBuf2[5];
-    
-    if (data.freePort1.wireId != 0) {
-        nameBuf1[0] = 'w';
-        nameBuf1[1] = data.freePort1.wireId + '0';
-        nameBuf1[2] = '\0';
-        components[IndexComponentFreePort1].name = nameBuf1;
+    if (data.freePort1.listener != NA) {
+        if (data.freePort1.name[0] == '\0') {
+            makePortName(data.freePort1.name, data.freePort1.wireId);
+        }
+        components[IndexComponentFreePort1].name = data.freePort1.name;
     }
     
-    if (data.freePort2.wireId != 0) {
-        nameBuf2[0] = 'w';
-        nameBuf2[1] = data.freePort2.wireId + '0';
-        nameBuf2[2] = '\0';
-        components[IndexComponentFreePort2].name = nameBuf2;
+    if (data.freePort2.listener != NA) {
+        if (data.freePort2.name[0] == '\0') {
+            makePortName(data.freePort2.name, data.freePort2.wireId);
+        }
+        components[IndexComponentFreePort2].name = data.freePort2.name;
     }
     
     int i;
@@ -303,7 +336,7 @@ void handleI2CInput()
         case COMMAND_DESCRIBE:
             describe(); 
             break;
-        case COMMAND_MODIFY: {
+        case COMMAND_MODIFY_ATTRIBUTE: {
             // usage: 'm' <uint8_t:moduleId> <uint8_t:componentId> <uint16_t:value>
             uint8_t attributeType = i2cSlaveWriteBuf[idata++];
             uint8_t attributeId = i2cSlaveWriteBuf[idata++];
@@ -328,10 +361,72 @@ void handleI2CInput()
         
             break;
         }
-        case COMMAND_REMOVE: {
+        case COMMAND_ADD_PORT: {
+            uint8_t parentComponentId = i2cSlaveWriteBuf[idata++];
+            if (parentComponentId < ComponentsResolverSize && components[parentComponentId].componentType == Knob) {
+                FreePort* port = NULL;
+                uint8_t freePortOffset;
+                uint8_t componentId;
+                if (data.freePort1.listener == NA) {
+                    port = &data.freePort1;
+                    componentId = ComponentIdFreePort1;
+                    freePortOffset = offsetof(Variables, freePort1);
+                }
+                else if (data.freePort2.listener == NA) {
+                    port = &data.freePort2;
+                    componentId = ComponentIdFreePort2;
+                    freePortOffset = offsetof(Variables, freePort2);
+                }
+                if (port != NULL) {
+                    uint8_t nameLen = i2cSlaveWriteBuf[idata++];
+                    int i;
+                    for (i = 0; i < nameLen; ++i) {
+                        port->name[i] = i2cSlaveWriteBuf[idata++];
+                    }
+                    port->name[i] = '\0';
+                    uint8_t wireId = i2cSlaveWriteBuf[idata++];
+                    uint16_t value = i2cSlaveWriteBuf[idata++];
+                    value <<= 8;
+                    value += i2cSlaveWriteBuf[idata++];
+
+                    port->wireId = wireId;
+                    port->value = value;
+                    port->listener = parentComponentId;
+                    
+                    AttributeInfo attrs[] = {
+                        /* 0 */ { freePortOffset + offsetof(FreePort, wireId), AttributeTypeWireId, 1},
+                        /* 1 */ { freePortOffset + offsetof(FreePort, value), AttributeTypeValue, 1 },
+                        /* 2 */ { offsetof(Variables, scale), AttributeTypeScale, 0 },
+                    };
+                    
+                    ComponentInfo components[] = {
+                        { port->name, ValueInputPort, componentId, 0, 1, 1 },
+                        { NULL }
+                    };
+                    
+                    DeviceDescriptor desc = { components, attrs, (uint8_t*) &data, 0 };
+    
+                    compact_descriptor_Description deviceDesc = {};
+                    deviceDesc.component.funcs.encode = &write_component;
+                    deviceDesc.component.arg = &desc;
+                    // fprintf(stderr, "arg=%p\n", nano_component.name.arg);
+
+                    pb_ostream_t stream = { &ostream_callback, NULL, 65536, 0 };
+                    pb_encode(&stream, compact_descriptor_Description_fields, &deviceDesc);
+                    flush();
+                }
+                // TODO: else return error.
+                
+                // TODO: add the port from the knob.
+            }
+            // TODO: else return error
+            break;
+        }
+        case COMMAND_REMOVE_PORT: {
             uint8_t componentId = i2cSlaveWriteBuf[idata++];
             if (componentId < ComponentsResolverSize && components[componentId].componentType == ValueInputPort) {
                 FreePort* port = (FreePort*) components[componentId].data;
+                port->wireId = 0;
                 port->listener = NA;
                 // TODO: remove the port from the knob.
             }
