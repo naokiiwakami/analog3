@@ -315,6 +315,19 @@ void describe()
 
 }
 
+int16_t getPeriod(int16_t freq)
+{
+    float k = (1023 - data.lfo1_frequency) / 1023.0;
+    k = k * 0.85 + 0.15;
+    k = k * k;
+    k = k * k;
+    uint16_t period = (uint16_t) (65535 * k);
+    if (period < 32) {
+        period = 32;
+    }
+    return period;
+}
+
 void handleI2CInput()
 {
     uint32_t bytesReceived = I2C_S_I2CSlaveGetWriteBufSize();
@@ -355,9 +368,10 @@ void handleI2CInput()
                 dataBlock[attributeId] = value;
                 break;
             }
-                        
-            PWM_1_WriteCompare1(data.lfo1_frequency);
-            PWM_1_WriteCompare2(data.lfo2_frequency);
+
+            Timer_1_WritePeriod(getPeriod(data.lfo1_frequency));
+            // PWM_1_WriteCompare1(data.lfo1_frequency);
+            // PWM_1_WriteCompare2(data.lfo2_frequency);
         
             break;
         }
@@ -452,11 +466,42 @@ void handleI2CInput()
     }
 }
 
+CY_ISR(ISR_Timer_1_Overflow)
+{
+    static struct _osc {
+        uint8_t direction;
+        uint16_t value;
+    }
+    osc = { 1, 0 };
+    
+    // Pin_LED_Blue_Write(!Pin_LED_Blue_Read());
+    PWM_1_WriteCompare1(osc.value);
+    if (osc.direction) {
+        if (osc.value == 1023) {
+            osc.direction = 0;
+            --osc.value;
+        }
+        else {
+            ++osc.value;
+        }
+    }
+    else {
+        if (osc.value == 0) {
+            ++osc.value;
+            osc.direction = 1;
+        }
+        else {
+            --osc.value;
+        }
+    }
+}
+
 int main()
 {
     /* Place your initialization/startup code here (e.g. MyInst_Start()) */
 
-    CyGlobalIntEnable; /* Uncomment this line to enable global interrupts. */
+    Timer_1_Start();
+    Timer_1_WritePeriod(getPeriod(data.lfo1_frequency));
     
     PWM_1_Start();
     PWM_1_WriteCompare1(data.lfo1_frequency);
@@ -469,6 +514,11 @@ int main()
     I2C_S_Start();
     
     Pin_LED_Blue_Write(1);
+    
+    ISR_Timer_1_Overflow_ClearPending();
+    ISR_Timer_1_Overflow_StartEx(ISR_Timer_1_Overflow);
+    
+    CyGlobalIntEnable; /* Uncomment this line to enable global interrupts. */    
     
     for(;;)
     {
