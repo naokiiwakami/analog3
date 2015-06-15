@@ -122,7 +122,7 @@ typedef struct _Variables {
 // TODO: load them from flash on startup
 Variables data = { 
     1023, // scale
-    72, 10, 0, NULL, 0, 0, // lfo1
+    512, 10, 0, NULL, 0, 0, // lfo1
     320, 1, 1, NULL, 0, 138, // lfo2
     0, NULL, 0, // midi-cv
     { 138, 256,  1, {'0'}, }, // freePort1
@@ -315,17 +315,106 @@ void describe()
 
 }
 
-int16_t getPeriod(int16_t freq)
+void modifyAttribute(uint32_t idata)
 {
-    float k = (1023 - data.lfo1_frequency) / 1023.0;
-    k = k * 0.85 + 0.15;
-    k = k * k;
-    k = k * k;
-    uint16_t period = (uint16_t) (65535 * k);
-    if (period < 32) {
-        period = 32;
+    // usage: 'm' <uint8_t:moduleId> <uint8_t:componentId> <uint16_t:value>
+    uint8_t attributeType = i2cSlaveWriteBuf[idata++];
+    uint8_t attributeId = i2cSlaveWriteBuf[idata++];
+    uint16_t value = i2cSlaveWriteBuf[idata++];
+    value <<= 8;
+    value += i2cSlaveWriteBuf[idata++];
+
+    uint8_t* dataBlock = (uint8_t*) &data;
+    
+    switch (attributeType) {
+    case AttributeTypeValue:
+        * (int16_t*) (dataBlock + attributeId) = value;
+        break;
+    case AttributeTypeSelectorIndex:
+    case AttributeTypeWireId:
+        dataBlock[attributeId] = value;
+        break;
     }
-    return period;
+
+    // Timer_1_WritePeriod(getPeriod(data.lfo1_frequency));
+    // Timer_2_WritePeriod(getPeriod(data.lfo2_frequency));
+    // PWM_1_WriteCompare1(data.lfo1_frequency);
+    // PWM_1_WriteCompare2(data.lfo2_frequency);
+}
+
+void addPort(int32_t idata)
+{
+    // usage: 'a' <uint8_t:parentComponentId> <uint8_t:nameLen> <char[namelen]:name> <uint8_t:wireId> <uint16_t:value>
+    uint8_t parentComponentId = i2cSlaveWriteBuf[idata++];
+    if (parentComponentId < ComponentsResolverSize && components[parentComponentId].componentType == Knob) {
+        FreePort* port = NULL;
+        uint8_t freePortOffset;
+        uint8_t componentId;
+        if (data.freePort1.listener == NA) {
+            port = &data.freePort1;
+            componentId = ComponentIdFreePort1;
+            freePortOffset = offsetof(Variables, freePort1);
+        }
+        else if (data.freePort2.listener == NA) {
+            port = &data.freePort2;
+            componentId = ComponentIdFreePort2;
+            freePortOffset = offsetof(Variables, freePort2);
+        }
+        if (port != NULL) {
+            uint8_t nameLen = i2cSlaveWriteBuf[idata++];
+            int i;
+            for (i = 0; i < nameLen; ++i) {
+                port->name[i] = i2cSlaveWriteBuf[idata++];
+            }
+            port->name[i] = '\0';
+            uint8_t wireId = i2cSlaveWriteBuf[idata++];
+            uint16_t value = i2cSlaveWriteBuf[idata++];
+            value <<= 8;
+            value += i2cSlaveWriteBuf[idata++];
+
+            port->wireId = wireId;
+            port->value = value;
+            port->listener = parentComponentId;
+            
+            AttributeInfo attrs[] = {
+                /* 0 */ { freePortOffset + offsetof(FreePort, wireId), AttributeTypeWireId, 1},
+                /* 1 */ { freePortOffset + offsetof(FreePort, value), AttributeTypeValue, 1 },
+                /* 2 */ { offsetof(Variables, scale), AttributeTypeScale, 0 },
+            };
+            
+            ComponentInfo components[] = {
+                { port->name, ValueInputPort, componentId, 0, 1, 1 },
+                { NULL }
+            };
+            
+            DeviceDescriptor desc = { components, attrs, (uint8_t*) &data, 0 };
+
+            compact_descriptor_Description deviceDesc = {};
+            deviceDesc.component.funcs.encode = &write_component;
+            deviceDesc.component.arg = &desc;
+            // fprintf(stderr, "arg=%p\n", nano_component.name.arg);
+
+            pb_ostream_t stream = { &ostream_callback, NULL, 65536, 0 };
+            pb_encode(&stream, compact_descriptor_Description_fields, &deviceDesc);
+            flush();
+        }
+        // TODO: else return error.
+        
+        // TODO: add the port from the knob.
+    }
+    // TODO: else return error
+}
+
+void removePort(uint32_t idata)
+{
+    uint8_t componentId = i2cSlaveWriteBuf[idata++];
+    if (componentId < ComponentsResolverSize && components[componentId].componentType == ValueInputPort) {
+        FreePort* port = (FreePort*) components[componentId].data;
+        port->wireId = 0;
+        port->listener = NA;
+        // TODO: remove the port from the knob.
+    }
+    // TODO: else return error
 }
 
 void handleI2CInput()
@@ -339,6 +428,7 @@ void handleI2CInput()
             Pin_LED_Blue_Write(0);
             ledTimer = 0x1ffff;
             break;
+        /*
         case COMMAND_NAME: {
             // I2C_S_I2CSlaveInitReadBuf(i2cSlaveReadBufDeviceName, sizeof(i2cSlaveReadBufDeviceName));
             SizedText text = {"\"Long time ago, in a galaxy far, far away...\"", 45};
@@ -346,107 +436,19 @@ void handleI2CInput()
             flush();
             break;
         }
+        */
         case COMMAND_DESCRIBE:
             describe(); 
             break;
-        case COMMAND_MODIFY_ATTRIBUTE: {
-            // usage: 'm' <uint8_t:moduleId> <uint8_t:componentId> <uint16_t:value>
-            uint8_t attributeType = i2cSlaveWriteBuf[idata++];
-            uint8_t attributeId = i2cSlaveWriteBuf[idata++];
-            uint16_t value = i2cSlaveWriteBuf[idata++];
-            value <<= 8;
-            value += i2cSlaveWriteBuf[idata++];
-            
-            uint8_t* dataBlock = (uint8_t*) &data;
-            
-            switch (attributeType) {
-            case AttributeTypeValue:
-                * (int16_t*) (dataBlock + attributeId) = value;
-                break;
-            case AttributeTypeSelectorIndex:
-            case AttributeTypeWireId:
-                dataBlock[attributeId] = value;
-                break;
-            }
-
-            Timer_1_WritePeriod(getPeriod(data.lfo1_frequency));
-            // PWM_1_WriteCompare1(data.lfo1_frequency);
-            // PWM_1_WriteCompare2(data.lfo2_frequency);
-        
+        case COMMAND_MODIFY_ATTRIBUTE:
+            modifyAttribute(idata);        
             break;
-        }
-        case COMMAND_ADD_PORT: {
-            uint8_t parentComponentId = i2cSlaveWriteBuf[idata++];
-            if (parentComponentId < ComponentsResolverSize && components[parentComponentId].componentType == Knob) {
-                FreePort* port = NULL;
-                uint8_t freePortOffset;
-                uint8_t componentId;
-                if (data.freePort1.listener == NA) {
-                    port = &data.freePort1;
-                    componentId = ComponentIdFreePort1;
-                    freePortOffset = offsetof(Variables, freePort1);
-                }
-                else if (data.freePort2.listener == NA) {
-                    port = &data.freePort2;
-                    componentId = ComponentIdFreePort2;
-                    freePortOffset = offsetof(Variables, freePort2);
-                }
-                if (port != NULL) {
-                    uint8_t nameLen = i2cSlaveWriteBuf[idata++];
-                    int i;
-                    for (i = 0; i < nameLen; ++i) {
-                        port->name[i] = i2cSlaveWriteBuf[idata++];
-                    }
-                    port->name[i] = '\0';
-                    uint8_t wireId = i2cSlaveWriteBuf[idata++];
-                    uint16_t value = i2cSlaveWriteBuf[idata++];
-                    value <<= 8;
-                    value += i2cSlaveWriteBuf[idata++];
-
-                    port->wireId = wireId;
-                    port->value = value;
-                    port->listener = parentComponentId;
-                    
-                    AttributeInfo attrs[] = {
-                        /* 0 */ { freePortOffset + offsetof(FreePort, wireId), AttributeTypeWireId, 1},
-                        /* 1 */ { freePortOffset + offsetof(FreePort, value), AttributeTypeValue, 1 },
-                        /* 2 */ { offsetof(Variables, scale), AttributeTypeScale, 0 },
-                    };
-                    
-                    ComponentInfo components[] = {
-                        { port->name, ValueInputPort, componentId, 0, 1, 1 },
-                        { NULL }
-                    };
-                    
-                    DeviceDescriptor desc = { components, attrs, (uint8_t*) &data, 0 };
-    
-                    compact_descriptor_Description deviceDesc = {};
-                    deviceDesc.component.funcs.encode = &write_component;
-                    deviceDesc.component.arg = &desc;
-                    // fprintf(stderr, "arg=%p\n", nano_component.name.arg);
-
-                    pb_ostream_t stream = { &ostream_callback, NULL, 65536, 0 };
-                    pb_encode(&stream, compact_descriptor_Description_fields, &deviceDesc);
-                    flush();
-                }
-                // TODO: else return error.
-                
-                // TODO: add the port from the knob.
-            }
-            // TODO: else return error
+        case COMMAND_ADD_PORT:
+            addPort(idata);
             break;
-        }
-        case COMMAND_REMOVE_PORT: {
-            uint8_t componentId = i2cSlaveWriteBuf[idata++];
-            if (componentId < ComponentsResolverSize && components[componentId].componentType == ValueInputPort) {
-                FreePort* port = (FreePort*) components[componentId].data;
-                port->wireId = 0;
-                port->listener = NA;
-                // TODO: remove the port from the knob.
-            }
-            // TODO: else return error
+        case COMMAND_REMOVE_PORT:
+            removePort(idata);
             break;
-        }
             /*
         case COMMAND_SEND:
             tx_numBytes = 0;
@@ -466,32 +468,38 @@ void handleI2CInput()
     }
 }
 
-CY_ISR(ISR_Timer_1_Overflow)
-{
-    static struct _osc {
-        uint8_t direction;
-        uint16_t value;
-    }
-    osc = { 1, 0 };
+uint16_t myexp(uint16_t);
+
+const float k = 2048.0 * 100.0 / 65536.0 / 20000.0;
+static struct _osc {
+    float granule;
+    uint8_t direction;
+    float value;
+}
+osc = { 2048.0 / 20000, 1, 0.0 };
     
+
+// This interrupt comes with 20kHz
+CY_ISR(ISR_Timer_1_Overflow)
+{    
     // Pin_LED_Blue_Write(!Pin_LED_Blue_Read());
-    PWM_1_WriteCompare1(osc.value);
+    PWM_1_WriteCompare1((int)(osc.value + 0.5));
     if (osc.direction) {
-        if (osc.value == 1023) {
+        if (osc.value >= 1023.0) {
             osc.direction = 0;
-            --osc.value;
+            osc.value -= osc.granule;
         }
         else {
-            ++osc.value;
+            osc.value += osc.granule;
         }
     }
     else {
-        if (osc.value == 0) {
-            ++osc.value;
+        if (osc.value <= 0.0) {
+            osc.value += osc.granule;
             osc.direction = 1;
         }
         else {
-            --osc.value;
+            osc.value -= osc.granule;
         }
     }
 }
@@ -500,12 +508,9 @@ int main()
 {
     /* Place your initialization/startup code here (e.g. MyInst_Start()) */
 
-    Timer_1_Start();
-    Timer_1_WritePeriod(getPeriod(data.lfo1_frequency));
-    
     PWM_1_Start();
-    PWM_1_WriteCompare1(data.lfo1_frequency);
-    PWM_1_WriteCompare2(data.lfo2_frequency);
+    // PWM_1_WriteCompare1(data.lfo1_frequency);
+    // PWM_1_WriteCompare2(data.lfo2_frequency);
    
     rb_ptr = 1;
     rb_in_use = 0;
@@ -517,7 +522,7 @@ int main()
     
     ISR_Timer_1_Overflow_ClearPending();
     ISR_Timer_1_Overflow_StartEx(ISR_Timer_1_Overflow);
-    
+
     CyGlobalIntEnable; /* Uncomment this line to enable global interrupts. */    
     
     for(;;)
@@ -547,6 +552,8 @@ int main()
             }
         }
         
+        osc.granule = k * myexp(data.lfo1_frequency * (65536 / 1024));
+        
 /*        
         if (rx_byteReady) {
             rx_byteReady = 0;
@@ -562,6 +569,61 @@ int main()
         */
     }
 }
+
+#if 1
+uint16_t DecayCurveLookup[];
+
+uint16_t myexp( uint16_t in )
+{
+    uint8_t lookup_key = (in >> 8);
+    uint8_t fine = in & 0xFF;
+
+    uint16_t curr = (lookup_key < 256) ? DecayCurveLookup[255 - lookup_key] : 65535;
+    uint16_t next = (lookup_key < 255) ? DecayCurveLookup[255 - lookup_key - 1] : 65535;
+
+    float diff = next - curr;
+    diff *= (255 - fine);
+    diff /= 256;
+    curr += diff;
+
+    return curr;
+}
+
+uint16_t DecayCurveLookup[256] = {
+  65535,  63715,  61945,  60224,  58552,  56925,  55344,  53807,
+  52312,  50859,  49447,  48073,  46738,  45440,  44178,  42951,
+  41758,  40598,  39470,  38374,  37308,  36272,  35264,  34285,
+  33332,  32406,  31506,  30631,  29780,  28953,  28149,  27367,
+  26607,  25868,  25149,  24451,  23772,  23112,  22470,  21845,
+  21239,  20649,  20075,  19518,  18975,  18448,  17936,  17438,
+  16953,  16483,  16025,  15580,  15147,  14726,  14317,  13919,
+  13533,  13157,  12792,  12436,  12091,  11755,  11428,  11111,
+  10802,  10502,  10211,   9927,   9651,   9383,   9123,   8869,
+   8623,   8383,   8150,   7924,   7704,   7490,   7282,   7080,
+   6883,   6692,   6506,   6325,   6150,   5979,   5813,   5651,
+   5494,   5342,   5193,   5049,   4909,   4772,   4640,   4511,
+   4386,   4264,   4145,   4030,   3918,   3810,   3704,   3601,
+   3501,   3404,   3309,   3217,   3128,   3041,   2956,   2874,
+   2795,   2717,   2641,   2568,   2497,   2427,   2360,   2294,
+   2231,   2169,   2108,   2050,   1993,   1938,   1884,   1831,
+   1781,   1731,   1683,   1636,   1591,   1547,   1504,   1462,
+   1421,   1382,   1343,   1306,   1270,   1235,   1200,   1167,
+   1135,   1103,   1072,   1043,   1014,    986,    958,    932,
+    906,    880,    856,    832,    809,    787,    765,    744,
+    723,    703,    683,    664,    646,    628,    611,    594,
+    577,    561,    545,    530,    516,    501,    487,    474,
+    461,    448,    435,    423,    412,    400,    389,    378,
+    368,    357,    348,    338,    329,    319,    311,    302,
+    294,    285,    277,    270,    262,    255,    248,    241,
+    234,    228,    221,    215,    209,    204,    198,    192,
+    187,    182,    177,    172,    167,    162,    158,    154,
+    149,    145,    141,    137,    133,    130,    126,    123,
+    119,    116,    113,    110,    106,    104,    101,     98,
+     95,     92,     90,     87,     85,     83,     80,     78,
+     76,     74,     72,     70,     68,     66,     64,     62,
+     61,     59,     57,     56,     54,     53,     51,     50,
+};
+#endif
 
 /* [] END OF FILE */
 
