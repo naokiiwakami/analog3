@@ -32,10 +32,10 @@ This repository is software part of the Analog3 project.  It consists of
 
 ### Build instruction
 #### Prerequisites
-Frontend is a Java project and can be built on any platform that supports Java.
-
+Frontend is a Java project and can be built on any platform that supports Java.  
 Netsynth has hardware depenency on Raspberry Pi B+.  Tested only on Raspbian.  
-PSoC modulators require PSoC Creator version 3.1 and higher.  
+PSoC modulators require PSoC Creator version 3.1 and higher.
+
 Following software tools need to be installed:
 - Apache Maven
 - Protocol Buffers
