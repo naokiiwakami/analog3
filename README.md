@@ -5,7 +5,7 @@ Analog3 is a software/hardware hybrid synthesizer.
 This is a software-controlled analog synthesizer project.
 
 One of the advantages of an analog synthesizer is smoothness of its voice.
-Sound of VCO is so smooth and beautiful.
+Sound of analog VCO is so beautiful and has its taste that is hard to be reproduced by digitally/software oscillators.
 
 However, it has significant disadvantage when you want to put complex modulations on the sound.
 For example, typical envelope generator of analog synthesizer gives too simple shape to create
