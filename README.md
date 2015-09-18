@@ -22,7 +22,7 @@ Typical analog synthesizer has one knob per control parameter on its panel.
 Analog3 is aiming to have hundreds of control parameters.
 Panel size becomes too large to put such many knobs, and control them during performance is almost impossible.
 So this project has another effort to virtualize panels.
-The software panel reads modulator devices and draw them as modules.  Number of shown control parameters can be reduced easilly by hiding or grouping.
+The software panel reads modulator devices and draw them as modules.  Number of shown control parameters would be reduced by hiding and/or grouping.
 
 This repository is the software of Analog3 project.  It consists of
 - frontend: Software panel and text console
