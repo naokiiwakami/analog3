@@ -9,25 +9,22 @@
  *
  * ========================================
 */
+
 #include <project.h>
 
-void SPIM_CAN_WriteTxData24(uint8 data1, uint8 data2, uint8 data3);
-void SPIM_CAN_WriteTxData2plusN(uint8 data1, uint8 data2, uint8 n);
-
-// TODO: move this to separate mcp2515.h file
 // MCP2515 SPI instructions
 //
-#define CAN_CTL_RESET          0xc0 // 1100 0000
-#define CAN_CTL_READ           0x03 // 0000 0011
-#define CAN_CTL_READ_RX_BUFFER 0x90 // 1001 0nm0
-#define CAN_CTL_WRITE          0x02 // 0000 0010
-#define CAN_CTL_LOAD_TX_BUFFER 0x40 // 0100 0abc
-#define CAN_CTL_RTS_TXB0       0x81 // 1000 0001
-#define CAN_CTL_RTS_TXB1       0x82 // 1000 0010
-#define CAN_CTL_RTS_TXB2       0x84 // 1000 0100
-#define CAN_CTL_READ_STATUS    0xa0 // 1010 0000
-#define CAN_CTL_RX_STATUS      0xb0 // 1011 0000
-#define CAN_CTL_BIT_MODIFY     0x05 // 0000 0101
+#define CAN_CTRL_RESET          0xc0 // 1100 0000
+#define CAN_CTRL_READ           0x03 // 0000 0011
+#define CAN_CTRL_READ_RX_BUFFER 0x90 // 1001 0nm0
+#define CAN_CTRL_WRITE          0x02 // 0000 0010
+#define CAN_CTRL_LOAD_TX_BUFFER 0x40 // 0100 0abc
+#define CAN_CTRL_RTS_TXB0       0x81 // 1000 0001
+#define CAN_CTRL_RTS_TXB1       0x82 // 1000 0010
+#define CAN_CTRL_RTS_TXB2       0x84 // 1000 0100
+#define CAN_CTRL_READ_STATUS    0xa0 // 1010 0000
+#define CAN_CTRL_RX_STATUS      0xb0 // 1011 0000
+#define CAN_CTRL_BIT_MODIFY     0x05 // 0000 0101
 
 // MCP2515 register map
 //
@@ -175,15 +172,6 @@ void SPIM_CAN_WriteTxData2plusN(uint8 data1, uint8 data2, uint8 n);
 #define CANSTAT7 0x7e
 #define CANCTRL7 0x7f
 
-#define CANINTF_RX0IF_BIT 0
-#define CANINTF_RX1IF_BIT 1
-#define CANINTF_TX0IF_BIT 2
-#define CANINTF_TX1IF_BIT 3
-#define CANINTF_TX2IF_BIT 4
-#define CANINTF_ERRIF_BIT 5
-#define CANINTF_WAKIF_BIT 6
-#define CANINTF_MERRF_BIT 7
-
 void mcp2515_reset();
 void mcp2515_read(uint8_t address, uint8_t data[], uint8_t length);
 void mcp2515_read_rx_buffer(uint8_t location, uint8_t data[], uint8_t length);
@@ -197,29 +185,12 @@ void mcp2515_read_status(uint8_t *status);
 void mcp2515_rx_status(uint8_t *status);
 void mcp2515_bit_modify(uint8_t address, uint8_t mask, uint8_t data);
 
-void mcp2515_read_into_queue(uint8_t address, uint8_t length);
-void mcp2515_read_rxb0_into_queue();
-
-int32_t my_device_id = 100;
-
-static void put_hex(uint8_t data)
-{
-    uint8_t elem = data >> 4;
-    int i;
-    SERIAL_UartPutChar(' ');
-    for (i = 0; i < 2; ++i) {
-        elem = (elem < 10) ? elem + '0' : elem + 'a' - 10;
-        SERIAL_UartPutChar(elem);
-        elem = data & 0x0f;
-    }
-}
-
-void set_can_id_std(uint8_t register_address, uint16_t id)
+inline void set_can_id_std(uint8_t register_address, uint16_t id)
 {
     uint8_t data[2];
     //               7     6     5     4     3     2     1     0
     // TXBnSIDH: SID10  SID9  SID8  SID7  SID6  SID5  SID4  SID3
-    // TXBnSIDL:  SID2  SID1  SID0   -   EXIDE   -   EID17 EID16
+    // TXBnSIDL:  SID2  SID1   -     -   EXIDE   -   EID17 EID16
     id <<= 5;
     data[1] = (uint8_t) id;
     id >>= 8;
@@ -227,14 +198,10 @@ void set_can_id_std(uint8_t register_address, uint16_t id)
     mcp2515_write_array(register_address, data, 2);
 }
 
-void init_can()
+void mcp2515_init()
 {
     uint8_t temp;
-    uint8_t buf[18];
-    uint8_t addr;
-    uint8_t i;
-    uint8 state = CyEnterCriticalSection();
-    
+
     mcp2515_reset();
 
     // configure baud rate
@@ -305,22 +272,22 @@ void init_can()
     
     // Change operation mode from configuration to normal
     // CANCTRL
-    #define REQOP 0b000 // bit7-5 REQOP<2:0>: Request Operation mode bits
+    #define REQOP 0b000 // bit7-5 REQOP<2:0>: R/W-100: Request Operation mode bits
                         // 000 = Set Normal Operation mode
                         // 001 = Set Sleep mode
                         // 010 = Set Loopback mode
                         // 011 = Set Listen-Only mode
                         // 100 = Set Configuration mod
-    #define ABAT 0      // bit4 ABAT: Abort All Pending Transmissions bit
+    #define ABAT 0      // bit4 ABAT: R/W-0: Abort All Pending Transmissions bit
                         // 1 = Request abort of all pending transmit buffers
                         // 0 = Terminate request to abort all transmissions
-    #define OSM 0       // bit3 OSM: One-Shot mode bit
+    #define OSM 0       // bit3 OSM: R/W-0: One-Shot mode bit
                         // 1 = Enabled. Message will only attempt to transmit one time
                         // 0 = Disabled. Messages will reattempt transmission, if required
-    #define CLKEN 1     // bit2 CLKEN: CLKOUT Pin Enable bit
+    #define CLKEN 1     // bit2 CLKEN: R/W-1: CLKOUT Pin Enable bit
                         // 1 = CLKOUT pin enabled
                         // 0 = CLKOUT pin disabled (Pin is in high-impedance state)
-    #define CLKPRE 0b11 // bit1-0 CLKPRE<1:0>: CLKOUT Pin Prescaler bits
+    #define CLKPRE 0b11 // bit1-0 CLKPRE<1:0>: R/W-11: CLKOUT Pin Prescaler bits
                         // 00 = FCLKOUT = System Clock/1
                         // 01 = FCLKOUT = System Clock/2
                         // 10 = FCLKOUT = System Clock/4
@@ -331,8 +298,7 @@ void init_can()
     
     // Configure Receive Buffer 0
     // RXB0CTRL
-    #define RXB0CTRL_RXM 0b11 // catch 'em all
-    #define RXB0CTRL_RXM_BIT 5     // bit 6-5 RXM<1:0>: R/W-00: Receive Buffer Operating mode bits
+    #define RXB0CTRL_RXM_BIT 5     // bit 6-5 RXM<1:0>: Receive Buffer Operating mode bits
                                    //         11 = Turn mask/filters off; receive any message
                                    //         10 = Receive only valid messages with extended identifiers that meet filter criteria
                                    //         01 = Receive only valid messages with standard identifiers that meet filter criteria. Extended ID filter
@@ -340,31 +306,32 @@ void init_can()
                                    //         00 = Receive all valid messages using either standard or extended identifiers that meet filter criteria.
                                    //           Extended ID filter registers RXFnEID8:RXFnEID0 are applied to first two bytes of data in the
                                    //           messages with standard IDs.
-    #define RXB0CTRL_RXRTR_BIT 3   // bit 3   RXRTR: R-0: Received Remote Transfer Request bit
+    #define RXB0CTRL_RXM 0b11 // catch 'em all
+    #define RXB0CTRL_RXRTR_BIT 3   // bit 3   RXRTR: R: Received Remote Transfer Request bit
                                    //         1 = Remote Transfer Request Received
                                    //         0 = No Remote Transfer Request Received
-    #define RXB0CTRL_BUKT 0
-    #define RXB0CTRL_BUKT_BIT 2    // bit 2   BUKT: R/W-0: Rollover Enable bit
+    #define RXB0CTRL_BUKT_BIT 2    // bit 2   BUKT: R/W: Rollover Enable bit
                                    //         1 = RXB0 message will rollover and be written to RXB1 if RXB0 is full
                                    //         0 = Rollover disabled
-    #define RXB0CTRL_BUKT1_BIT 1   // bit 1   BUKT1: R-0: Read-only Copy of BUKT bit (used internally bu the MCP2515)
-    #define RXB0CTRL_FILHIT0_BIT 0 // bit 0   FILHIT0: R-0: Filter Hit bit – indicates which acceptance filter enabled reception of message
+    #define RXB0CTRL_BUKT 0
+    #define RXB0CTRL_BUKT1_BIT 1   // bit 1   BUKT1: R: Read-only Copy of BUKT bit (used internally bu the MCP2515)
+    #define RXB0CTRL_FILHIT0_BIT 0 // bit 0   FILHIT0: R: Filter Hit bit – indicates which acceptance filter enabled reception of message
                                    //         1 = Acceptance Filter 1 (RXF1)
                                    //         0 = Acceptance Filter 0 (RXF0)
     mcp2515_write(RXB0CTRL, (RXB0CTRL_RXM << RXB0CTRL_RXM_BIT) + (RXB0CTRL_BUKT << RXB0CTRL_BUKT_BIT));
-
+    
     // Configure Receive Buffer 1
     // RXB1CTRL
-    #define RXB1CTRL_RXM 0b10
-    #define RXB1CTRL_RXM_BIT 5    // bit 6-5 RXM<1:0>: R/W-00: Receive Buffer Operating mode bits
+    #define RXB1CTRL_RXM_BIT 5    // bit 6-5 RXM<1:0>: R/W: Receive Buffer Operating mode bits
                                   //         11 = Turn mask/filters off; receive any message
                                   //         10 = Receive only valid messages with extended identifiers that meet filter criteria
                                   //         01 = Receive only valid messages with standard identifiers that meet filter criteria
                                   //         00 = Receive all valid messages using either standard or extended identifiers that meet filter criteria
-    #define RXB1CTRL_RXRTR_BIT 3  // bit 3   RXRTR: R-0: Received Remote Transfer Request bit
+    #define RXB1CTRL_RXM 0b10
+    #define RXB1CTRL_RXRTR_BIT 3  // bit 3   RXRTR: R: Received Remote Transfer Request bit
                                   //         1 = Remote Transfer Request Received
                                   //         0 = No Remote Transfer Request Received
-    #define RXB1CTRL_FILHIT_BIT 0 // bit 2-0 FILHIT<2:0>: R-0: Filter Hit bits - indicates which acceptance filter enabled reception of message
+    #define RXB1CTRL_FILHIT_BIT 0 // bit 2-0 FILHIT<2:0>: R: Filter Hit bits - indicates which acceptance filter enabled reception of message
                                   //         101 = Acceptance Filter 5 (RXF5)
                                   //         100 = Acceptance Filter 4 (RXF4)
                                   //         011 = Acceptance Filter 3 (RXF3)
@@ -374,28 +341,28 @@ void init_can()
     mcp2515_write(RXB1CTRL, (RXB1CTRL_RXM << RXB1CTRL_RXM_BIT));
     
     // Set RXnBF pin control and status
-    #define BFPCTRL_B1BFS 0
     #define BFPCTRL_B1BFS_BIT 5 // bit 5 B1BFS: R/W-0: RX1BF Pin State bit (Digital Output mode only)
                                 //       - Reads as ‘0’ when RX1BF is configured as interrupt pin
-    #define BFPCTRL_B0BFS 0
+    #define BFPCTRL_B1BFS 0
     #define BFPCTRL_B0BFS_BIT 4 // bit 4 B0BFS: R/W-0: RX0BF Pin State bit (Digital Output mode only)
                                 //       - Reads as ‘0’ when RX0BF is configured as interrupt pin
-    #define BFPCTRL_B1BFE 0
+    #define BFPCTRL_B0BFS 0
     #define BFPCTRL_B1BFE_BIT 3 // bit 3 B1BFE: R/W-0: RX1BF Pin Function Enable bit
                                 //       1 = Pin function enabled, operation mode determined by B1BFM bit
                                 //       0 = Pin function disabled, pin goes to high-impedance state
-    #define BFPCTRL_B0BFE 1
+    #define BFPCTRL_B1BFE 0
     #define BFPCTRL_B0BFE_BIT 2 // bit 2 B0BFE: R/W-0: RX0BF Pin Function Enable bit
                                 //       1 = Pin function enabled, operation mode determined by B0BFM bit
                                 //       0 = Pin function disabled, pin goes to high-impedance state
-    #define BFPCTRL_B1BFM 0
+    #define BFPCTRL_B0BFE 0
     #define BFPCTRL_B1BFM_BIT 1 // bit 1 B1BFM: R/W-0: RX1BF Pin Operation mode bit
                                 //       1 = Pin is used as interrupt when valid message loaded into RXB1
                                 //       0 = Digital Output mode
-    #define BFPCTRL_B0BFM 1
+    #define BFPCTRL_B1BFM 0
     #define BFPCTRL_B0BFM_BIT 0 // bit 0 B0BFM: R/W-0: RX0BF Pin Operation mode bit
                                 //       1 = Pin is used as interrupt when valid message loaded into RXB0
                                 //       0 = Digital Output mode
+    #define BFPCTRL_B0BFM 1
     temp = (BFPCTRL_B1BFS << BFPCTRL_B1BFS_BIT)
          + (BFPCTRL_B0BFS << BFPCTRL_B0BFS_BIT)
          + (BFPCTRL_B1BFE << BFPCTRL_B1BFE_BIT)
@@ -403,26 +370,15 @@ void init_can()
          + (BFPCTRL_B1BFM << BFPCTRL_B1BFM_BIT)
          + (BFPCTRL_B0BFM << BFPCTRL_B0BFM_BIT);
     mcp2515_write(BFPCTRL, temp);
-    
-    SERIAL_UartPutString("\r\nDone configuring CAN controller:\r\n");
-    
+
     // DONE initialization
-    
-    // test writing data to TxB0 data registers
-    for (i = 0; i < 8; ++i)
-        buf[7-i] = i + 1;
-    mcp2515_write_array(TXB0D0, buf, 8);
-    set_can_id_std(TXB0SIDH, 0x555);
-    mcp2515_write(TXB0DLC, 8);
-    mcp2515_write(TXB0EID8, 0);
-    mcp2515_write(TXB0EID0, 0);
-    
-    mcp2515_message_request_to_send_txb0();
-    // done test
-    
+
     // dump all register values
+#if 0
     {
         int i;
+        uint8_t addr;
+        uint8_t buf[18];
         for (addr = 0; addr < 0x80; addr += 0x10) {
             mcp2515_read(addr, buf, 16);
             // put_hex(addr);
@@ -431,135 +387,12 @@ void init_can()
             SERIAL_UartPutString("\r\n");
         }
     }
-    CyExitCriticalSection(state);
-    
-    SERIAL_UartPutString("\r\nlistening...\r\n");    
-}
-
-
-uint8 led = 1;
-CY_ISR(ISR_USER_SW)
-{
-    Pin_LED_B_Write(0);
-    init_can();
-    Pin_LED_B_Write(1);    
-}
-
-#define QUEUE_SIZE 128
-volatile uint8_t q_first = 0;
-volatile uint8_t q_last = 0;
-volatile uint8_t queue_array[QUEUE_SIZE];
-
-inline void queue_add(uint8_t val)
-{
-    queue_array[q_last++] = val;
-    if (q_last == QUEUE_SIZE)
-        q_last = 0;
-}
-
-inline uint8_t queue_remove()
-{
-    uint8_t val = queue_array[q_first++];
-    if (q_first == QUEUE_SIZE)
-        q_first = 0;
-    return val;
-}
-
-#define queue_empty() (q_first == q_last)
-
-#define RXBnSIDL_SRR_BIT 4
-#define RXBnSIDL_IDE_BIT 3
-
-#define RXBnDLC_RFR_BIT 6
-
-CY_ISR(ISR_RX0BF)
-{
-    mcp2515_read_into_queue(RXB0SIDH, 13);
-    mcp2515_bit_modify(CANINTF, (1 << CANINTF_RX0IF_BIT), 0);
-}
-
-int main()
-{
-    CyGlobalIntEnable; /* Enable global interrupts. */
-
-    /* Place your initialization/startup code here (e.g. MyInst_Start()) */
-    
-    SPIM_CAN_Start();
-    SERIAL_Start();
-    
-    init_can();
-
-    led = 1;
-    Pin_LED_B_Write(led);
-
-    // start listening
-    isr_1_ClearPending();
-    isr_1_StartEx(ISR_USER_SW);
-    
-    isr_RX0BF_ClearPending();
-    isr_RX0BF_StartEx(ISR_RX0BF);
-
-    for(;;)
-    {
-        if (!queue_empty()) {
-            //               7     6     5     4     3     2     1     0
-            // RXBnSIDH: SID10  SID9  SID8  SID7  SID6  SID5  SID4  SID3
-            // RXBnSIDL:  SID2  SID1  SID0   SRR   IDE   -   EID17 EID16
-            uint8_t value = queue_remove(); // RXB0SIDH
-            uint16_t sid = value;
-            sid <<= 3;
-            value = queue_remove(); // RXB0SIDL
-            sid |= value >> 5;
-            uint8_t extended = value & (1 << 3);
-            uint8_t is_remote = value & (1 << 4);
-            uint32_t eid = value & 0x3;
-            eid <<= 8;
-            //               7     6     5     4     3     2     1     0
-            // RXBnEID8: EID15 EID14 EID13 EID12 EID11 EID10  EID9  EID8
-            // RXBnEID0:  EID7  EID6  EID5  EID4  EID3  EID2  EID1  EID0
-            value = queue_remove(); // RXB0EID8
-            eid |= value;
-            eid <<= 8;
-            value = queue_remove(); // RXB0EID0
-            eid |= value;
-            //               7     6     5     4     3     2     1     0
-            // RXBnDLC:    -     RTR   RB1   RB0  DLC3  DLC2  DLC1  DLC0
-            value = queue_remove(); // RXB0DLC
-            if (extended)
-                is_remote = value & (1 << 6);
-            uint8_t len = value & 0x0f;    
-            
-            if (!extended) {
-                SERIAL_UartPutString("std[");
-                put_hex(sid >> 8);
-                put_hex(sid);
-            }
-            else {
-                SERIAL_UartPutString("ext[");
-                put_hex(eid >> 16);
-                put_hex(eid >> 8);
-                put_hex(eid);
-            }
-            if (is_remote) {
-                SERIAL_UartPutString("]: REMOTE\r\n");                
-            }
-            else {
-                SERIAL_UartPutString("]:");                                
-                int i;
-                for (i = 0; i < 8; ++i) {
-                    value = queue_remove();
-                    if (i < len)
-                        put_hex(value);
-                }
-                SERIAL_UartPutString("\r\n");                                
-            }
-        }
-    }
+#endif
 }
 
 void mcp2515_reset()
 {
-    SPIM_CAN_WriteTxData(CAN_CTL_RESET);
+    SPIM_CAN_WriteTxData(CAN_CTRL_RESET);
 }
 
 void mcp2515_read(uint8_t address, uint8_t data[], uint8_t length)
@@ -567,7 +400,6 @@ void mcp2515_read(uint8_t address, uint8_t data[], uint8_t length)
     while (SPIM_CAN_GetRxBufferSize()) {
         SPIM_CAN_ReadRxData();
     }
-    // SPIM_CAN_ClearRxBuffer();
     
     uint8_t toWrite = length;
     length += 2;
@@ -577,7 +409,7 @@ void mcp2515_read(uint8_t address, uint8_t data[], uint8_t length)
     }
 
     /* Put data element into the TX FIFO */
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, CAN_CTL_READ);
+    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, CAN_CTRL_READ);
     CY_SET_REG8(SPIM_CAN_TXDATA_PTR, address);
         
     while (length > 0) {
@@ -592,46 +424,12 @@ void mcp2515_read(uint8_t address, uint8_t data[], uint8_t length)
     }
 }
 
-void mcp2515_read_into_queue(uint8_t address, uint8_t length)
-{
-    while (SPIM_CAN_GetRxBufferSize()) {
-        SPIM_CAN_ReadRxData();
-    }
-    // SPIM_CAN_ClearRxBuffer();
-    
-    uint8_t toWrite = length;
-    length += 2;
-
-    while(0u == (SPIM_CAN_TX_STATUS_REG & SPIM_CAN_STS_TX_FIFO_EMPTY))
-    {
-    }
-
-    /* Put data element into the TX FIFO */
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, CAN_CTL_READ);
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, address);
-        
-    uint8_t read = 0;
-    uint8_t data;
-    while (read < length) {
-        if (toWrite > 0 && (SPIM_CAN_TX_STATUS_REG & SPIM_CAN_STS_TX_FIFO_NOT_FULL)) {
-            CY_SET_REG8(SPIM_CAN_TXDATA_PTR, 0);
-            --toWrite;
-        }
-        if (SPIM_CAN_RX_STATUS_REG & SPIM_CAN_STS_RX_FIFO_NOT_EMPTY) {
-            data = CY_GET_REG8(SPIM_CAN_RXDATA_PTR);
-            if (read >= 2)
-                queue_add(data);
-            ++read;
-        }
-    }
-}
-
 void mcp2515_write(uint8_t address, uint8_t data)
 {
     while ((SPIM_CAN_ReadTxStatus() & SPIM_CAN_STS_SPI_DONE) == 0) {}
     
     /* Put data element into the TX FIFO */
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, CAN_CTL_WRITE);
+    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, CAN_CTRL_WRITE);
     CY_SET_REG8(SPIM_CAN_TXDATA_PTR, address);
     CY_SET_REG8(SPIM_CAN_TXDATA_PTR, data);
 }
@@ -639,7 +437,7 @@ void mcp2515_write(uint8_t address, uint8_t data)
 void mcp2515_write_array(uint8_t address, uint8_t data[], uint8_t length)
 {
     while ((SPIM_CAN_ReadTxStatus() & SPIM_CAN_STS_SPI_DONE) == 0) {}
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, CAN_CTL_WRITE);
+    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, CAN_CTRL_WRITE);
     CY_SET_REG8(SPIM_CAN_TXDATA_PTR, address);
 
     while (1) {
@@ -654,56 +452,20 @@ void mcp2515_write_array(uint8_t address, uint8_t data[], uint8_t length)
 void mcp2515_message_request_to_send_txb0()
 {
     while ((SPIM_CAN_ReadTxStatus() & SPIM_CAN_STS_SPI_DONE) == 0) {}
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, CAN_CTL_RTS_TXB0);
+    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, CAN_CTRL_RTS_TXB0);
 }
 
 void mcp2515_message_request_to_send_txb1()
 {
     while ((SPIM_CAN_ReadTxStatus() & SPIM_CAN_STS_SPI_DONE) == 0) {}
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, CAN_CTL_RTS_TXB1);
+    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, CAN_CTRL_RTS_TXB1);
 }
 
 void mcp2515_message_request_to_send_txb2()
 {
     while ((SPIM_CAN_ReadTxStatus() & SPIM_CAN_STS_SPI_DONE) == 0) {}
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, CAN_CTL_RTS_TXB2);
+    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, CAN_CTRL_RTS_TXB2);
 }
 
-void mcp2515_bit_modify(uint8_t address, uint8_t mask, uint8_t data)
-{
-    while ((SPIM_CAN_ReadTxStatus() & SPIM_CAN_STS_SPI_DONE) == 0) {}
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, CAN_CTL_BIT_MODIFY);
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, address);
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, mask);
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, data);
-}
-
-void SPIM_CAN_WriteTxData24(uint8 data1, uint8 data2, uint8_t data3) 
-{
-    /* Wait until TX FIFO has a place */
-    while(0u == (SPIM_CAN_TX_STATUS_REG & SPIM_CAN_STS_TX_FIFO_EMPTY))
-    {
-    }
-
-    /* Put data element into the TX FIFO */
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, data1);
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, data2);
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, data3);
-}
-
-void SPIM_CAN_WriteTxData2plusN(uint8 data1, uint8 data2, uint8 n) 
-{
-    /* Wait until TX FIFO has a place */
-    while(0u == (SPIM_CAN_TX_STATUS_REG & SPIM_CAN_STS_TX_FIFO_EMPTY)) {}
-
-    /* Put data element into the TX FIFO */
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, data1);
-    CY_SET_REG8(SPIM_CAN_TXDATA_PTR, data2);
-    
-    while (--n >= 0) {
-        while (0u == (SPIM_CAN_TX_STATUS_REG & SPIM_CAN_STS_TX_FIFO_NOT_FULL)) {}
-        CY_SET_REG8(SPIM_CAN_TXDATA_PTR, 0);    
-    }
-}
 
 /* [] END OF FILE */
