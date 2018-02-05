@@ -20,6 +20,7 @@ class NodeBuilder {
   enum class DataType {
     STRING,
     INT,
+    UINT16,
     ARRAY,
   };
 
@@ -30,11 +31,15 @@ class NodeBuilder {
 
   int GetInt(const rapidjson::Value& value, const Prop& prop, bool is_required);
 
+  uint16_t GetUint16(const rapidjson::Value& value, const Prop& prop, bool is_required);
+
   bool CheckProp(const rapidjson::Value& value, const Prop& prop, bool is_required);
 
   SynthNode* BuildNode(const rapidjson::Value& value);
 
   Module* BuildModule(const rapidjson::Value& value);
+
+  Knob* BuildKnob(const rapidjson::Value& value);
 
   Switch* BuildSwitch(const rapidjson::Value& value);
 
@@ -47,6 +52,9 @@ class NodeBuilder::Prop {
   static Prop NODE_NAME;
   static Prop MODEL_NAME;
   static Prop MODEL_ID;
+  static Prop INITIAL_VALUE;
+  static Prop MIN_VALUE;
+  static Prop MAX_VALUE;
   static Prop CHANNEL;
   static Prop CHILD_NODES;
   static Prop OPTIONS;

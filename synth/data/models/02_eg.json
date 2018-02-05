@@ -1,0 +1,36 @@
+{
+  "node_type": "Module",
+  "node_name": "Envelope Generator",
+  "model_name": "a3.eg.000",
+  "model_id": 2,
+  "channel": "can",
+  "child_nodes": [{
+    "node_type": "Knob",
+    "node_name": "Attack Time",
+    "min_value": 0,
+    "max_value": 1023,
+    "initial_value": 0
+  }, {
+    "node_type": "Knob",
+    "node_name": "Decay Time",
+    "min_value": 0,
+    "max_value": 1023,
+    "initial_value": 0
+  }, {
+    "node_type": "Knob",
+    "node_name": "Sustain Level",
+    "min_value": 0,
+    "max_value": 1023,
+    "initial_value": 0
+  }, {
+    "node_type": "Knob",
+    "node_name": "Decay Time",
+    "min_value": 0,
+    "max_value": 1023,
+    "initial_value": 0
+  }, {
+    "node_type": "Switch",
+    "node_name": "Voice",
+    "initial_value": 0
+  }]
+}

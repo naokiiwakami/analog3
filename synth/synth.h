@@ -3,7 +3,7 @@
 
 #include <string>
 #include <unordered_map>
-#include "synth/synth_node.h"
+#include "synth/module.h"
 
 namespace analog3 {
 
@@ -12,10 +12,10 @@ class Synth {
   Synth();
   virtual ~Synth();
 
-  Status AddModelEntry(SynthNode* model_entry);
+  Status AddModelEntry(Module* module);
 
  private:
-  std::unordered_map<int, SynthNode*> models;
+  std::unordered_map<int, Module*> models;
 };
 
 }  // namespace analog3

@@ -7,14 +7,14 @@ Synth::Synth() {
 }
 
 Synth::~Synth() {
-  for (std::unordered_map<int, SynthNode*>::iterator it = models.begin();
+  for (std::unordered_map<int, Module*>::iterator it = models.begin();
        it != models.end();
        ++it) {
     delete it->second;
   }
 }
 
-Status Synth::AddModelEntry(SynthNode* model_entry) {
+Status Synth::AddModelEntry(Module* model_entry) {
   uint16_t model_id = model_entry->GetModelId();
   if (model_id == 0) {
     return Status::MODEL_NOT_A_MODEL;

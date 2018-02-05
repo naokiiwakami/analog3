@@ -3,27 +3,27 @@
 namespace analog3 {
 
 SynthNode::SynthNode(NodeType t)
-    : node_type(t), instance_id(0) {
+    : _node_type(t), _instance_id(0), _initial_value(0), _value(0), _parent(NULL) {
 }
 
 SynthNode::~SynthNode() {
-  for (auto node : child_nodes) {
+  for (auto node : _child_nodes) {
     delete node;
   }
 }
 
 bool SynthNode::Validate() {
-  return !node_name.empty() && instance_id != 0;
+  return !_node_name.empty() && _instance_id != 0;
 }
 
 void SynthNode::AddChild(SynthNode* child_node) {
-  child_nodes.push_back(child_node);
+  _child_nodes.push_back(child_node);
 }
 
 bool SynthNode::RemoveChild(const std::string& name) {
-  for (std::list<SynthNode*>::iterator it = child_nodes.begin(); it != child_nodes.end(); ++it) {
-    if ((*it)->node_name == name) {
-      child_nodes.erase(it);
+  for (std::list<SynthNode*>::iterator it = _child_nodes.begin(); it != _child_nodes.end(); ++it) {
+    if ((*it)->_node_name == name) {
+      _child_nodes.erase(it);
       return true;
     }
   }
@@ -31,9 +31,9 @@ bool SynthNode::RemoveChild(const std::string& name) {
 }
 
 bool SynthNode::RemoveChild(SynthNode* child_node) {
-  for (std::list<SynthNode*>::iterator it = child_nodes.begin(); it != child_nodes.end(); ++it) {
+  for (std::list<SynthNode*>::iterator it = _child_nodes.begin(); it != _child_nodes.end(); ++it) {
     if (*it == child_node) {
-      child_nodes.erase(it);
+      _child_nodes.erase(it);
       return true;
     }
   }
@@ -41,7 +41,7 @@ bool SynthNode::RemoveChild(SynthNode* child_node) {
 }
 
 void SynthNode::DetachFromParent() {
-  parent->RemoveChild(this);
+  _parent->RemoveChild(this);
 }
 
 }  // namespace analog3
