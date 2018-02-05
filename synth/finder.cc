@@ -15,7 +15,6 @@
 #include "rapidjson/reader.h"
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/error/en.h"
-#include "synth/module_recognition_exception.h"
 #include "synth/module.h"
 #include "synth/node_builder.h"
 
@@ -62,6 +61,7 @@ Status Finder::load() {
         fileName += ep->d_name;
         LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT("Loading file module " << fileName));
 
+        try {
         rapidjson::Document* doc = MakeDocument(fileName);
         SynthNode *node;
         Status st = BuildComponent(doc, &node);
@@ -69,6 +69,10 @@ Status Finder::load() {
           return st;
         }
         // SynthComponent* component = ComponentUtils::loadComponent(fileName);
+        } catch (const AppError& error) {
+          LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT(error.GetMessage()));
+          return error.GetStatus();
+        }
       }
     }
   }
@@ -78,7 +82,7 @@ Status Finder::load() {
 rapidjson::Document* Finder::MakeDocument(const std::string& file_name) {
   int fd = ::open(file_name.c_str(), O_RDONLY);
   if (fd < 0) {
-    throw ModuleRecognitionException("File open error");
+    throw AppError(Status::FILE_NOT_FOUND, "file_name=" + file_name);
   }
   struct stat file_info;
   ::fstat(fd, &file_info);
@@ -88,9 +92,7 @@ rapidjson::Document* Finder::MakeDocument(const std::string& file_name) {
   if (::read(fd, buf, file_info.st_size) < 0) {
     close(fd);
     delete[] buf;
-    std::string message = "File read error: ";
-    message += file_name;
-    throw ModuleRecognitionException(message);
+    throw AppError(Status::FILE_READ_ERROR, "file_name=" + file_name);
   }
   buf[file_info.st_size] = '\0';
   close(fd);
@@ -112,10 +114,9 @@ rapidjson::Document* Finder::MakeDocument(const std::string& file_name) {
     }
     snprintf(error_text, sizeof(error_text), "%s\n", buf + start + 1);
     message += error_text;
-    ModuleRecognitionException ex(message);
     delete[] buf;
     delete document;
-    throw ex;
+    throw AppError(Status::SCHEMA_PARSE_ERROR, message);
   }
   delete[] buf;
 

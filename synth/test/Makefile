@@ -1,6 +1,6 @@
 PROJECT_ROOT = $(abspath ../..)
 COMPONENT_ROOT = $(abspath ..)
-THIRD_PARTY = $(abspath $(PROJECT_ROOT)/thirdparty)
+THIRD_PARTY = $(PROJECT_ROOT)/third-party
 
 GTEST_LIB = $(THIRD_PARTY)/lib/gtest_main.a
 
@@ -9,6 +9,7 @@ COMMON_LIB = $(COMPONENT_ROOT)/libsynth.a
 CC = gcc
 CXX = g++
 LD = g++
+CPPLINT = $(PROJECT_ROOT)/third-party/bin/cpplint.py
 DEPFLAGS = -M
 CPPFLAGS = -std=gnu++11 -O0 -g -I$(PROJECT_ROOT) -I$(THIRD_PARTY)/include
 LDFLAGS = -L$(THIRD_PARTY)/lib
@@ -31,7 +32,7 @@ $(MODULE_TEST): $(COMMON_LIB) $(MODULE_TEST).o
 
 -include $(OBJS:.o=.d)
 %.o: %.cc
-	cpplint.py --quiet --filter=-legal/copyright --linelength=120 $*.cc
+	$(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.cc
 	$(CXX) -c -o $*.o $(CPPFLAGS) $*.cc
 	$(CXX) $(DEPFLAGS) $(CPPFLAGS) $*.cc > $*.d
 #	@mv -f $*.d $*.d.tmp

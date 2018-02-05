@@ -1,4 +1,5 @@
 PROJECT_ROOT = $(abspath ..)
+THIRD_PARTY = $(PROJECT_ROOT)/third-party
 COMPONENT_ROOT = $(abspath .)
 UNAMES = $(shell uname -s)
 
@@ -6,14 +7,15 @@ UNAMES = $(shell uname -s)
 
 TARGET = synth
 
-INCLUDES = -I../thirdparty/include -I../nanopb -I$(PROJECT_ROOT)
+INCLUDES = -I../thirdparty/include -I../nanopb -I$(PROJECT_ROOT) -I$(THIRD_PARTY)/include
 CC = gcc
 CPP = g++
 LD  = g++
-CFLAGS = -I../nanopb -I$(PROJECT_ROOT)
+CPPLINT = $(PROJECT_ROOT)/third-party/bin/cpplint.py
+CFLAGS = -I../nanopb $(INCLUDES)
 CPPWARNFLAGS = -Wlong-long -Wformat -Wpointer-arith -Wall -Werror=return-type
 CPPFLAGS = -std=gnu++11 -g $(CPPWARNFLAGS) $(INCLUDES)
-LDFLAGS = -L../thirdparty/lib
+LDFLAGS = -L$(THIRD_PARTY)/lib
 LIB = -lpthread -llog4cplus
 # LIB += -lprotobuf
 DEPFLAGS = -M
@@ -39,8 +41,8 @@ synth: main.o libsynth.a
 -include $(OBJS:.o=.d)
 
 %.o: %.cc
-	cpplint.py --quiet --filter=-legal/copyright --linelength=120 $*.h
-	cpplint.py --quiet --filter=-legal/copyright --linelength=120 $*.cc
+	$(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.h
+	$(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.cc
 	$(CPP) -c -o $*.o $(CPPFLAGS) $*.cc
 	$(CPP) $(DEPFLAGS) $(CPPFLAGS) $*.cc > $*.d
 

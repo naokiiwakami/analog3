@@ -15,8 +15,10 @@ enum class StatusCategory {
 enum class Status {
   OK = 0,
   FILE_NOT_FOUND,
+  FILE_READ_ERROR,
 
-  SCHEMA_NOT_AN_OBJECT  = (static_cast<int>(StatusCategory::SCHEMA) << 16) + 1,
+  SCHEMA_PARSE_ERROR  = (static_cast<int>(StatusCategory::SCHEMA) << 16) + 1,
+  SCHEMA_NOT_AN_OBJECT,
   SCHEMA_REQUIRED_PROPERTY_MISSING,
   SCHEMA_INVALID_PROPERTY_TYPE,
   SCHEMA_PROPERTY_MISUSE,
