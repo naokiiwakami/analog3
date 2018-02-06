@@ -30,13 +30,15 @@ enum class Status {
 
 class AppError {
  public:
+  static void Initialize();
+
+  static std::string StrError(Status status);
+
   explicit AppError(Status status)
       : _status(status)
   {}
 
   explicit AppError(Status status, const std::string& message);
-
-  std::string StrError(Status status);
 
   Status GetStatus() const { return _status; }
 
@@ -54,7 +56,7 @@ class AppError {
     std::map<Status, std::string> _error_strings;
   };
 
-  static ErrorStrings error_strings;
+  static ErrorStrings *error_strings;
 };
 
 }  // namespace analog3

@@ -4,7 +4,7 @@
 
 namespace analog3 {
 
-AppError::ErrorStrings AppError::error_strings;
+AppError::ErrorStrings* AppError::error_strings;
 
 AppError::ErrorStrings::ErrorStrings() {
   REGISTER(OK);
@@ -22,12 +22,16 @@ AppError::ErrorStrings::ErrorStrings() {
   REGISTER(MODEL_ID_CONFLICT);
 }
 
+void AppError::Initialize() {
+  error_strings = new ErrorStrings();
+}
+
 std::string AppError::ErrorStrings::StrError(Status status) {
   return (_error_strings.find(status) != _error_strings.end()) ? _error_strings[status] : "UNKNOWN";
 }
 
 std::string AppError::StrError(Status status) {
-  return error_strings.StrError(status);
+  return error_strings->StrError(status);
 }
 
 AppError::AppError(Status status, const std::string& message)

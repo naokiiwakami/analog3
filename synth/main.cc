@@ -6,7 +6,13 @@
 
 const char* version = "0.1";
 
+static void initialize() {
+  analog3::AppError::Initialize();
+}
+
 int main(int argc, char *argv[]) {
+  initialize();
+
   log4cplus::BasicConfigurator config;
   config.configure();
 
