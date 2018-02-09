@@ -1,8 +1,5 @@
 bin
 include
 lib
+src
 .done-*
-googletest*
-log4cplus*
-rapidjson*
-styleguide*

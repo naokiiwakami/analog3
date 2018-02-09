@@ -1,3 +1,12 @@
+#
+# source me from bash
+#
 export ROOT=`pwd`
 export THIRD_PARTY=${ROOT}/third-party
-export LD_LIBRARY_PATH=${THIRD_PARTY}/lib:${LD_LIBRARY_PATH}
+export THIRD=${THIRD_PARTY}  # alias
+if [ -z "$(echo ${PATH} | grep ${THIRD_PARTY}/bin:)" ]; then
+    export PATH=${THIRD_PARTY}/bin:${PATH}
+fi
+if [ -z "$(echo ${LD_LIBRARY_PATH} | grep ${THIRD_PARTY}/lib:)" ]; then
+    export LD_LIBRARY_PATH=${THIRD_PARTY}/lib:${LD_LIBRARY_PATH}
+fi
