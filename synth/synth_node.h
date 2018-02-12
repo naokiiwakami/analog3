@@ -9,7 +9,6 @@
 namespace analog3 {
 
 enum class NodeType {
-  kNodeTypeRig,
   kNodeTypeModule,
   kNodeTypeKnob,
   kNodeTypeSwitch,

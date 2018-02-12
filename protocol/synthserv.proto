@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package a3proto;
+option java_package = "jp.gaje.analog3.protocol";
+
+message SynthNodeCommon {
+  enum NodeType {
+    MODULE = 0;
+    KNOB = 1;
+    SWITCH = 2;
+  }
+  enum Channel {
+    CAN = 0;
+  }
+  SynthNode node_type = 1;
+  string node_name = 2;
+  uint32 component_number = 3;
+  Channel channel = 4;
+  uint32 initial_value = 5;
+}
+
+message Module {
+  uint32 model_id = 1;
+}
+
+message Knob {
+  uint32 min_value = 1;
+  uint32 max_value = 2;
+}
+
+message Switch {
+  repeated string options = 1;
+}
+
+message SynthNode {
+  SynthNodeCommon common = 1;
+  // metadata
+  Module module = 2;
+  Knob knob = 3;
+  Switch switch = 4;
+  repeated SynthNode child_nodes = 5;
+}
+
+message Request {
+  enum Operation {
+    PING = 0;
+    LIST_MODELS = 1;
+  }
+  Operation op = 1;
+}
+
+message Response {
+  enum Operation {
+    PING_RESP = 0;
+    LIST_MODELS_RESP = 1;
+  }
+  Operation op = 1;
+  string version = 2;
+  repeated SynthNode nodes = 3;
+}

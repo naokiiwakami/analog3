@@ -26,7 +26,8 @@ OBJS = \
 	module.o \
 	node_builder.o \
 	synth.o \
-	synth_node.o
+	synth_node.o \
+	synthserv.pb.o
 
 all:
 	make $(TARGET)
@@ -41,10 +42,13 @@ synth: main.o libsynth.a
 -include $(OBJS:.o=.d)
 
 %.o: %.cc
-	$(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.h
-	$(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.cc
+	if [ -z `echo $*.h | grep '\.pb\.'` ]; then $(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.h; fi
+	if [ -z `echo $*.cc | grep '\.pb\.'` ]; then $(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.cc; fi
 	$(CPP) -c -o $*.o $(CPPFLAGS) $*.cc
 	$(CPP) $(DEPFLAGS) $(CPPFLAGS) $*.cc > $*.d
+
+synthserv.pb.cc: $(PROJECT_ROOT)/protocol/synthserv.proto
+	protoc -I$(PROJECT_ROOT)/protocol --cpp_out=. $(PROJECT_ROOT)/protocol/synthserv.proto
 
 CLEANFILES = *.o *.d *~ core* $(TARGET) *.a
 CLEANESTFILES = $(CLEANFILES) depend *.pb.* *_pb2.* *.pb

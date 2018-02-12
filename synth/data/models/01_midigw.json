@@ -1,12 +1,14 @@
 {
   "node_type": "Module",
   "node_name": "MIDI Gateway",
+  "component_number": 0,
   "model_name": "a3.midigw.000",
   "model_id": 1,
   "channel": "can",
   "child_nodes": [{
     "node_type": "Switch",
     "node_name": "MIDI Channel",
+    "component_number": 1,
     "options": [
       "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"
     ],
@@ -14,6 +16,7 @@
   }, {
     "node_type": "Switch",
     "node_name": "Voices",
+    "component_number": 2,
     "options": [
       "1", "2", "4"
     ],
@@ -21,6 +24,7 @@
   }, {
     "node_type": "Switch",
     "node_name": "Retrigger",
+    "component_number": 3,
     "initial_value": 0
   }]
 }
