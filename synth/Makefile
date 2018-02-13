@@ -25,6 +25,7 @@ OBJS = \
 	finder.o \
 	module.o \
 	node_builder.o \
+	server.o \
 	synth.o \
 	synth_node.o \
 	synthserv.pb.o

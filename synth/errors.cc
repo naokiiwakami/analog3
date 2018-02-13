@@ -20,6 +20,9 @@ AppError::ErrorStrings::ErrorStrings() {
 
   REGISTER(MODEL_NOT_A_MODEL);
   REGISTER(MODEL_ID_CONFLICT);
+
+  REGISTER(SERVER_INIT_FAILED);
+  REGISTER(SERVER_LAUNCH_FAILED);
 }
 
 void AppError::Initialize() {
