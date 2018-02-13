@@ -1,9 +1,12 @@
 #include "synth/server.h"
+
+#include <errno.h>
 #include <log4cplus/logger.h>
 #include <log4cplus/loggingmacros.h>
 #include <log4cplus/configurator.h>
-#include <errno.h>
+#include <string.h>
 #include <poll.h>
+
 #include <vector>
 /*
 #include <stdio.h>
@@ -86,7 +89,7 @@ void* Server::ThreadMain(void *arg) {
   fds.push_back(pfd);
 
   while (true) {
-    fprintf(stderr, "start polling %ld fds\n", fds.size());
+    fprintf(stderr, "start polling %u fds\n", fds.size());
     poll(fds.data(), fds.size(), -1);
     for (auto entry : fds) {
       fprintf(stderr, "event: %x in=%s out=%s\n", entry.revents,
