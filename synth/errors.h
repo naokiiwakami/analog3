@@ -30,6 +30,7 @@ enum class Status {
 
   SERVER_INIT_FAILED = (static_cast<int>(StatusCategory::SERVER) << 16) + 1,
   SERVER_LAUNCH_FAILED,
+  SERVER_SCHEDULER_ERROR,
 };
 
 class AppError {

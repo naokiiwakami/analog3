@@ -23,6 +23,7 @@ AppError::ErrorStrings::ErrorStrings() {
 
   REGISTER(SERVER_INIT_FAILED);
   REGISTER(SERVER_LAUNCH_FAILED);
+  REGISTER(SERVER_SCHEDULER_ERROR);
 }
 
 void AppError::Initialize() {
