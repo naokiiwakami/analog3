@@ -22,10 +22,12 @@ DEPFLAGS = -M
 
 OBJS = \
 	errors.o \
+	event_handler.o \
 	finder.o \
 	module.o \
 	node_builder.o \
 	server.o \
+	session_handler.o \
 	synth.o \
 	synth_node.o \
 	synthserv.pb.o

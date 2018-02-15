@@ -27,15 +27,24 @@ class Server {
 
   // bool waitForShutdown();
 
-  int acceptLoop();
+  // int acceptLoop();
+
+  Status AddFd(int fd, uint32_t events);
+
+  Status ModFd(int fd, uint32_t events);
+
+  Status DelFd(int fd);
 
  private:
-  void shutdown();
+  // void shutdown();
 
  private:
   uint16_t _listener_port;
   int _listener_fd;
   int _listener_backlog;
+
+  int _epoll_fd;
+
   pthread_t _tid;
   Status _finish_status;
 };
