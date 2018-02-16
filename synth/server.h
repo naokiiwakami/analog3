@@ -1,11 +1,15 @@
 #ifndef SYNTH_SERVER_H_
 #define SYNTH_SERVER_H_
 
+#include <poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include <vector>
+
 #include "synth/errors.h"
+#include "synth/event_handler.h"
 
 namespace analog3 {
 
@@ -23,19 +27,22 @@ class Server {
 
   int  GetPort() const { return _listener_port; }
 
+  int GetListenerFd() const { return _listener_fd; }
+
   Status GetFinishStatus() { return _finish_status; }
 
   // bool waitForShutdown();
 
   // int acceptLoop();
 
-  Status AddFd(int fd, uint32_t events);
+  Status AddFd(int fd, int16_t events, EventHandler* handler);
 
-  Status ModFd(int fd, uint32_t events);
+  Status ModFd(int fd, int16_t events);
 
-  Status DelFd(int fd);
+  Status DelFd(int index);
 
  private:
+  Status Run();
   // void shutdown();
 
  private:
@@ -43,7 +50,8 @@ class Server {
   int _listener_fd;
   int _listener_backlog;
 
-  int _epoll_fd;
+  std::vector<struct pollfd> _fds;
+  std::vector<EventHandler*> _handlers;
 
   pthread_t _tid;
   Status _finish_status;

@@ -5,10 +5,10 @@
 #include <log4cplus/loggingmacros.h>
 #include <log4cplus/configurator.h>
 #include <string.h>
-#include <sys/epoll.h>
 #include <unistd.h>
 
-#include <vector>
+#include "synth/event_handler.h"
+
 /*
 #include <stdio.h>
 #include <string.h>
@@ -20,9 +20,9 @@
 // #include "SessionFactory.h"
 // #include "Thread.h"
 
-static log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("Server"));
-
 namespace analog3 {
+
+static log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("Server"));
 
 Server::Server(uint16_t port)
     : _listener_port(port),
@@ -80,80 +80,55 @@ Status Server::Launch() {
 void* Server::ThreadMain(void *arg) {
   Server *server = reinterpret_cast<Server*>(arg);
   Status& status = server->_finish_status;
-  status = Status::OK;
+  status = server->Run();
+  return nullptr;
+}
 
-  const int kMaxEvents = 10;
-
-  int epoll_fd = epoll_create(kMaxEvents);
-  if (epoll_fd == -1) {
-    LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("failed to start poller: " << strerror(errno)));
-    status = Status::SERVER_SCHEDULER_ERROR;
-    return &status;
+Status Server::AddFd(int fd, int16_t events, EventHandler* handler) {
+  _fds.resize(_fds.size() + 1);
+  struct pollfd *pfd = &_fds[_fds.size() - 1];
+  pfd->fd = fd;
+  pfd->events = events;
+  pfd->revents = 0;
+  if (handler) {
+    handler->SetPollFd(pfd);
   }
-  server->_epoll_fd = epoll_fd;
+  _handlers.push_back(handler);
+  return Status::OK;
+}
 
-  status = server->AddFd(server->_listener_fd, EPOLLIN);
+Status Server::DelFd(int index) {
+  _fds.erase(_fds.begin() + index);
+  delete _handlers[index];
+  _handlers.erase(_handlers.begin() + index);
+  return Status::OK;
+}
+
+Status Server::Run() {
+  Status status = AddFd(_listener_fd, POLLIN, new AcceptHandler(this));
   if (status != Status::OK) {
-    LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("failed to add the listener fd to poller: " << strerror(errno)));
-    return &status;
+    LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("failed to add the listener fd to poller: " << AppError::StrError(status)));
+    return status;
   }
-
-  struct epoll_event events[kMaxEvents];
-
-  struct sockaddr childaddr;
-  socklen_t len;
-  int connfd;
 
   while (true) {
     fprintf(stderr, "start polling\n");
-    int nfds = epoll_wait(epoll_fd, events, kMaxEvents, -1);
+    int nfds = poll(_fds.data(), _fds.size(), -1);
     if (nfds == -1) {
       LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("poller wait error: " << strerror(errno)));
-      status = Status::SERVER_SCHEDULER_ERROR;
-      return &status;
+      return Status::SERVER_SCHEDULER_ERROR;
     }
-    for (int i = 0; i < nfds; ++i) {
-      if (events[i].data.fd == server->_listener_fd) {
-        memset(&childaddr, 0, sizeof(childaddr));
-        len = sizeof(childaddr);
-        if ((connfd = accept(server->_listener_fd, &childaddr, &len)) == -1) {
-          LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("accept error: " << strerror(errno)));
-          status = Status::SERVER_SCHEDULER_ERROR;
-          return &status;
-        }
-        fprintf(stderr, "CONNECT: fd=%d\n", connfd);
-        status = server->AddFd(connfd, EPOLLIN);
-        if (status != Status::OK) {
-          LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("failed to add the listener fd to poller: " << strerror(errno)));
-          return &status;
-        }
-      } else {
-        fprintf(stderr, "sock=%d event=%d\n", events[i].data.fd, events[i].events);
-        char buf[1024];
-        ssize_t sz = read(events[i].data.fd, buf, sizeof(buf));
-        buf[sz] = 0;
-        if (sz == 0) {
-          fprintf(stderr, "sock=%d connection closed\n", events[i].data.fd);
-          epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
-          close(events[i].data.fd);
-        } else {
-          fprintf(stderr, "READ: %s\n", buf);
+    for (unsigned i = 0; i < _fds.size(); ++i) {
+      if (_fds[i].revents) {
+        status = _handlers[i]->HandleEvent();
+        if (status == Status::SESSION_CONNECTION_CLOSED) {
+          DelFd(i);
+          close(_fds[i].fd);
         }
       }
     }
   }
-  return nullptr;
-}
-
-Status Server::AddFd(int fd, uint32_t events) {
-  struct epoll_event ev;
-  ev.events = events;
-  ev.data.fd = fd;
-  if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &ev) == 0) {
-    return Status::OK;
-  } else {
-    return Status::SERVER_SCHEDULER_ERROR;
-  }
+  return Status::OK;
 }
 
 }  // namespace analog3

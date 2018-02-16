@@ -11,6 +11,7 @@ enum class StatusCategory {
   SCHEMA,
   MODEL,
   SERVER,
+  SESSION,
 };
 
 enum class Status {
@@ -32,6 +33,8 @@ enum class Status {
   SERVER_LAUNCH_FAILED,
   SERVER_SCHEDULER_ERROR,
   SERVER_HANDLER_TERM,
+
+  SESSION_CONNECTION_CLOSED = (static_cast<int>(StatusCategory::SESSION) << 16) + 1,
 };
 
 class AppError {
