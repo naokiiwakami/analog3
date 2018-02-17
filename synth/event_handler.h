@@ -1,13 +1,14 @@
 #ifndef SYNTH_EVENT_HANDLER_H_
 #define SYNTH_EVENT_HANDLER_H_
 
-#include <poll.h>
+#include <sys/epoll.h>
 
 #include "synth/errors.h"
 
 namespace analog3 {
 
 class Server;
+class Event;
 
 /**
  * Abstract class to handle I/O events
@@ -18,25 +19,24 @@ class EventHandler {
    * ctor
    * @param fd File descriptor where the handler receives events.
    */
-  EventHandler()
-      : _pfd(nullptr)
-  {}
+  EventHandler() {}
 
   virtual ~EventHandler() {}
-
-  void SetPollFd(struct pollfd* pfd) {
-    _pfd = pfd;
-  }
 
   /**
    * This method is called when epoll receives an event at corresponding file descriptor.
    * @param events Epoll events
    * @return Status::OK, Status::SERVER_HANDLER_TERM, or an error code
    */
-  virtual Status HandleEvent() = 0;
+  virtual Status HandleEvent(const struct epoll_event& epoll_event) = 0;
+};
 
- protected:
-  struct pollfd *_pfd;
+struct Event {
+  EventHandler* handler;
+  struct epoll_event epoll_event;
+  Event(EventHandler* h, const struct epoll_event& e)
+      : handler(h), epoll_event(e)
+  {}
 };
 
 class AcceptHandler : public EventHandler {
@@ -47,7 +47,7 @@ class AcceptHandler : public EventHandler {
 
   ~AcceptHandler() {}
 
-  Status HandleEvent();
+  Status HandleEvent(const struct epoll_event& epoll_event);
 
  private:
   Server *_server;
@@ -60,7 +60,7 @@ class SessionHandler : public EventHandler {
  public:
   SessionHandler() {}
   ~SessionHandler() {}
-  Status HandleEvent();
+  Status HandleEvent(const struct epoll_event& epoll_event);
 };
 
 }  // namespace analog3

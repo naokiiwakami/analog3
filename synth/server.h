@@ -1,13 +1,11 @@
 #ifndef SYNTH_SERVER_H_
 #define SYNTH_SERVER_H_
 
-#include <poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-
+#include <boost/container/flat_map.hpp>
 #include <vector>
-
 #include "synth/errors.h"
 #include "synth/event_handler.h"
 
@@ -35,11 +33,11 @@ class Server {
 
   // int acceptLoop();
 
-  Status AddFd(int fd, int16_t events, EventHandler* handler);
+  Status AddFd(int fd, uint32_t events, EventHandler* handler);
 
-  Status ModFd(int fd, int16_t events);
+  Status ModFd(int fd, uint32_t events);
 
-  Status DelFd(int index);
+  Status DelFd(int fd);
 
  private:
   Status Run();
@@ -50,8 +48,9 @@ class Server {
   int _listener_fd;
   int _listener_backlog;
 
-  std::vector<struct pollfd> _fds;
-  std::vector<EventHandler*> _handlers;
+  // event polling
+  int _epoll_fd;
+  boost::container::flat_map<int, EventHandler*> _fd_table;
 
   pthread_t _tid;
   Status _finish_status;

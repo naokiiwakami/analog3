@@ -5,7 +5,10 @@
 #include <log4cplus/loggingmacros.h>
 #include <log4cplus/configurator.h>
 #include <string.h>
+#include <sys/epoll.h>
 #include <unistd.h>
+
+#include <boost/circular_buffer.hpp>
 
 #include "synth/event_handler.h"
 
@@ -69,6 +72,14 @@ Status Server::Initialize() {
     LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("listn failure: " << strerror(errno)));
     return Status::SERVER_INIT_FAILED;
   }
+
+  // Create epoll fd
+  _epoll_fd = epoll_create1(0);
+  if (_epoll_fd == -1) {
+    LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("epoll_create failure: " << strerror(errno)));
+    return Status::SERVER_INIT_FAILED;
+  }
+
   return Status::OK;
 }
 
@@ -89,47 +100,53 @@ void* Server::ThreadMain(void *arg) {
   return nullptr;
 }
 
-Status Server::AddFd(int fd, int16_t events, EventHandler* handler) {
-  _fds.resize(_fds.size() + 1);
-  struct pollfd *pfd = &_fds[_fds.size() - 1];
-  pfd->fd = fd;
-  pfd->events = events;
-  pfd->revents = 0;
-  if (handler) {
-    handler->SetPollFd(pfd);
+Status Server::AddFd(int fd, uint32_t events, EventHandler* handler) {
+  _fd_table[fd] = handler;
+  struct epoll_event event;
+  event.events = events;
+  event.data.fd = fd;
+  if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &event) == -1) {
+    LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("epoll_ctrl add failure: " << strerror(errno)));
+    return Status::SERVER_SCHEDULER_ERROR;
   }
-  _handlers.push_back(handler);
   return Status::OK;
 }
 
-Status Server::DelFd(int index) {
-  _fds.erase(_fds.begin() + index);
-  delete _handlers[index];
-  _handlers.erase(_handlers.begin() + index);
+Status Server::DelFd(int fd) {
+  if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, nullptr) == -1) {
+    LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("epoll_ctrl del failure: " << strerror(errno)));
+    return Status::SERVER_SCHEDULER_ERROR;
+  }
+  _fd_table.erase(fd);
   return Status::OK;
 }
 
 Status Server::Run() {
-  Status status = AddFd(_listener_fd, POLLIN, new AcceptHandler(this));
+  Status status = AddFd(_listener_fd, EPOLLIN, new AcceptHandler(this));
   if (status != Status::OK) {
     LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("failed to add the listener fd to poller: " << AppError::StrError(status)));
     return status;
   }
 
+  const int kMaxEvents = 64;
+  struct epoll_event epoll_events[kMaxEvents];
+  boost::circular_buffer<Event> events(kMaxEvents);
+
   while (true) {
-    int nfds = poll(_fds.data(), _fds.size(), -1);
-    if (nfds == -1) {
+    int num_events = epoll_wait(_epoll_fd, epoll_events, kMaxEvents - events.size(), -1);
+    if (num_events == -1) {
       LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("poller wait error: " << strerror(errno)));
       return Status::SERVER_SCHEDULER_ERROR;
     }
-    for (unsigned i = 0; i < _fds.size(); ++i) {
-      int16_t revents = _fds[i].revents;
-      if (revents == 0) {
-        continue;
-      }
+    for (int i = 0; i < num_events; ++i) {
+      events.push_back(Event(_fd_table[epoll_events[i].data.fd], epoll_events[i]));
+    }
+    while (!events.empty()) {
       status = Status::OK;
-      if ((revents & (POLLIN | POLLOUT)) == 0 ||
-          (status = _handlers[i]->HandleEvent()) != Status::OK) {
+      const Event& event = events.front();
+      uint32_t revents = event.epoll_event.events;
+      if ((revents & (EPOLLIN | EPOLLOUT)) == 0 ||
+          (status = event.handler->HandleEvent(event.epoll_event)) != Status::OK) {
         // close socket on detecting an unexpected event or handler status
         if (status != Status::OK) {
           if (status == Status::SESSION_CONNECTION_CLOSED) {
@@ -140,9 +157,10 @@ Status Server::Run() {
         } else {
           LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("poll detects an unexpected event: " << revents));
         }
-        DelFd(i);
-        close(_fds[i].fd);
+        DelFd(event.epoll_event.data.fd);
+        close(event.epoll_event.data.fd);
       }
+      events.pop_front();
     }
   }
   return Status::OK;
