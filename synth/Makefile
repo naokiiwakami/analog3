@@ -44,15 +44,10 @@ synth: main.o libsynth.a
 -include $(OBJS:.o=.d)
 
 %.o: %.cc
+	if [ -z `echo $*.h | grep '\.pb\.'` ]; then $(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.h; fi
 	if [ -z `echo $*.cc | grep '\.pb\.'` ]; then $(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.cc; fi
 	$(CPP) -c -o $*.o $(CPPFLAGS) $*.cc
-	$(CPP) $(DEPFLAGS) $(CPPFLAGS) $*.cc > $*.d.tmp
-	sed -E "s#($(COMPONENT_ROOT)/\S+\.)h #\1hl #g" $*.d.tmp > $*.d
-	rm $*.d.tmp
-
-%.hl: %.h
-	if [ -z `echo $*.h | grep '\.pb\.'` ]; then $(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.h; fi \
-	&& touch $*.hl
+	$(CPP) $(DEPFLAGS) $(CPPFLAGS) $*.cc > $*.d
 
 synthserv.pb.cc: $(PROJECT_ROOT)/protocol/synthserv.proto
 	protoc -I$(PROJECT_ROOT)/protocol --cpp_out=. $(PROJECT_ROOT)/protocol/synthserv.proto

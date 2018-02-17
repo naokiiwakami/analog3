@@ -18,7 +18,12 @@ Status AcceptHandler::HandleEvent() {
   struct sockaddr childaddr = {};
   socklen_t len = sizeof(childaddr);
   int connfd;
-  if ((connfd = accept(_pfd->fd, &childaddr, &len)) == -1) {
+  if ((connfd = accept4(_pfd->fd, &childaddr, &len, SOCK_NONBLOCK)) == -1) {
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+      // This should not happen, but we log and return to poll anyway
+      LOG4CPLUS_WARN(logger, LOG4CPLUS_TEXT("accept misses a connection: " << strerror(errno)));
+      return Status::OK;
+    }
     LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("accept error: " << strerror(errno)));
     return Status::SERVER_SCHEDULER_ERROR;
   }

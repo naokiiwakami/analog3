@@ -33,6 +33,9 @@ Server::Server(uint16_t port)
 {}
 
 Server::~Server() {
+  if (_listener_fd != -1) {
+    close(_listener_fd);
+  }
 }
 
 Status Server::Initialize() {
@@ -42,25 +45,27 @@ Status Server::Initialize() {
   myaddr.sin_port        = htons(_listener_port);
 
   // Create a server socket
-  if ( (_listener_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
+  if ((_listener_fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0)) < 0) {
     LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("socket open failure: " << strerror(errno)));
     return Status::SERVER_INIT_FAILED;
   }
 
+  // Set socket options
   int flag = 1;
-  if (setsockopt(_listener_fd, SOL_SOCKET, SO_REUSEADDR, (const char *) &flag, sizeof(flag)) < 0) {
+  if (setsockopt(_listener_fd, SOL_SOCKET, SO_REUSEADDR, (const char *) &flag, sizeof(flag)) < 0 ||
+      setsockopt(_listener_fd, SOL_SOCKET, SO_KEEPALIVE, (const char *) &flag, sizeof(flag)) < 0) {
     LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("setsockopt failure: " << strerror(errno)));
     return Status::SERVER_INIT_FAILED;
   }
 
   // Bind
-  if ( bind(_listener_fd, reinterpret_cast<struct sockaddr*>(&myaddr), sizeof(myaddr)) < 0 ) {
+  if (bind(_listener_fd, reinterpret_cast<struct sockaddr*>(&myaddr), sizeof(myaddr)) < 0) {
     LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("bind failure: " << strerror(errno)));
     return Status::SERVER_INIT_FAILED;
   }
 
   // Listen
-  if ( listen(_listener_fd, _listener_backlog) < 0 ) {
+  if (listen(_listener_fd, _listener_backlog) < 0) {
     LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("listn failure: " << strerror(errno)));
     return Status::SERVER_INIT_FAILED;
   }
@@ -112,19 +117,31 @@ Status Server::Run() {
   }
 
   while (true) {
-    fprintf(stderr, "start polling\n");
     int nfds = poll(_fds.data(), _fds.size(), -1);
     if (nfds == -1) {
       LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("poller wait error: " << strerror(errno)));
       return Status::SERVER_SCHEDULER_ERROR;
     }
     for (unsigned i = 0; i < _fds.size(); ++i) {
-      if (_fds[i].revents) {
-        status = _handlers[i]->HandleEvent();
-        if (status == Status::SESSION_CONNECTION_CLOSED) {
-          DelFd(i);
-          close(_fds[i].fd);
+      int16_t revents = _fds[i].revents;
+      if (revents == 0) {
+        continue;
+      }
+      status = Status::OK;
+      if ((revents & (POLLIN | POLLOUT)) == 0 ||
+          (status = _handlers[i]->HandleEvent()) != Status::OK) {
+        // close socket on detecting an unexpected event or handler status
+        if (status != Status::OK) {
+          if (status == Status::SESSION_CONNECTION_CLOSED) {
+            LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT("session terminated"));
+          } else {
+            LOG4CPLUS_WARN(logger, LOG4CPLUS_TEXT("event handler returns an error, closing socket"));
+          }
+        } else {
+          LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("poll detects an unexpected event: " << revents));
         }
+        DelFd(i);
+        close(_fds[i].fd);
       }
     }
   }
