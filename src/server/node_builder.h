@@ -1,11 +1,11 @@
-#ifndef SYNTH_NODE_BUILDER_H_
-#define SYNTH_NODE_BUILDER_H_
+#ifndef SRC_SERVER_NODE_BUILDER_H_
+#define SRC_SERVER_NODE_BUILDER_H_
 
 #include <string>
 
 #include "rapidjson/document.h"
-#include "synth/module.h"
-#include "synth/synth_node.h"
+#include "server/module.h"
+#include "server/synth_node.h"
 
 namespace analog3 {
 
@@ -72,4 +72,4 @@ class NodeBuilder::Prop {
 };
 
 }  // namespace analog3
-#endif  // SYNTH_NODE_BUILDER_H_
+#endif  // SRC_SERVER_NODE_BUILDER_H_

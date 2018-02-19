@@ -1,5 +1,5 @@
-#include "synth/synth.h"
-#include "synth/errors.h"
+#include "server/synth.h"
+#include "server/errors.h"
 
 namespace analog3 {
 

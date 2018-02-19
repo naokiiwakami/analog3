@@ -1,4 +1,4 @@
-#include "synth/errors.h"
+#include "server/errors.h"
 
 #define REGISTER(status) _error_strings[Status::status] = #status
 

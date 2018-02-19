@@ -1,8 +1,8 @@
-#ifndef SYNTH_MODULE_H_
-#define SYNTH_MODULE_H_
+#ifndef SRC_SERVER_MODULE_H_
+#define SRC_SERVER_MODULE_H_
 
 #include <string>
-#include "synth/synth_node.h"
+#include "server/synth_node.h"
 
 namespace analog3 {
 
@@ -25,4 +25,4 @@ class Module : public SynthNode {
 };
 
 }  // namespace analog3
-#endif  // SYNTH_MODULE_H_
+#endif  // SRC_SERVER_MODULE_H_

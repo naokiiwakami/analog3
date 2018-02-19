@@ -1,4 +1,4 @@
-PROJECT_ROOT = $(abspath ../..)
+PROJECT_ROOT = $(abspath ../../..)
 COMPONENT_ROOT = $(abspath ..)
 THIRD_PARTY = $(PROJECT_ROOT)/third-party
 
@@ -11,7 +11,7 @@ CXX = g++
 LD = g++
 CPPLINT = $(PROJECT_ROOT)/third-party/bin/cpplint.py
 DEPFLAGS = -M
-CPPFLAGS = -std=gnu++11 -O0 -g -I$(PROJECT_ROOT) -I$(THIRD_PARTY)/include
+CPPFLAGS = -std=gnu++11 -O0 -g -I$(PROJECT_ROOT)/src -I$(THIRD_PARTY)/include
 LDFLAGS = -L$(THIRD_PARTY)/lib
 LIBS = $(COMMON_LIB) $(GTEST_LIB) -lpthread -llog4cplus
 

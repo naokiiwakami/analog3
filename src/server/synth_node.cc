@@ -1,4 +1,4 @@
-#include "synth/synth_node.h"
+#include "server/synth_node.h"
 
 namespace analog3 {
 

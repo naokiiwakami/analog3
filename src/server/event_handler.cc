@@ -1,4 +1,4 @@
-#include "synth/event_handler.h"
+#include "server/event_handler.h"
 
 #include <errno.h>
 #include <log4cplus/logger.h>
@@ -8,7 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "synth/server.h"
+#include "server/server.h"
 
 namespace analog3 {
 

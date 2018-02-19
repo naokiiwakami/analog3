@@ -1,10 +1,10 @@
-#ifndef SYNTH_SYNTH_NODE_H_
-#define SYNTH_SYNTH_NODE_H_
+#ifndef SRC_SERVER_SYNTH_NODE_H_
+#define SRC_SERVER_SYNTH_NODE_H_
 
 #include <list>
 #include <string>
 #include <vector>
-#include "synth/errors.h"
+#include "server/errors.h"
 
 namespace analog3 {
 
@@ -102,4 +102,4 @@ class Switch : public SynthNode {
 };
 
 }  // namespace analog3
-#endif  // SYNTH_SYNTH_NODE_H_
+#endif  // SRC_SERVER_SYNTH_NODE_H_

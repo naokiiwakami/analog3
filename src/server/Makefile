@@ -1,4 +1,4 @@
-PROJECT_ROOT = $(abspath ..)
+PROJECT_ROOT = $(abspath ../..)
 THIRD_PARTY = $(PROJECT_ROOT)/third-party
 COMPONENT_ROOT = $(abspath .)
 UNAMES = $(shell uname -s)
@@ -7,7 +7,7 @@ UNAMES = $(shell uname -s)
 
 TARGET = synth
 
-INCLUDES = -I../thirdparty/include -I../nanopb -I$(PROJECT_ROOT) -I$(THIRD_PARTY)/include
+INCLUDES = -I../thirdparty/include -I../nanopb -I$(PROJECT_ROOT)/src -I$(THIRD_PARTY)/include
 CC = gcc
 CPP = g++
 LD  = g++
@@ -28,8 +28,7 @@ OBJS = \
 	node_builder.o \
 	server.o \
 	synth.o \
-	synth_node.o \
-	synthserv.pb.o
+	synth_node.o
 
 all:
 	make $(TARGET)
@@ -44,8 +43,8 @@ synth: main.o libsynth.a
 -include $(OBJS:.o=.d)
 
 %.o: %.cc
-	if [ -z `echo $*.h | grep '\.pb\.'` ]; then $(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.h; fi
-	if [ -z `echo $*.cc | grep '\.pb\.'` ]; then $(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.cc; fi
+	$(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.h
+	$(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.cc
 	$(CPP) -c -o $*.o $(CPPFLAGS) $*.cc
 	$(CPP) $(DEPFLAGS) $(CPPFLAGS) $*.cc > $*.d
 

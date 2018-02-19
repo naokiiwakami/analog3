@@ -1,4 +1,4 @@
-#include "synth/node_builder.h"
+#include "server/node_builder.h"
 
 #include <sstream>
 

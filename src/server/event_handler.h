@@ -1,9 +1,9 @@
-#ifndef SYNTH_EVENT_HANDLER_H_
-#define SYNTH_EVENT_HANDLER_H_
+#ifndef SRC_SERVER_EVENT_HANDLER_H_
+#define SRC_SERVER_EVENT_HANDLER_H_
 
 #include <sys/epoll.h>
 
-#include "synth/errors.h"
+#include "server/errors.h"
 
 namespace analog3 {
 
@@ -64,4 +64,4 @@ class SessionHandler : public EventHandler {
 };
 
 }  // namespace analog3
-#endif  // SYNTH_EVENT_HANDLER_H_
+#endif  // SRC_SERVER_EVENT_HANDLER_H_
