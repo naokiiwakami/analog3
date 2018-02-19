@@ -10,6 +10,8 @@ enum class StatusCategory {
   COMMON = 0,
   SCHEMA,
   MODEL,
+  SERVER,
+  SESSION,
 };
 
 enum class Status {
@@ -26,6 +28,13 @@ enum class Status {
 
   MODEL_NOT_A_MODEL = (static_cast<int>(StatusCategory::MODEL) << 16) + 1,
   MODEL_ID_CONFLICT,
+
+  SERVER_INIT_FAILED = (static_cast<int>(StatusCategory::SERVER) << 16) + 1,
+  SERVER_LAUNCH_FAILED,
+  SERVER_SCHEDULER_ERROR,
+  SERVER_HANDLER_TERM,
+
+  SESSION_CONNECTION_CLOSED = (static_cast<int>(StatusCategory::SESSION) << 16) + 1,
 };
 
 class AppError {

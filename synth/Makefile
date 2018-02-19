@@ -13,7 +13,7 @@ CPP = g++
 LD  = g++
 CPPLINT = $(PROJECT_ROOT)/third-party/bin/cpplint.py
 CFLAGS = -I../nanopb $(INCLUDES)
-CPPWARNFLAGS = -Wlong-long -Wformat -Wpointer-arith -Wall -Werror=return-type
+CPPWARNFLAGS = -Wformat -Wpointer-arith -Wall -Werror=return-type
 CPPFLAGS = -std=gnu++11 -g $(CPPWARNFLAGS) $(INCLUDES)
 LDFLAGS = -L$(THIRD_PARTY)/lib
 LIB = -lpthread -llog4cplus
@@ -22,9 +22,11 @@ DEPFLAGS = -M
 
 OBJS = \
 	errors.o \
+	event_handler.o \
 	finder.o \
 	module.o \
 	node_builder.o \
+	server.o \
 	synth.o \
 	synth_node.o \
 	synthserv.pb.o
@@ -50,7 +52,7 @@ synth: main.o libsynth.a
 synthserv.pb.cc: $(PROJECT_ROOT)/protocol/synthserv.proto
 	protoc -I$(PROJECT_ROOT)/protocol --cpp_out=. $(PROJECT_ROOT)/protocol/synthserv.proto
 
-CLEANFILES = *.o *.d *~ core* $(TARGET) *.a
+CLEANFILES = *.o *.d *~ core* $(TARGET) *.a *.hl
 CLEANESTFILES = $(CLEANFILES) depend *.pb.* *_pb2.* *.pb
 
 clean:
