@@ -21,17 +21,11 @@ class Server {
   Status Launch();
   static void* ThreadMain(void* arg);
 
-  // Sock* accept();
-
   int  GetPort() const { return _listener_port; }
 
   int GetListenerFd() const { return _listener_fd; }
 
   Status GetFinishStatus() { return _finish_status; }
-
-  // bool waitForShutdown();
-
-  // int acceptLoop();
 
   Status AddFd(int fd, uint32_t events, EventHandler* handler);
 
@@ -41,7 +35,6 @@ class Server {
 
  private:
   Status Run();
-  // void shutdown();
 
  private:
   uint16_t _listener_port;

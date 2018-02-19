@@ -12,17 +12,6 @@
 
 #include "synth/event_handler.h"
 
-/*
-#include <stdio.h>
-#include <string.h>
-#include <sys/socket.h>
-*/
-
-// #include "common.hxx"
-// #include "Session.h"
-// #include "SessionFactory.h"
-// #include "Thread.h"
-
 namespace analog3 {
 
 static log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("Server"));
@@ -167,72 +156,3 @@ Status Server::Run() {
 }
 
 }  // namespace analog3
-
-// Server::~Server()
-// {
-//     close(_listener_fd);
-// }
-
-// int
-// Server::acceptLoop()
-// {
-//     while ( isAcceptAllowed() ) {
-//         Session* session = nullptr;
-//         Sock* theSock = accept();
-
-//         if (theSock == nullptr) {
-//             return -1;
-//         }
-
-//         // session = m_sessionFactory->makeSession(theSock);
-//         session = new Session(theSock);
-//         if (session != nullptr) {
-//             Thread* worker = new Thread(session);
-//             worker->launch();
-//         }
-//         else {
-//             // TODO: log
-//             delete theSock;
-//             theSock = nullptr;
-//             return -1;
-//         }
-//     }
-
-//     return 0;
-// }
-
-// Sock* Server::accept()
-// {
-//     struct sockaddr childaddr;
-//     memset(&childaddr, 0, sizeof(childaddr));
-//     socklen_t len = 0;
-
-//     int connfd;
-
-//     if ( (connfd = ::accept(_listener_fd, &childaddr, &len)) >= 0 ) {
-//         return new Sock(connfd);
-//     }
-//     else {
-//         LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("accept error: " << strerror(errno)));
-//         return nullptr;
-//     }
-// }
-
-// bool Server::launch()
-// {
-//     return pthread_create( &_tid, nullptr, Server::worker, this ) == 0;
-// }
-
-// void* Server::worker(void* arg)
-// {
-//     Server* server = (Server*) arg;
-//     server->acceptLoop();
-//     return nullptr;
-// }
-
-// bool Server::waitForShutdown()
-// {
-//     return pthread_join( _tid, nullptr ) == 0;
-// }
-
-// #endif
