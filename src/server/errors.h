@@ -1,5 +1,5 @@
-#ifndef SYNTH_ERRORS_H_
-#define SYNTH_ERRORS_H_
+#ifndef SRC_SERVER_ERRORS_H_
+#define SRC_SERVER_ERRORS_H_
 
 #include <map>
 #include <string>
@@ -69,4 +69,4 @@ class AppError {
 };
 
 }  // namespace analog3
-#endif  // SYNTH_ERRORS_H_
+#endif  // SRC_SERVER_ERRORS_H_

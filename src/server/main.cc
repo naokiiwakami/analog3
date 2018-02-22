@@ -1,9 +1,9 @@
 #include <log4cplus/logger.h>
 #include <log4cplus/loggingmacros.h>
 #include <log4cplus/configurator.h>
-#include "synth/errors.h"
-#include "synth/finder.h"
-#include "synth/server.h"
+#include "server/errors.h"
+#include "server/finder.h"
+#include "server/server.h"
 
 const char* version = "0.1";
 

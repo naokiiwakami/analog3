@@ -1,4 +1,4 @@
-#include "synth/server.h"
+#include "server/server.h"
 
 #include <errno.h>
 #include <log4cplus/logger.h>
@@ -10,7 +10,7 @@
 
 #include <boost/circular_buffer.hpp>
 
-#include "synth/event_handler.h"
+#include "server/event_handler.h"
 
 namespace analog3 {
 

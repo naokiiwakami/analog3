@@ -1,11 +1,11 @@
-#ifndef SYNTH_FINDER_H_
-#define SYNTH_FINDER_H_
+#ifndef SRC_SERVER_FINDER_H_
+#define SRC_SERVER_FINDER_H_
 
 #include <dirent.h>
 #include <string>
 #include "rapidjson/document.h"
-#include "synth/errors.h"
-#include "synth/synth_node.h"
+#include "server/errors.h"
+#include "server/synth_node.h"
 
 namespace analog3 {
 
@@ -32,4 +32,4 @@ class Finder {
 };
 
 }  // namespace analog3
-#endif  // SYNTH_FINDER_H_
+#endif  // SRC_SERVER_FINDER_H_

@@ -1,4 +1,4 @@
-#include "synth/finder.h"
+#include "server/finder.h"
 
 #include <fcntl.h>
 #include <log4cplus/logger.h>
@@ -15,8 +15,8 @@
 #include "rapidjson/reader.h"
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/error/en.h"
-#include "synth/module.h"
-#include "synth/node_builder.h"
+#include "server/module.h"
+#include "server/node_builder.h"
 
 namespace analog3 {
 

@@ -1,13 +1,13 @@
-#ifndef SYNTH_SERVER_H_
-#define SYNTH_SERVER_H_
+#ifndef SRC_SERVER_SERVER_H_
+#define SRC_SERVER_SERVER_H_
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <boost/container/flat_map.hpp>
 #include <vector>
-#include "synth/errors.h"
-#include "synth/event_handler.h"
+#include "server/errors.h"
+#include "server/event_handler.h"
 
 namespace analog3 {
 
@@ -50,4 +50,4 @@ class Server {
 };
 
 }  // namespace analog3
-#endif  // SYNTH_SERVER_H_
+#endif  // SRC_SERVER_SERVER_H_

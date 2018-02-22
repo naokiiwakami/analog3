@@ -1,9 +1,9 @@
-#ifndef SYNTH_SYNTH_H_
-#define SYNTH_SYNTH_H_
+#ifndef SRC_SERVER_SYNTH_H_
+#define SRC_SERVER_SYNTH_H_
 
 #include <string>
 #include <unordered_map>
-#include "synth/module.h"
+#include "server/module.h"
 
 namespace analog3 {
 
@@ -20,4 +20,4 @@ class Synth {
 
 }  // namespace analog3
 
-#endif  // SYNTH_SYNTH_H_
+#endif  // SRC_SERVER_SYNTH_H_
