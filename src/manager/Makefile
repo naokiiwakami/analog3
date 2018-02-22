@@ -5,7 +5,7 @@ UNAMES = $(shell uname -s)
 
 # -include local.mk
 
-TARGET = synth
+TARGET = manager
 
 INCLUDES = -I../thirdparty/include -I../nanopb -I$(PROJECT_ROOT)/src -I$(THIRD_PARTY)/include
 CC = gcc
@@ -20,25 +20,14 @@ LIB = -lpthread -llog4cplus
 # LIB += -lprotobuf
 DEPFLAGS = -M
 
-OBJS = \
-	errors.o \
-	event_handler.o \
-	finder.o \
-	module.o \
-	node_builder.o \
-	server.o \
-	synth.o \
-	synth_node.o
+OBJS =
 
 all:
 	make $(TARGET)
-	make -w -C $(COMPONENT_ROOT)/test
+#	make -w -C $(COMPONENT_ROOT)/test
 
-libsynth.a: $(OBJS)
-	ar -r libsynth.a $(OBJS)
-
-synth: main.o libsynth.a
-	$(LD) $(LDFLAGS) -o synth main.o libsynth.a $(LIB)
+manager: main.o
+	$(LD) $(LDFLAGS) -o manager main.o $(LIB)
 
 -include $(OBJS:.o=.d)
 
@@ -53,8 +42,8 @@ CLEANESTFILES = $(CLEANFILES)
 
 clean:
 	rm -rf $(CLEANFILES)
-	make -C test clean
+#	make -C test clean
 
 cleanest:
 	rm -rf $(CLEANESTFILES)
-	make -C test cleanest
+#	make -C test cleanest
