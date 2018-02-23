@@ -16,18 +16,19 @@ CFLAGS = -I../nanopb $(INCLUDES)
 CPPWARNFLAGS = -Wformat -Wpointer-arith -Wall -Werror=return-type
 CPPFLAGS = -std=gnu++11 -g $(CPPWARNFLAGS) $(INCLUDES)
 LDFLAGS = -L$(THIRD_PARTY)/lib
-LIB = -lpthread -llog4cplus
+LIB = -lreadline -lhistory -lcurses -lpthread -llog4cplus
 # LIB += -lprotobuf
 DEPFLAGS = -M
 
-OBJS =
+OBJS = \
+	app.o
 
 all:
 	make $(TARGET)
 #	make -w -C $(COMPONENT_ROOT)/test
 
-manager: main.o
-	$(LD) $(LDFLAGS) -o manager main.o $(LIB)
+manager: main.o $(OBJS)
+	$(LD) $(LDFLAGS) -o manager main.o $(OBJS) $(LIB)
 
 -include $(OBJS:.o=.d)
 

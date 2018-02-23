@@ -1,5 +1,9 @@
 #include <iostream>
 
+#include "manager/app.h"
+
 int main(int argc, char* argv[]) {
-  std::cout << "Hello world!" << std::endl;
+  analog3::App* app = new analog3::App();
+  app->run();
+  return 0;
 }
