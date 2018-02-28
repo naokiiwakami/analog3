@@ -4,6 +4,7 @@
 #include <readline/history.h>
 #include <boost/tokenizer.hpp>
 #include <iostream>
+#include "protocol/synthserv.pb.h"
 
 namespace analog3 {
 
@@ -17,6 +18,7 @@ App::~App() {
 
 void App::run() {
   std::vector<std::string> argv;
+  boost::escaped_list_separator<char> sep("", " ", "\"\'");
   bool quit = false;
   do {
     char* line = readline(prompt);
@@ -33,14 +35,16 @@ void App::run() {
       } else {
         add_history(expansion);
         argv.clear();
-        typedef boost::tokenizer<boost::escaped_list_separator<char>> tokenizer;
-        boost::escaped_list_separator<char> sep('\\', ' ', '"');
         std::string input = expansion;
-        tokenizer tokens(input, sep);
+        boost::tokenizer<boost::escaped_list_separator<char>> tokens(input, sep);
         for (auto token : tokens) {
-          argv.push_back(token);
+          if (!token.empty()) {
+            argv.push_back(token);
+          }
         }
-        quit = ProcessInput(argv);
+        if (!argv.empty()) {
+          quit = ProcessInput(argv);
+        }
       }
       free(expansion);
     }
@@ -48,11 +52,21 @@ void App::run() {
   } while (!quit);
 }
 
+/**
+ * @return true if you want to quit
+ */
 bool App::ProcessInput(const std::vector<std::string>& args) {
-  for (auto arg : args) {
-    std::cout << arg << std::endl;
+  const std::string& command = args[0];
+  if (command == "quit") {
+    return true;
+  } else if (command == "listmodels") {
+    std::cout << "listmodels" << std::endl;
+    a3proto::Request request;
+    request.set_op(a3proto::Request::LIST_MODELS);
+  } else {
+    std::cout << command << ": command not found" << std::endl;
   }
-  return !args.empty() && args[0] == "quit";
+  return false;
 }
 
 }  // namespace analog3
