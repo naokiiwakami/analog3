@@ -61,8 +61,8 @@ bool App::ProcessInput(const std::vector<std::string>& args) {
     return true;
   } else if (command == "listmodels") {
     std::cout << "listmodels" << std::endl;
-    a3proto::Request request;
-    request.set_op(a3proto::Request::LIST_MODELS);
+    a3proto::SynthServiceMessage request;
+    request.set_op(a3proto::SynthServiceMessage::LIST_MODELS);
   } else {
     std::cout << command << ": command not found" << std::endl;
   }

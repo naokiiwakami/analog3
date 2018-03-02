@@ -41,20 +41,28 @@ message SynthNode {
   repeated SynthNode child_nodes = 5;
 }
 
-message Request {
+message SynthServiceMessage {
   enum Operation {
-    PING = 0;
-    LIST_MODELS = 1;
+    PING                = 0;
+    LIST_MODELS         = 1;
+    LIST_MODELS_RESP    = 2;
+    GET_MODELS          = 3;
+    GET_MODELS_RESP     = 4;
+    LIST_INSTANCES      = 5;
+    LIST_INSTANCES_RESP = 6;
+    BIND                = 7;
+    BIND_RESP           = 8;
+    UNBIND              = 9;
+    UNBIND_RESP         = 10;
+    VALUE_CHANGE_REQ    = 11;
+    VALUE_CHANGE_NOTIF  = 12;
   }
-  Operation op = 1;
-}
-
-message Response {
-  enum Operation {
-    PING_RESP = 0;
-    LIST_MODELS_RESP = 1;
-  }
-  Operation op = 1;
-  string version = 2;
-  repeated SynthNode nodes = 3;
+  Operation op                 = 1;
+  uint32 sequene_num           = 2;
+  repeated uint32 model_ids    = 3;
+  repeated SynthNode models    = 4;
+  repeated uint32 instance_ids = 5;
+  uint32 instance_id           = 6;
+  uint32 component_id          = 7;
+  uint32 new_value             = 8;
 }
