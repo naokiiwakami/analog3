@@ -21,7 +21,8 @@ LIB = -la3proto -lprotobuf -lreadline -lhistory -lcurses -lpthread -llog4cplus
 DEPFLAGS = -M
 
 OBJS = \
-	app.o
+	app.o \
+	synth_service.o
 
 all:
 	make $(TARGET)

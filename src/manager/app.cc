@@ -10,7 +10,13 @@ namespace analog3 {
 
 const char* App::prompt = "analog3> ";
 
-App::App() {
+App::App(bool is_stub) {
+  if (is_stub) {
+    service = new StubSynthService();
+  } else {
+    std::cerr << "SynthServ channel has not been implemented yet. Try --stub option." << std::endl;
+    exit(255);
+  }
 }
 
 App::~App() {
@@ -59,10 +65,15 @@ bool App::ProcessInput(const std::vector<std::string>& args) {
   const std::string& command = args[0];
   if (command == "quit") {
     return true;
+  } else if (command == "ping") {
+    service->Ping();
   } else if (command == "listmodels") {
     std::cout << "listmodels" << std::endl;
     a3proto::SynthServiceMessage request;
     request.set_op(a3proto::SynthServiceMessage::LIST_MODELS);
+    Consumer<const char*> *consumer = new MyConsumer();
+    consumer->accept("hello");
+    delete consumer;
   } else {
     std::cout << command << ": command not found" << std::endl;
   }

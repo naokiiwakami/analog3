@@ -1,4 +1,5 @@
 syntax = "proto3";
+option cc_enable_arenas = true;
 
 package a3proto;
 option java_package = "jp.gaje.analog3.protocol";
@@ -44,21 +45,22 @@ message SynthNode {
 message SynthServiceMessage {
   enum Operation {
     PING                = 0;
-    LIST_MODELS         = 1;
-    LIST_MODELS_RESP    = 2;
-    GET_MODELS          = 3;
-    GET_MODELS_RESP     = 4;
-    LIST_INSTANCES      = 5;
-    LIST_INSTANCES_RESP = 6;
-    BIND                = 7;
-    BIND_RESP           = 8;
-    UNBIND              = 9;
-    UNBIND_RESP         = 10;
-    VALUE_CHANGE_REQ    = 11;
-    VALUE_CHANGE_NOTIF  = 12;
+    PING_RESP           = 1;
+    LIST_MODELS         = 2;
+    LIST_MODELS_RESP    = 3;
+    GET_MODELS          = 4;
+    GET_MODELS_RESP     = 5;
+    LIST_INSTANCES      = 6;
+    LIST_INSTANCES_RESP = 7;
+    BIND                = 8;
+    BIND_RESP           = 9;
+    UNBIND              = 10;
+    UNBIND_RESP         = 11;
+    VALUE_CHANGE_REQ    = 12;
+    VALUE_CHANGE_NOTIF  = 13;
   }
   Operation op                 = 1;
-  uint32 sequene_num           = 2;
+  uint32 sequence_num          = 2;
   repeated uint32 model_ids    = 3;
   repeated SynthNode models    = 4;
   repeated uint32 instance_ids = 5;

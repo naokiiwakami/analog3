@@ -4,17 +4,21 @@
 #include <string>
 #include <vector>
 
+#include "manager/synth_service.h"
+
 namespace analog3 {
 
 class App {
  public:
-  App();
+  explicit App(bool is_stub);
   virtual ~App();
 
   void run();
 
  private:
   bool ProcessInput(const std::vector<std::string>& args);
+
+  SynthService *service;
 
   static const char* prompt;
 };
