@@ -21,7 +21,8 @@ class EventHandler {
    * ctor
    * @param fd File descriptor where the handler receives events.
    */
-  EventHandler() {}
+  explicit EventHandler(Server* server)
+      : _server(server) {}
 
   virtual ~EventHandler() {}
 
@@ -31,6 +32,9 @@ class EventHandler {
    * @return Status::OK, Status::SERVER_HANDLER_TERM, or an error code
    */
   virtual Status HandleEvent(const struct epoll_event& epoll_event) = 0;
+
+ protected:
+  Server *_server;
 };
 
 struct Event {
@@ -44,15 +48,12 @@ struct Event {
 class AcceptHandler : public EventHandler {
  public:
   explicit AcceptHandler(Server* server)
-      : _server(server)
+      : EventHandler(server)
   {}
 
   ~AcceptHandler() {}
 
   Status HandleEvent(const struct epoll_event& epoll_event);
-
- private:
-  Server *_server;
 };
 
 /**
@@ -60,7 +61,7 @@ class AcceptHandler : public EventHandler {
  */
 class SessionHandler : public EventHandler {
  public:
-  explicit SessionHandler(int fd);
+  explicit SessionHandler(Server* server, int fd);
   ~SessionHandler();
   Status HandleEvent(const struct epoll_event& epoll_event);
 

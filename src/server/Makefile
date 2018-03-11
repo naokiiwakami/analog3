@@ -44,8 +44,8 @@ synth: main.o libsynth.a
 -include $(OBJS:.o=.d)
 
 %.o: %.cc
-	$(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.h
-	$(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.cc
+	$(CPPLINT) --quiet --filter=-legal/copyright,-whitespace/parens --linelength=120 $*.h
+	$(CPPLINT) --quiet --filter=-legal/copyright,-whitespace/parens --linelength=120 $*.cc
 	$(CPP) -c -o $*.o $(CPPFLAGS) $*.cc
 	$(CPP) $(DEPFLAGS) $(CPPFLAGS) $*.cc > $*.d
 

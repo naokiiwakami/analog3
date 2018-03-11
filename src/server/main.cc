@@ -20,15 +20,16 @@ int main(int argc, char *argv[]) {
   log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("main"));
   LOG4CPLUS_INFO(logger, LOG4CPLUS_TEXT("analog3 synth version " << version << " started"));
 
+  analog3::Server* server = new analog3::Server(12345);
+
   std::string dirname = "data";
   analog3::Finder finder(dirname);
-  analog3::Status st = finder.load();
+  analog3::Status st = finder.Load(server);
   if (st != analog3::Status::OK) {
     LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("Failed to load schema in dierctory " << dirname));
     return 2;
   }
 
-  analog3::Server* server = new analog3::Server(12345);
   if (server->Initialize() != analog3::Status::OK) {
     delete server;
     return 2;

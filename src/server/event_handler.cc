@@ -30,7 +30,7 @@ Status AcceptHandler::HandleEvent(const struct epoll_event& epoll_event) {
     return Status::SERVER_SCHEDULER_ERROR;
   }
   fprintf(stderr, "CONNECT: fd=%d\n", connfd);
-  Status status = _server->AddFd(connfd, EPOLLIN, new SessionHandler(connfd));
+  Status status = _server->AddFd(connfd, EPOLLIN, new SessionHandler(_server, connfd));
   if (status != Status::OK) {
     LOG4CPLUS_ERROR(logger,
                     LOG4CPLUS_TEXT("failed to add the listener fd to poller: " << AppError::StrError(status)));
@@ -38,7 +38,8 @@ Status AcceptHandler::HandleEvent(const struct epoll_event& epoll_event) {
   return status;
 }
 
-SessionHandler::SessionHandler(int fd) {
+SessionHandler::SessionHandler(Server* server, int fd)
+    : EventHandler(server) {
   _instream = new google::protobuf::io::FileInputStream(fd);
   _outstream = new google::protobuf::io::FileOutputStream(fd);
 }
@@ -75,8 +76,9 @@ Status SessionHandler::HandleEvent(const struct epoll_event& epoll_event) {
     case api::SynthServiceMessage::LIST_MODELS:
       std::cout << "LIST_MODELS" << std::endl;
       response->set_op(api::SynthServiceMessage::LIST_MODELS_RESP);
-      response->add_model_ids(1234);
-      response->add_model_ids(5678);
+      _server->ForEachModel([&] (Module* module) {
+          response->add_model_ids(module->GetModelId());
+        });
       api::NetUtils::WriteToStream(*response, _outstream);
       _outstream->Flush();
       break;

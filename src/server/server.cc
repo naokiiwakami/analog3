@@ -21,8 +21,9 @@ Server::Server(uint16_t port)
       _listener_fd(-1),
       _listener_backlog(10),
       _tid(0),
-      _finish_status(Status::OK)
-{}
+      _finish_status(Status::OK) {
+  TAILQ_INIT(&models_head);
+}
 
 Server::~Server() {
   if (_listener_fd != -1) {
@@ -108,6 +109,28 @@ Status Server::DelFd(int fd) {
   }
   _fd_table.erase(fd);
   return Status::OK;
+}
+
+void Server::AddModel(Module* model) {
+  ModuleEntry* entry = new ModuleEntry(model);
+  TAILQ_INSERT_TAIL(&models_head, entry, next);
+  models[model->GetModelId()] = entry;
+}
+
+Module* Server::GetModel(uint16_t model_id) {
+  auto it = models.find(model_id);
+  if (it != models.end()) {
+    return it->second->module;
+  } else {
+    return nullptr;
+  }
+}
+
+void Server::ForEachModel(std::function<void (Module*)> cb) {
+  ModuleEntry* entry;
+  TAILQ_FOREACH(entry, &models_head, next) {
+    cb(entry->module);
+  }
 }
 
 Status Server::Run() {

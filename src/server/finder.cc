@@ -29,7 +29,7 @@ Finder::Finder(const std::string& dir_name)
 Finder::~Finder() {
 }
 
-Status Finder::load() {
+Status Finder::Load(Server* server) {
   std::list<std::string> dirs;
   dirs.push_back(m_dir_name + "/models");
 
@@ -62,13 +62,19 @@ Status Finder::load() {
         LOG4CPLUS_DEBUG(logger, LOG4CPLUS_TEXT("Loading file module " << fileName));
 
         try {
-        rapidjson::Document* doc = MakeDocument(fileName);
-        SynthNode *node;
-        Status st = BuildComponent(doc, &node);
-        if (st != Status::OK) {
-          return st;
-        }
-        // SynthComponent* component = ComponentUtils::loadComponent(fileName);
+          rapidjson::Document* doc = MakeDocument(fileName);
+          SynthNode *node;
+          Status st = BuildComponent(doc, &node);
+          if (st != Status::OK) {
+            return st;
+          }
+          Module* module = dynamic_cast<Module*>(node);
+          if (module != nullptr) {
+            server->AddModel(module);
+          } else {
+            LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT("A model node must be a module"));
+          }
+          // SynthComponent* component = ComponentUtils::loadComponent(fileName);
         } catch (const AppError& error) {
           LOG4CPLUS_ERROR(logger, LOG4CPLUS_TEXT(error.GetMessage()));
           return error.GetStatus();
