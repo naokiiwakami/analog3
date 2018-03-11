@@ -8,7 +8,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "protocol/synthserv.pb.h"
+#include "api/net_utils.h"
+#include "api/synthserv.pb.h"
 #include "server/server.h"
 
 namespace analog3 {
@@ -40,7 +41,6 @@ Status AcceptHandler::HandleEvent(const struct epoll_event& epoll_event) {
 SessionHandler::SessionHandler(int fd) {
   _instream = new google::protobuf::io::FileInputStream(fd);
   _outstream = new google::protobuf::io::FileOutputStream(fd);
-  // _input = new google::protobuf::io::CodedInputStream(_instream);
 }
 
 SessionHandler::~SessionHandler() {
@@ -52,36 +52,32 @@ SessionHandler::~SessionHandler() {
 
 Status SessionHandler::HandleEvent(const struct epoll_event& epoll_event) {
   fprintf(stderr, "sock=%d event=%d\n", epoll_event.data.fd, epoll_event.events);
-  api::SynthServiceMessage* message = new api::SynthServiceMessage();
-  // bool result = message->ParseFromZeroCopyStream(_instream);
-  // bool result = message->ParseFromCodedStream(_input);
-  google::protobuf::io::CodedInputStream input(_instream);
-  uint32_t size;
-  if (!input.ReadVarint32(&size)) {
+
+  api::SynthServiceMessage* request = new api::SynthServiceMessage();
+  if (api::NetUtils::ReadFromStream(_instream, request) < 0) {
     // We assume the peer closed the connection
     std::cout << "Connection to peer has been lost." << std::endl;
+    delete request;
     return Status::SESSION_CONNECTION_CLOSED;
   }
 
-  google::protobuf::io::CodedInputStream::Limit limit = input.PushLimit(size);
-  if (!message->MergeFromCodedStream(&input)) {
-    // TODO(Naoki): do something
-  }
-  if (!input.ConsumedEntireMessage()) {
-    // TODO(Naoki): do something
-  }
-  input.PopLimit(limit);
-
   Status status = Status::OK;
+  api::SynthServiceMessage* response = new api::SynthServiceMessage();
+  response->set_sequence_number(request->sequence_number());
 
-  switch (message->op()) {
-    case api::SynthServiceMessage::PING: {
-      google::protobuf::io::CodedOutputStream output(_outstream);
+  switch (request->op()) {
+    case api::SynthServiceMessage::PING:
       std::cout << "PING" << std::endl;
-      message->set_op(api::SynthServiceMessage::PING_RESP);
-      output.WriteVarint32(message->ByteSize());
-      message->SerializeWithCachedSizes(&output);
-    }
+      response->set_op(api::SynthServiceMessage::PING_RESP);
+      api::NetUtils::WriteToStream(*response, _outstream);
+      _outstream->Flush();
+      break;
+    case api::SynthServiceMessage::LIST_MODELS:
+      std::cout << "LIST_MODELS" << std::endl;
+      response->set_op(api::SynthServiceMessage::LIST_MODELS_RESP);
+      response->add_model_ids(1234);
+      response->add_model_ids(5678);
+      api::NetUtils::WriteToStream(*response, _outstream);
       _outstream->Flush();
       break;
     case api::SynthServiceMessage::NONE:
@@ -93,7 +89,8 @@ Status SessionHandler::HandleEvent(const struct epoll_event& epoll_event) {
       std::cerr << "NOT YET IMPLEMENTED" << std::endl;
   }
 
-  delete message;
+  delete request;
+  delete response;
 
   return status;
 }

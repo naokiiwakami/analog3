@@ -4,7 +4,7 @@
 #include <readline/history.h>
 #include <boost/tokenizer.hpp>
 #include <iostream>
-#include "protocol/synthserv.pb.h"
+#include "api/synthserv.pb.h"
 
 namespace analog3 {
 

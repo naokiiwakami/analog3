@@ -2,7 +2,6 @@
 #define SRC_MANAGER_SYNTH_SERVICE_H_
 
 #include <google/protobuf/arena.h>
-#include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <pthread.h>
 
@@ -13,7 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "protocol/synthserv.pb.h"
+#include "api/synthserv.pb.h"
 
 namespace analog3 {
 
@@ -114,10 +113,6 @@ class NetSynthService : public SynthService {
   int _fd;
   google::protobuf::io::FileInputStream* _instream;
   google::protobuf::io::FileOutputStream* _outstream;
-  // google::protobuf::io::CodedOutputStream* _coded_outstream;
-
-  pthread_mutex_t _net_mutex;
-  pthread_cond_t _net_cond;
 };
 
 class StubSynthService : public SynthService {

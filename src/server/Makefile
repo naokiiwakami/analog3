@@ -1,13 +1,14 @@
 PROJECT_ROOT = $(abspath ../..)
 THIRD_PARTY = $(PROJECT_ROOT)/third-party
 COMPONENT_ROOT = $(abspath .)
+API = $(abspath ../api)
 UNAMES = $(shell uname -s)
 
 # -include local.mk
 
 TARGET = synth
 
-INCLUDES = -I../thirdparty/include -I../nanopb -I$(PROJECT_ROOT)/src -I$(THIRD_PARTY)/include
+INCLUDES = -I$(PROJECT_ROOT)/src -I$(THIRD_PARTY)/include
 CC = gcc
 CPP = g++
 LD  = g++
@@ -15,8 +16,8 @@ CPPLINT = $(PROJECT_ROOT)/third-party/bin/cpplint.py
 CFLAGS = -I../nanopb $(INCLUDES)
 CPPWARNFLAGS = -Wformat -Wpointer-arith -Wall -Werror=return-type -Wno-deprecated-declarations
 CPPFLAGS = -std=gnu++11 -g $(CPPWARNFLAGS) $(INCLUDES)
-LDFLAGS = -L$(THIRD_PARTY)/lib -L$(PROJECT_ROOT)/src/protocol
-LIB = -lpthread -llog4cplus -la3proto -lprotobuf
+LDFLAGS = -L$(THIRD_PARTY)/lib -L$(PROJECT_ROOT)/src/protocol -L$(API)
+LIB = -lpthread -llog4cplus -la3api -lprotobuf
 # LIB += -lprotobuf
 DEPFLAGS = -M
 

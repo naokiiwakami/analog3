@@ -2,7 +2,6 @@
 #define SRC_SERVER_EVENT_HANDLER_H_
 
 #include <google/protobuf/arena.h>
-#include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <sys/epoll.h>
 
@@ -69,7 +68,6 @@ class SessionHandler : public EventHandler {
   // int _fd;
   google::protobuf::io::FileInputStream* _instream;
   google::protobuf::io::FileOutputStream* _outstream;
-  // google::protobuf::io::CodedInputStream* _input;
 };
 
 }  // namespace analog3

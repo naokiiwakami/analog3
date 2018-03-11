@@ -2,7 +2,7 @@ syntax = "proto3";
 option cc_enable_arenas = true;
 
 package analog3.api;
-option java_package = "jp.gaje.analog3.protocol";
+option java_package = "jp.gaje.analog3.api";
 
 message SynthNodeCommon {
   enum NodeType {

@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <iostream>
 
+#include "api/net_utils.h"
+
 namespace analog3 {
 
 const uint64_t SynthService::DEFAULT_TIMEOUT = 10000;  // 10s
@@ -236,21 +238,7 @@ void NetSynthService::Send(api::SynthServiceMessage *message) {
   std::cout << "  seq = " << message->sequence_number() << std::endl;
   std::cout << "  IsMessageTypeSet = " << message->ByteSizeLong() << std::endl;
   std::cout << "... sending" << std::endl;
-  {
-    google::protobuf::io::CodedOutputStream output(_outstream);
-    const int size = message->ByteSize();
-    std::cout << "size = " << size << std::endl;
-    output.WriteVarint32(size);
-    uint8_t* buffer = output.GetDirectBufferForNBytesAndAdvance(size);
-    if (buffer != nullptr) {
-      message->SerializeWithCachedSizesToArray(buffer);
-    } else {
-      message->SerializeWithCachedSizes(&output);
-      if (output.HadError()) {
-        // TODO(Naoki): do something
-      }
-    }
-  }
+  api::NetUtils::WriteToStream(*message, _outstream);
   _outstream->Flush();
   std::cout << "...sent" << std::endl;
 }
@@ -260,7 +248,6 @@ void NetSynthService::Notify() {
 }
 
 void NetSynthService::WaitForEvents() {
-#if 1
   struct pollfd pollfd = {
     .fd = _fd,
     .events = POLLIN,
@@ -274,18 +261,8 @@ void NetSynthService::WaitForEvents() {
   // TODO(Naoki): handle connection lost
 
   api::SynthServiceMessage *message = google::protobuf::Arena::CreateMessage<api::SynthServiceMessage>(_arena);
-  google::protobuf::io::CodedInputStream input(_instream);
-  uint32_t size;
-  input.ReadVarint32(&size);
-  google::protobuf::io::CodedInputStream::Limit limit = input.PushLimit(size);
-  message->MergeFromCodedStream(&input);
-  input.PopLimit(limit);
+  api::NetUtils::ReadFromStream(_instream, message);
   received_messages.push_back(message);
-#else
-  pthread_mutex_lock(&_net_mutex);
-  pthread_cond_wait(&_net_cond, &_net_mutex);
-  pthread_mutex_unlock(&_net_mutex);
-#endif
 }
 
 // StubSynthService implementation //////////////////////////////////////////////////////
