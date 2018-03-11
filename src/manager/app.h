@@ -13,12 +13,12 @@ class App {
   explicit App(bool is_stub);
   virtual ~App();
 
-  void run();
+  int run();
 
  private:
   bool ProcessInput(const std::vector<std::string>& args);
 
-  SynthService *service;
+  SynthService *_service;
 
   static const char* prompt;
 };

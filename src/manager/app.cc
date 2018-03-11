@@ -12,17 +12,21 @@ const char* App::prompt = "analog3> ";
 
 App::App(bool is_stub) {
   if (is_stub) {
-    service = new StubSynthService();
+    _service = new StubSynthService();
   } else {
-    std::cerr << "SynthServ channel has not been implemented yet. Try --stub option." << std::endl;
-    exit(255);
+    _service = new NetSynthService("localhost", 12345);
   }
 }
 
 App::~App() {
+  delete _service;
 }
 
-void App::run() {
+int App::run() {
+  int status;
+  if ((status = _service->Plugin()) != 0) {
+    return status;
+  }
   std::vector<std::string> argv;
   boost::escaped_list_separator<char> sep("", " ", "\"\'");
   bool quit = false;
@@ -56,6 +60,8 @@ void App::run() {
     }
     free(line);
   } while (!quit);
+
+  return _service->Plugout();
 }
 
 /**
@@ -63,17 +69,22 @@ void App::run() {
  */
 bool App::ProcessInput(const std::vector<std::string>& args) {
   const std::string& command = args[0];
+  int result;
   if (command == "quit") {
     return true;
   } else if (command == "ping") {
-    service->Ping();
-  } else if (command == "listmodels") {
-    std::cout << "listmodels" << std::endl;
-    a3proto::SynthServiceMessage request;
-    request.set_op(a3proto::SynthServiceMessage::LIST_MODELS);
-    Consumer<const char*> *consumer = new MyConsumer();
-    consumer->accept("hello");
-    delete consumer;
+    _service->Ping();
+    std::cout << "PONG" << std::endl;
+  } else if (command == "listmodelids") {
+    std::vector<uint32_t> model_ids;
+    result = _service->ListModelIds(&model_ids);
+    if (result == 0) {
+      for (uint32_t id : model_ids) {
+        std::cout << id << std::endl;
+      }
+    } else {
+      std::cout << "ERROR: " << result << std::endl;
+    }
   } else {
     std::cout << command << ": command not found" << std::endl;
   }

@@ -13,7 +13,7 @@ CPP = g++
 LD  = g++
 CPPLINT = $(PROJECT_ROOT)/third-party/bin/cpplint.py
 CFLAGS = -I../nanopb $(INCLUDES)
-CPPWARNFLAGS = -Wformat -Wpointer-arith -Wall -Werror=return-type
+CPPWARNFLAGS = -Wformat -Wpointer-arith -Wall -Werror=return-type -Wno-deprecated-declarations
 CPPFLAGS = -std=gnu++11 -g $(CPPWARNFLAGS) $(INCLUDES)
 LDFLAGS = -L$(THIRD_PARTY)/lib -L$(PROJECT_ROOT)/src/protocol
 LIB = -la3proto -lprotobuf -lreadline -lhistory -lcurses -lpthread -llog4cplus

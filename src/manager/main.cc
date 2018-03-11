@@ -27,6 +27,7 @@ int main(int argc, char* argv[]) {
   }
 
   analog3::App* app = new analog3::App(is_stub);
-  app->run();
-  return 0;
+  int status = app->run();
+  delete app;
+  return status;
 }
