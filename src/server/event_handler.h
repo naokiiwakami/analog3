@@ -1,6 +1,9 @@
 #ifndef SRC_SERVER_EVENT_HANDLER_H_
 #define SRC_SERVER_EVENT_HANDLER_H_
 
+#include <google/protobuf/arena.h>
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <sys/epoll.h>
 
 #include "server/errors.h"
@@ -58,9 +61,15 @@ class AcceptHandler : public EventHandler {
  */
 class SessionHandler : public EventHandler {
  public:
-  SessionHandler() {}
-  ~SessionHandler() {}
+  explicit SessionHandler(int fd);
+  ~SessionHandler();
   Status HandleEvent(const struct epoll_event& epoll_event);
+
+ private:
+  // int _fd;
+  google::protobuf::io::FileInputStream* _instream;
+  google::protobuf::io::FileOutputStream* _outstream;
+  // google::protobuf::io::CodedInputStream* _input;
 };
 
 }  // namespace analog3

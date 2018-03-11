@@ -13,21 +13,23 @@ CPP = g++
 LD  = g++
 CPPLINT = $(PROJECT_ROOT)/third-party/bin/cpplint.py
 CFLAGS = -I../nanopb $(INCLUDES)
-CPPWARNFLAGS = -Wformat -Wpointer-arith -Wall -Werror=return-type
+CPPWARNFLAGS = -Wformat -Wpointer-arith -Wall -Werror=return-type -Wno-deprecated-declarations
 CPPFLAGS = -std=gnu++11 -g $(CPPWARNFLAGS) $(INCLUDES)
-LDFLAGS = -L$(THIRD_PARTY)/lib
-LIB = -lpthread -llog4cplus
+LDFLAGS = -L$(THIRD_PARTY)/lib -L$(PROJECT_ROOT)/src/protocol
+LIB = -la3proto -lprotobuf -lreadline -lhistory -lcurses -lpthread -llog4cplus
 # LIB += -lprotobuf
 DEPFLAGS = -M
 
-OBJS =
+OBJS = \
+	app.o \
+	synth_service.o
 
 all:
 	make $(TARGET)
 #	make -w -C $(COMPONENT_ROOT)/test
 
-manager: main.o
-	$(LD) $(LDFLAGS) -o manager main.o $(LIB)
+manager: main.o $(OBJS)
+	$(LD) $(LDFLAGS) -o manager main.o $(OBJS) $(LIB)
 
 -include $(OBJS:.o=.d)
 
