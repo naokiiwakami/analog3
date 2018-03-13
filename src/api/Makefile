@@ -27,7 +27,8 @@ OBJS = \
 	module.o \
 	net_utils.o \
 	synthserv.pb.o \
-	synth_node.o
+	synth_node.o \
+	synth_service.o
 
 all:
 	make $(TARGET)

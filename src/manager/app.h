@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "manager/synth_service.h"
+#include "api/synth_service.h"
 
 namespace analog3 {
 
@@ -18,7 +18,7 @@ class App {
  private:
   bool ProcessInput(const std::vector<std::string>& args);
 
-  SynthService *_service;
+  api::SynthService *_service;
 
   static const char* prompt;
 };

@@ -12,9 +12,9 @@ const char* App::prompt = "analog3> ";
 
 App::App(bool is_stub) {
   if (is_stub) {
-    _service = new StubSynthService();
+    _service = new api::StubSynthService();
   } else {
-    _service = new NetSynthService("localhost", 12345);
+    _service = new api::NetSynthService("localhost", 12345);
   }
 }
 

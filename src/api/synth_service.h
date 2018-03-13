@@ -1,5 +1,5 @@
-#ifndef SRC_MANAGER_SYNTH_SERVICE_H_
-#define SRC_MANAGER_SYNTH_SERVICE_H_
+#ifndef SRC_API_SYNTH_SERVICE_H_
+#define SRC_API_SYNTH_SERVICE_H_
 
 #include <google/protobuf/arena.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
@@ -15,6 +15,7 @@
 #include "api/synthserv.pb.h"
 
 namespace analog3 {
+namespace api {
 
 template<typename T>
 class Consumer {
@@ -131,5 +132,6 @@ class StubSynthService : public SynthService {
   pthread_cond_t _stub_cond;
 };
 
+}  // namespace api
 }  // namespace analog3
-#endif  // SRC_MANAGER_SYNTH_SERVICE_H_
+#endif  // SRC_API_SYNTH_SERVICE_H_

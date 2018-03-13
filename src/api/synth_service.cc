@@ -1,4 +1,4 @@
-#include "manager/synth_service.h"
+#include "api/synth_service.h"
 #include <error.h>
 #include <netdb.h>
 #include <poll.h>
@@ -12,6 +12,7 @@
 #include "api/net_utils.h"
 
 namespace analog3 {
+namespace api {
 
 const uint64_t SynthService::DEFAULT_TIMEOUT = 10000;  // 10s
 
@@ -312,4 +313,5 @@ void StubSynthService::WaitForEvents() {
   pthread_mutex_unlock(&_stub_mutex);
 }
 
+}  // namespace api
 }  // namespace analog3
