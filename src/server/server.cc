@@ -111,13 +111,13 @@ Status Server::DelFd(int fd) {
   return Status::OK;
 }
 
-void Server::AddModel(Module* model) {
+void Server::AddModel(models::Module* model) {
   ModuleEntry* entry = new ModuleEntry(model);
   TAILQ_INSERT_TAIL(&models_head, entry, next);
   models[model->GetModelId()] = entry;
 }
 
-Module* Server::GetModel(uint16_t model_id) {
+models::Module* Server::GetModel(uint16_t model_id) {
   auto it = models.find(model_id);
   if (it != models.end()) {
     return it->second->module;
@@ -126,7 +126,7 @@ Module* Server::GetModel(uint16_t model_id) {
   }
 }
 
-void Server::ForEachModel(std::function<void (Module*)> cb) {
+void Server::ForEachModel(std::function<void (models::Module*)> cb) {
   ModuleEntry* entry;
   TAILQ_FOREACH(entry, &models_head, next) {
     cb(entry->module);

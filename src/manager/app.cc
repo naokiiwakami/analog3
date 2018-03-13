@@ -76,7 +76,7 @@ bool App::ProcessInput(const std::vector<std::string>& args) {
     _service->Ping();
     std::cout << "PONG" << std::endl;
   } else if (command == "listmodelids") {
-    std::vector<uint32_t> model_ids;
+    std::vector<uint16_t> model_ids;
     result = _service->ListModelIds(&model_ids);
     if (result == 0) {
       for (uint32_t id : model_ids) {
@@ -85,6 +85,8 @@ bool App::ProcessInput(const std::vector<std::string>& args) {
     } else {
       std::cout << "ERROR: " << result << std::endl;
     }
+  } else if (command == "getmodels") {
+    int value;
   } else {
     std::cout << command << ": command not found" << std::endl;
   }

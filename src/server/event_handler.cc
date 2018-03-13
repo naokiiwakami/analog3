@@ -76,7 +76,7 @@ Status SessionHandler::HandleEvent(const struct epoll_event& epoll_event) {
     case api::SynthServiceMessage::LIST_MODELS:
       std::cout << "LIST_MODELS" << std::endl;
       response->set_op(api::SynthServiceMessage::LIST_MODELS_RESP);
-      _server->ForEachModel([&] (Module* module) {
+      _server->ForEachModel([&] (models::Module* module) {
           response->add_model_ids(module->GetModelId());
         });
       api::NetUtils::WriteToStream(*response, _outstream);

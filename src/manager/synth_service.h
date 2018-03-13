@@ -55,7 +55,8 @@ class SynthService {
   static const uint64_t DEFAULT_TIMEOUT;  // millisecond
 
   void Ping();
-  int ListModelIds(std::vector<uint32_t>* model_ids);
+  int ListModelIds(std::vector<uint16_t>* model_ids);
+  // int GetModels(const std::vector<uint16_t>& model_ids, std::vector<Module*> models);
 
  protected:
   void Call(api::SynthServiceMessage *message, Request* request);

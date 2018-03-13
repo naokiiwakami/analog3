@@ -6,7 +6,7 @@
 #include "rapidjson/document.h"
 #include "server/errors.h"
 #include "server/server.h"
-#include "server/synth_node.h"
+#include "api/synth_node.h"
 
 namespace analog3 {
 
@@ -25,8 +25,8 @@ class Finder {
   void IterateDirectory(DIR* dp);
 
   rapidjson::Document* MakeDocument(const std::string& file_name);
-  Status BuildComponent(rapidjson::Document* doc, SynthNode **node);
-  Status BuildModule(rapidjson::Document* doc, SynthNode **node);
+  Status BuildComponent(rapidjson::Document* doc, models::SynthNode **node);
+  Status BuildModule(rapidjson::Document* doc, models::SynthNode **node);
 
   // disable the default constructor
   Finder();

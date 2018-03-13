@@ -15,7 +15,7 @@
 #include "rapidjson/reader.h"
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/error/en.h"
-#include "server/module.h"
+#include "api/module.h"
 #include "server/node_builder.h"
 
 namespace analog3 {
@@ -63,12 +63,12 @@ Status Finder::Load(Server* server) {
 
         try {
           rapidjson::Document* doc = MakeDocument(fileName);
-          SynthNode *node;
+          models::SynthNode *node;
           Status st = BuildComponent(doc, &node);
           if (st != Status::OK) {
             return st;
           }
-          Module* module = dynamic_cast<Module*>(node);
+          models::Module* module = dynamic_cast<models::Module*>(node);
           if (module != nullptr) {
             server->AddModel(module);
           } else {
@@ -129,7 +129,7 @@ rapidjson::Document* Finder::MakeDocument(const std::string& file_name) {
   return document;
 }
 
-Status Finder::BuildComponent(rapidjson::Document *doc, SynthNode **node) {
+Status Finder::BuildComponent(rapidjson::Document *doc, models::SynthNode **node) {
   try {
     NodeBuilder builder(doc);
     *node = builder.Build();

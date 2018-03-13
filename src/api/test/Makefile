@@ -4,16 +4,14 @@ THIRD_PARTY = $(PROJECT_ROOT)/third-party
 
 GTEST_LIB = $(THIRD_PARTY)/lib/gtest_main.a
 
-COMMON_LIB = $(COMPONENT_ROOT)/libsynth.a
-
 CC = gcc
 CXX = g++
 LD = g++
 CPPLINT = $(PROJECT_ROOT)/third-party/bin/cpplint.py
 DEPFLAGS = -M
 CPPFLAGS = -std=gnu++11 -O0 -g -I$(PROJECT_ROOT)/src -I$(THIRD_PARTY)/include
-LDFLAGS = -L$(THIRD_PARTY)/lib -L$(PROJECT_ROOT)/src/api
-LIBS = $(COMMON_LIB) -la3api $(GTEST_LIB) -lpthread -llog4cplus
+LDFLAGS = -L$(PROJECT_ROOT)/src/api -L$(THIRD_PARTY)/lib
+LIBS = -la3api $(GTEST_LIB) -lpthread -llog4cplus
 
 all:
 	make $(TARGETS)
@@ -25,7 +23,7 @@ PROGRAMS += $(MODULE_TEST)
 OBJS += $(MODULE_TEST).o
 $(MODULE_TEST).T: $(MODULE_TEST)
 	$(VALGRIND) ./module_test && touch module_test.T
-$(MODULE_TEST): $(COMMON_LIB) $(MODULE_TEST).o
+$(MODULE_TEST): $(MODULE_TEST).o
 	rm -f $(MODULE_TEST)
 	$(LD) -o $(MODULE_TEST) $(LDFLAGS) $(MODULE_TEST).o $(LIBS)
 # end module test

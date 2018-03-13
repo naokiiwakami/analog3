@@ -1,5 +1,5 @@
-#ifndef SRC_SERVER_SYNTH_NODE_H_
-#define SRC_SERVER_SYNTH_NODE_H_
+#ifndef SRC_API_SYNTH_NODE_H_
+#define SRC_API_SYNTH_NODE_H_
 
 #include <list>
 #include <string>
@@ -7,6 +7,7 @@
 #include "server/errors.h"
 
 namespace analog3 {
+namespace models {
 
 enum class NodeType {
   kNodeTypeModule,
@@ -101,5 +102,6 @@ class Switch : public SynthNode {
   std::vector<std::string> _options;
 };
 
+}  // namespace models
 }  // namespace analog3
-#endif  // SRC_SERVER_SYNTH_NODE_H_
+#endif  // SRC_API_SYNTH_NODE_H_

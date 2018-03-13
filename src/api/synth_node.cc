@@ -1,6 +1,7 @@
-#include "server/synth_node.h"
+#include "api/synth_node.h"
 
 namespace analog3 {
+namespace models {
 
 SynthNode::SynthNode(NodeType t)
     : _node_type(t), _instance_id(0), _initial_value(0), _value(0), _parent(NULL) {
@@ -44,4 +45,5 @@ void SynthNode::DetachFromParent() {
   _parent->RemoveChild(this);
 }
 
+}  // namespace models
 }  // namespace analog3

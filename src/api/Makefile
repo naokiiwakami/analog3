@@ -18,16 +18,20 @@ CPPLINT = $(PROJECT_ROOT)/third-party/bin/cpplint.py
 CFLAGS = -I../nanopb $(INCLUDES)
 CPPWARNFLAGS = -Wformat -Wpointer-arith -Wall -Werror=return-type -Wno-deprecated-declarations
 CPPFLAGS = -std=gnu++11 -g $(CPPWARNFLAGS) $(INCLUDES)
-LDFLAGS = -L$(THIRD_PARTY)/lib -L$(PROJECT_ROOT)/src/protocol
+LDFLAGS = -L$(THIRD_PARTY)/lib -L$(PROJECT_ROOT)/src/api
 # LIB = -la3proto -lprotobuf -lreadline -lhistory -lcurses -lpthread -llog4cplus
 # LIB += -lprotobuf
 DEPFLAGS = -M
 
 OBJS = \
+	module.o \
 	net_utils.o \
-	synthserv.pb.o
+	synthserv.pb.o \
+	synth_node.o
 
-all: $(TARGET)
+all:
+	make $(TARGET)
+	make -w -C $(COMPONENT_ROOT)/test
 
 synthserv.pb.cc: $(PROTO)/synthserv.proto
 	protoc -I$(PROTO) --cpp_out=. $(PROTO)/synthserv.proto

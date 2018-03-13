@@ -1,10 +1,11 @@
-#ifndef SRC_SERVER_MODULE_H_
-#define SRC_SERVER_MODULE_H_
+#ifndef SRC_API_MODULE_H_
+#define SRC_API_MODULE_H_
 
 #include <string>
-#include "server/synth_node.h"
+#include "api/synth_node.h"
 
 namespace analog3 {
+namespace models {
 
 class Module : public SynthNode {
  public:
@@ -24,5 +25,6 @@ class Module : public SynthNode {
   uint16_t model_id;
 };
 
+}  // namespace models
 }  // namespace analog3
-#endif  // SRC_SERVER_MODULE_H_
+#endif  // SRC_API_MODULE_H_

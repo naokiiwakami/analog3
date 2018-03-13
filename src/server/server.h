@@ -11,15 +11,15 @@
 #include <vector>
 #include "server/errors.h"
 #include "server/event_handler.h"
-#include "server/module.h"
+#include "api/module.h"
 
 namespace analog3 {
 
 struct ModuleEntry {
-  Module* module;
+  models::Module* module;
   TAILQ_ENTRY(ModuleEntry) next;
 
-  explicit ModuleEntry(Module* m) {
+  explicit ModuleEntry(models::Module* m) {
     module = m;
   }
 };
@@ -48,13 +48,13 @@ class Server {
 
   Status DelFd(int fd);
 
-  void AddModel(Module* model);
+  void AddModel(models::Module* model);
 
-  // void DeleteModel(Module* model);
+  // void DeleteModel(models::Module* model);
 
-  Module* GetModel(uint16_t model_id);
+  models::Module* GetModel(uint16_t model_id);
 
-  void ForEachModel(std::function<void (Module*)> func);
+  void ForEachModel(std::function<void (models::Module*)> func);
 
  private:
   Status Run();

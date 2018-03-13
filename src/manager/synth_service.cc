@@ -82,7 +82,7 @@ class PingConsumer : public SyncAcceptor {
 
 class ListModelIdsConsumer : public SyncAcceptor {
  public:
-  explicit ListModelIdsConsumer(int32_t* status, std::vector<uint32_t>* model_ids)
+  explicit ListModelIdsConsumer(int32_t* status, std::vector<uint16_t>* model_ids)
       : SyncAcceptor(), _status(status), _model_ids(model_ids) {}
   ~ListModelIdsConsumer() {}
 
@@ -98,7 +98,7 @@ class ListModelIdsConsumer : public SyncAcceptor {
 
  private:
   int32_t* _status;
-  std::vector<uint32_t>* _model_ids;
+  std::vector<uint16_t>* _model_ids;
 };
 
 // synchronous command processors
@@ -114,7 +114,7 @@ void SynthService::Ping() {
   acceptor.Wait();
 }
 
-int SynthService::ListModelIds(std::vector<uint32_t>* model_ids) {
+int SynthService::ListModelIds(std::vector<uint16_t>* model_ids) {
   int32_t status;
   ListModelIdsConsumer acceptor(&status, model_ids);
   Request request(_next_sequence_num++, &acceptor);
