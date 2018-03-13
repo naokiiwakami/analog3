@@ -4,6 +4,8 @@
 #include <list>
 #include <string>
 #include <vector>
+
+#include "api/synthserv.pb.h"
 #include "server/errors.h"
 
 namespace analog3 {
@@ -23,6 +25,8 @@ class SynthNode {
  public:
   explicit SynthNode(NodeType t);
   virtual ~SynthNode();
+
+  static SynthNode* Build(const api::SynthNode& src);
 
   enum NodeType GetNodeType() { return _node_type; }
 

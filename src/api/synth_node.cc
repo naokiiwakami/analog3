@@ -13,6 +13,12 @@ SynthNode::~SynthNode() {
   }
 }
 
+SynthNode* SynthNode::Build(const api::SynthNode& src) {
+  // TODO(#16): implement this
+  return nullptr;
+}
+
+
 bool SynthNode::Validate() {
   return !_node_name.empty() && _instance_id != 0;
 }

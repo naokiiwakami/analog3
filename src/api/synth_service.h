@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "api/synth_node.h"
 #include "api/synthserv.pb.h"
 
 namespace analog3 {
@@ -57,7 +58,7 @@ class SynthService {
 
   void Ping();
   int ListModelIds(std::vector<uint16_t>* model_ids);
-  // int GetModels(const std::vector<uint16_t>& model_ids, std::vector<Module*> models);
+  int GetModels(const std::vector<uint16_t>& model_ids, std::vector<models::SynthNode*>* models);
 
  protected:
   void Call(api::SynthServiceMessage *message, Request* request);

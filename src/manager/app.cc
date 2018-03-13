@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <iostream>
 #include "api/synthserv.pb.h"
@@ -86,7 +87,25 @@ bool App::ProcessInput(const std::vector<std::string>& args) {
       std::cout << "ERROR: " << result << std::endl;
     }
   } else if (command == "getmodels") {
-    int value;
+    std::vector<uint16_t> model_ids;
+    for (uint32_t i = 1; i < args.size(); ++i) {
+      try {
+        model_ids.push_back(boost::lexical_cast<uint16_t>(args[i]));
+      } catch (const boost::bad_lexical_cast& err) {
+        std::cout << "ERROR: Argument " << args[i] << " must be a short integer" << std::endl;
+        return false;
+      }
+    }
+    std::vector<models::SynthNode*> models;
+    result = _service->GetModels(model_ids, &models);
+    if (result == 0) {
+      for (models::SynthNode* module : models) {
+        std::cout << module->GetNodeName() << std::endl;
+        delete module;
+      }
+    } else {
+      std::cout << "ERROR: " << result << std::endl;
+    }
   } else {
     std::cout << command << ": command not found" << std::endl;
   }

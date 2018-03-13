@@ -102,6 +102,27 @@ class ListModelIdsConsumer : public SyncAcceptor {
   std::vector<uint16_t>* _model_ids;
 };
 
+class GetModelsConsumer : public SyncAcceptor {
+ public:
+  explicit GetModelsConsumer(int32_t* status, std::vector<models::SynthNode*>* models)
+      : SyncAcceptor(), _status(status), _models(models) {}
+  ~GetModelsConsumer() {}
+
+  void HandleMessage(api::SynthServiceMessage* response) {
+    *_status = response->status();
+    if (*_status == 0) {
+      int size = response->models_size();
+      for (int i = 0; i < size; ++i) {
+        _models->push_back(models::SynthNode::Build(response->models(i)));
+      }
+    }
+  }
+
+ private:
+  int32_t* _status;
+  std::vector<models::SynthNode*>* _models;
+};
+
 // synchronous command processors
 void SynthService::Ping() {
   PingConsumer acceptor;
@@ -122,6 +143,23 @@ int SynthService::ListModelIds(std::vector<uint16_t>* model_ids) {
   api::SynthServiceMessage *message = google::protobuf::Arena::CreateMessage<api::SynthServiceMessage>(_arena);
   message->set_op(api::SynthServiceMessage::LIST_MODELS);
   message->set_sequence_number(request.sequence_number);
+
+  Call(message, &request);
+
+  acceptor.Wait();
+  return status;
+}
+
+int SynthService::GetModels(const std::vector<uint16_t>& model_ids, std::vector<models::SynthNode*>* models) {
+  int32_t status;
+  GetModelsConsumer acceptor(&status, models);
+  Request request(_next_sequence_num++, &acceptor);
+  api::SynthServiceMessage *message = google::protobuf::Arena::CreateMessage<api::SynthServiceMessage>(_arena);
+  message->set_op(api::SynthServiceMessage::GET_MODELS);
+  message->set_sequence_number(request.sequence_number);
+  for (uint16_t model_id : model_ids) {
+    message->add_model_ids(model_id);
+  }
 
   Call(message, &request);
 
