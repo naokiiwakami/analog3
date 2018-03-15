@@ -28,7 +28,7 @@ all:
 	make $(TARGET)
 #	make -w -C $(COMPONENT_ROOT)/test
 
-manager: main.o $(OBJS)
+manager: main.o $(OBJS) $(API)/liba3api.a
 	$(LD) $(LDFLAGS) -o manager main.o $(OBJS) $(LIB)
 
 -include $(OBJS:.o=.d)

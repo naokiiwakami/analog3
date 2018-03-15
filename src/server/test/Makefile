@@ -13,7 +13,7 @@ CPPLINT = $(PROJECT_ROOT)/third-party/bin/cpplint.py
 DEPFLAGS = -M
 CPPFLAGS = -std=gnu++11 -O0 -g -I$(PROJECT_ROOT)/src -I$(THIRD_PARTY)/include
 LDFLAGS = -L$(THIRD_PARTY)/lib -L$(PROJECT_ROOT)/src/api
-LIBS = $(COMMON_LIB) -la3api $(GTEST_LIB) -lpthread -llog4cplus
+LIBS = $(COMMON_LIB) -la3api -lprotobuf $(GTEST_LIB) -lpthread -llog4cplus
 
 all:
 	make $(TARGETS)

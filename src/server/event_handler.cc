@@ -82,7 +82,7 @@ Status SessionHandler::HandleEvent(const struct epoll_event& epoll_event) {
       api::NetUtils::WriteToStream(*response, _outstream);
       _outstream->Flush();
       break;
-    case api::SynthServiceMessage::NONE:
+    case api::SynthServiceMessage::NOT_SET:
       // Client never sends operation NONE. If the message has this op, it means peer connection was closed.
       std::cout << "Connection closed." << std::endl;
       status = Status::SESSION_CONNECTION_CLOSED;

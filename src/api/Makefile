@@ -8,7 +8,7 @@ UNAMES = $(shell uname -s)
 
 TARGET_LIB_NAME = liba3api
 
-TARGET = $(TARGET_LIB_NAME).a
+TARGETS = synthserv.pb.cc $(TARGET_LIB_NAME).a
 
 INCLUDES = -I$(PROJECT_ROOT)/src -I$(THIRD_PARTY)/include
 CC = gcc
@@ -31,7 +31,7 @@ OBJS = \
 	synth_service.o
 
 all:
-	make $(TARGET)
+	make $(TARGETS)
 	make -w -C $(COMPONENT_ROOT)/test
 
 synthserv.pb.cc: $(PROTO)/synthserv.proto

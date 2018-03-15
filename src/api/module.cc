@@ -4,7 +4,7 @@ namespace analog3 {
 namespace models {
 
 Module::Module()
-    : SynthNode(NodeType::kNodeTypeModule), model_id(0) {
+    : SynthNode(NodeType::MODULE), model_id(0) {
 }
 
 Module::~Module() {

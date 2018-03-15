@@ -36,7 +36,7 @@ all:
 libsynth.a: $(OBJS)
 	ar -r libsynth.a $(OBJS)
 
-synth: main.o libsynth.a
+synth: main.o libsynth.a $(API)/liba3api.a
 	$(LD) $(LDFLAGS) -o synth main.o libsynth.a $(LIB)
 
 -include $(OBJS:.o=.d)

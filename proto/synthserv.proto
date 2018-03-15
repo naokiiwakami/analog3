@@ -4,47 +4,58 @@ option cc_enable_arenas = true;
 package analog3.api;
 option java_package = "jp.gaje.analog3.api";
 
-message SynthNodeCommon {
-  enum NodeType {
-    MODULE = 0;
-    KNOB = 1;
-    SWITCH = 2;
-  }
-  enum Channel {
-    CAN = 0;
-  }
-  SynthNode node_type = 1;
-  string node_name = 2;
-  uint32 component_number = 3;
-  Channel channel = 4;
-  uint32 initial_value = 5;
-}
-
 message Module {
   uint32 model_id = 1;
+  string model_name = 2;
 }
 
 message Knob {
   uint32 min_value = 1;
   uint32 max_value = 2;
+  uint32 offset = 3;
+  uint32 scale = 4;
 }
 
 message Switch {
-  repeated string options = 1;
+  enum SwitchType {
+    NOT_SET = 0;
+    TOGGLE = 1;
+    ROTARY = 2;
+    SELECTOR = 3;
+    MOMENTARY = 4;
+  }
+  SwitchType switch_type = 1;
+  repeated string options = 2;
 }
 
 message SynthNode {
-  SynthNodeCommon common = 1;
-  // metadata
-  Module module = 2;
-  Knob knob = 3;
-  Switch switch = 4;
-  repeated SynthNode child_nodes = 5;
+  enum NodeType {
+    NOT_SET = 0;
+    MODULE = 1;
+    KNOB = 2;
+    SWITCH = 3;
+  }
+  enum Channel {
+    NONE = 0;
+    CAN = 1;
+  }
+  NodeType node_type = 1;
+  string node_name = 2;
+  uint32 instance_id = 3;
+  uint32 component_number = 4;
+  Channel channel = 5;
+  uint32 initial_value = 6;
+  oneof type_specific_metadata {
+    Module module = 7;
+    Knob knob = 8;
+    Switch switch = 9;
+  }
+  repeated SynthNode child_nodes = 10;
 }
 
 message SynthServiceMessage {
   enum Operation {
-    NONE                = 0;
+    NOT_SET             = 0;
     PING                = 1;
     PING_RESP           = 2;
     LIST_MODELS         = 3;

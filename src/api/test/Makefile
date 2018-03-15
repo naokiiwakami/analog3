@@ -11,22 +11,22 @@ CPPLINT = $(PROJECT_ROOT)/third-party/bin/cpplint.py
 DEPFLAGS = -M
 CPPFLAGS = -std=gnu++11 -O0 -g -I$(PROJECT_ROOT)/src -I$(THIRD_PARTY)/include
 LDFLAGS = -L$(PROJECT_ROOT)/src/api -L$(THIRD_PARTY)/lib
-LIBS = -la3api $(GTEST_LIB) -lpthread -llog4cplus
+LIBS = -la3api -lprotobuf $(GTEST_LIB) -lpthread -llog4cplus
 
 all:
 	make $(TARGETS)
 
-# types test
-MODULE_TEST = module_test
-TARGETS += $(MODULE_TEST).T
-PROGRAMS += $(MODULE_TEST)
-OBJS += $(MODULE_TEST).o
-$(MODULE_TEST).T: $(MODULE_TEST)
-	$(VALGRIND) ./module_test && touch module_test.T
-$(MODULE_TEST): $(MODULE_TEST).o
-	rm -f $(MODULE_TEST)
-	$(LD) -o $(MODULE_TEST) $(LDFLAGS) $(MODULE_TEST).o $(LIBS)
-# end module test
+# synth_node test
+SYNTH_NODE_TEST = synth_node_test
+TARGETS += $(SYNTH_NODE_TEST).T
+PROGRAMS += $(SYNTH_NODE_TEST)
+OBJS += $(SYNTH_NODE_TEST).o
+$(SYNTH_NODE_TEST).T: $(SYNTH_NODE_TEST)
+	$(VALGRIND) ./synth_node_test && touch synth_node_test.T
+$(SYNTH_NODE_TEST): $(SYNTH_NODE_TEST).o $(PROJECT_ROOT)/src/api/liba3api.a
+	rm -f $(SYNTH_NODE_TEST)
+	$(LD) -o $(SYNTH_NODE_TEST) $(LDFLAGS) $(SYNTH_NODE_TEST).o $(LIBS)
+# end synth_node test
 
 -include $(OBJS:.o=.d)
 %.o: %.cc
