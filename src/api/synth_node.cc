@@ -6,7 +6,8 @@ namespace analog3 {
 namespace models {
 
 SynthNode::SynthNode(NodeType t)
-    : _node_type(t), _component_number(0), _instance_id(0), _initial_value(0), _value(0), _parent(NULL) {
+    : _node_type(t), _component_number(0), _channel(ChannelType::NONE),
+      _instance_id(0), _initial_value(0), _value(0), _parent(NULL) {
 }
 
 SynthNode::~SynthNode() {
