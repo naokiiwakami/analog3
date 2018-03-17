@@ -349,7 +349,6 @@ TEST(SynthNodeTest, DecodeFromApiMessageModuleNested) {
 }
 
 TEST(SynthNodeTest, EncodeModule) {
-  api::SynthNode* node_desc = new api::SynthNode();
   Module module;
   module.SetNodeName("instance1");
   module.SetComponentNumber(30);
@@ -360,6 +359,7 @@ TEST(SynthNodeTest, EncodeModule) {
   module.SetModelName("test_module");
   module.SetModelId(123);
 
+  api::SynthNode* node_desc = new api::SynthNode();
   module.Encode(node_desc);
 
   EXPECT_EQ(node_desc->node_type(), api::SynthNode::MODULE);
@@ -391,7 +391,6 @@ TEST(SynthNodeTest, EncodeModule) {
 }
 
 TEST(SynthNodeTest, EncodeKnob) {
-  api::SynthNode* node_desc = new api::SynthNode();
   Knob knob;
   knob.SetNodeName("attack");
   knob.SetComponentNumber(255);
@@ -401,6 +400,7 @@ TEST(SynthNodeTest, EncodeKnob) {
   knob.SetOffset(32768);
   knob.SetScale(3);
 
+  api::SynthNode* node_desc = new api::SynthNode();
   knob.Encode(node_desc);
 
   ASSERT_EQ(node_desc->node_type(), api::SynthNode::KNOB);
@@ -426,10 +426,10 @@ TEST(SynthNodeTest, EncodeKnob) {
 }
 
 TEST(SynthNodeTest, EncodeSwitch) {
-  api::SynthNode* node_desc = new api::SynthNode();
   Switch switch_;
   switch_.SetSwitchType(SwitchType::TOGGLE);
 
+  api::SynthNode* node_desc = new api::SynthNode();
   switch_.Encode(node_desc);
 
   ASSERT_EQ(node_desc->node_type(), api::SynthNode::SWITCH);
@@ -446,10 +446,10 @@ TEST(SynthNodeTest, EncodeSwitch) {
   Switch* decoded = dynamic_cast<Switch*>(node);
   ASSERT_NE(decoded, nullptr);
 
-  ASSERT_EQ(decoded->GetSwitchType(), SwitchType::TOGGLE);
-  ASSERT_EQ(decoded->GetOptions().size(), 2);
-  ASSERT_EQ(decoded->GetOptions()[0], "off");
-  ASSERT_EQ(decoded->GetOptions()[1], "on");
+  EXPECT_EQ(decoded->GetSwitchType(), SwitchType::TOGGLE);
+  EXPECT_EQ(decoded->GetOptions().size(), 2);
+  EXPECT_EQ(decoded->GetOptions()[0], "off");
+  EXPECT_EQ(decoded->GetOptions()[1], "on");
 
   delete decoded;
 
@@ -460,15 +460,15 @@ TEST(SynthNodeTest, EncodeSwitch) {
   switch_.AddOption("Sawtooth");
   switch_.AddOption("Pulse");
   switch_.Encode(node_desc);
-  ASSERT_EQ(node_desc->switch_().switch_type(), api::Switch::ROTARY);
-  ASSERT_EQ(node_desc->switch_().options_size(), 3);
+  EXPECT_EQ(node_desc->switch_().switch_type(), api::Switch::ROTARY);
+  EXPECT_EQ(node_desc->switch_().options_size(), 3);
   decoded = dynamic_cast<Switch*>(SynthNode::Decode(*node_desc));
   ASSERT_NE(decoded, nullptr);
-  ASSERT_EQ(decoded->GetSwitchType(), SwitchType::ROTARY);
-  ASSERT_EQ(decoded->GetOptions().size(), 3);
-  ASSERT_EQ(decoded->GetOptions()[0], "Triangular");
-  ASSERT_EQ(decoded->GetOptions()[1], "Sawtooth");
-  ASSERT_EQ(decoded->GetOptions()[2], "Pulse");
+  EXPECT_EQ(decoded->GetSwitchType(), SwitchType::ROTARY);
+  EXPECT_EQ(decoded->GetOptions().size(), 3);
+  EXPECT_EQ(decoded->GetOptions()[0], "Triangular");
+  EXPECT_EQ(decoded->GetOptions()[1], "Sawtooth");
+  EXPECT_EQ(decoded->GetOptions()[2], "Pulse");
   delete decoded;
 
   node_desc->Clear();
@@ -480,17 +480,17 @@ TEST(SynthNodeTest, EncodeSwitch) {
   switch_.AddOption("4");
   switch_.AddOption("5");
   switch_.Encode(node_desc);
-  ASSERT_EQ(node_desc->switch_().switch_type(), api::Switch::SELECTOR);
-  ASSERT_EQ(node_desc->switch_().options_size(), 5);
+  EXPECT_EQ(node_desc->switch_().switch_type(), api::Switch::SELECTOR);
+  EXPECT_EQ(node_desc->switch_().options_size(), 5);
   decoded = dynamic_cast<Switch*>(SynthNode::Decode(*node_desc));
   ASSERT_NE(decoded, nullptr);
-  ASSERT_EQ(decoded->GetSwitchType(), SwitchType::SELECTOR);
-  ASSERT_EQ(decoded->GetOptions().size(), 5);
-  ASSERT_EQ(decoded->GetOptions()[0], "1");
-  ASSERT_EQ(decoded->GetOptions()[1], "2");
-  ASSERT_EQ(decoded->GetOptions()[2], "3");
-  ASSERT_EQ(decoded->GetOptions()[3], "4");
-  ASSERT_EQ(decoded->GetOptions()[4], "5");
+  EXPECT_EQ(decoded->GetSwitchType(), SwitchType::SELECTOR);
+  EXPECT_EQ(decoded->GetOptions().size(), 5);
+  EXPECT_EQ(decoded->GetOptions()[0], "1");
+  EXPECT_EQ(decoded->GetOptions()[1], "2");
+  EXPECT_EQ(decoded->GetOptions()[2], "3");
+  EXPECT_EQ(decoded->GetOptions()[3], "4");
+  EXPECT_EQ(decoded->GetOptions()[4], "5");
   delete decoded;
 
   node_desc->Clear();
@@ -499,16 +499,110 @@ TEST(SynthNodeTest, EncodeSwitch) {
   switch_.AddOption("off");
   switch_.AddOption("on");
   switch_.Encode(node_desc);
-  ASSERT_EQ(node_desc->switch_().switch_type(), api::Switch::MOMENTARY);
-  ASSERT_EQ(node_desc->switch_().options_size(), 2);
+  EXPECT_EQ(node_desc->switch_().switch_type(), api::Switch::MOMENTARY);
+  EXPECT_EQ(node_desc->switch_().options_size(), 2);
   decoded = dynamic_cast<Switch*>(SynthNode::Decode(*node_desc));
   ASSERT_NE(decoded, nullptr);
-  ASSERT_EQ(decoded->GetSwitchType(), SwitchType::MOMENTARY);
-  ASSERT_EQ(decoded->GetOptions().size(), 2);
-  ASSERT_EQ(decoded->GetOptions()[0], "off");
-  ASSERT_EQ(decoded->GetOptions()[1], "on");
+  EXPECT_EQ(decoded->GetSwitchType(), SwitchType::MOMENTARY);
+  EXPECT_EQ(decoded->GetOptions().size(), 2);
+  EXPECT_EQ(decoded->GetOptions()[0], "off");
+  EXPECT_EQ(decoded->GetOptions()[1], "on");
   delete decoded;
 
+  delete node_desc;
+}
+
+TEST(SynthNodeTest, EncodeNestedModule) {
+  Module module;
+  module.SetNodeName("instance1");
+  module.SetModelName("envelope generator");
+  module.SetChannel(ChannelType::CAN);
+  module.SetInstanceId(40);
+
+  Knob* attack = new Knob();
+  attack->SetNodeName("attack time");
+  attack->SetComponentNumber(1);
+  attack->SetMinValue(0);
+  attack->SetMaxValue(1023);
+  attack->SetInitialValue(0);
+  module.AddChild(attack);
+  EXPECT_EQ(attack->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(attack->GetInstanceId(), 40);
+
+  Knob* sustain = new Knob();
+  sustain->SetNodeName("sustain level");
+  sustain->SetComponentNumber(2);
+  sustain->SetMinValue(0);
+  sustain->SetMaxValue(1023);
+  sustain->SetInitialValue(700);
+  module.AddChild(sustain);
+  EXPECT_EQ(sustain->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(sustain->GetInstanceId(), 40);
+
+  Switch* curve = new Switch();
+  curve->SetNodeName("curve");
+  curve->SetComponentNumber(3);
+  curve->ClearOptions();
+  curve->AddOption("linear");
+  curve->AddOption("exponential");
+  module.AddChild(curve);
+  EXPECT_EQ(curve->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(curve->GetInstanceId(), 40);
+
+  api::SynthNode* node_desc = new api::SynthNode();
+  module.Encode(node_desc);
+
+  EXPECT_EQ(node_desc->node_type(), api::SynthNode::MODULE);
+  EXPECT_EQ(node_desc->instance_id(), 40);
+  EXPECT_EQ(node_desc->component_number(), 0);
+  EXPECT_EQ(node_desc->child_nodes_size(), 3);
+  EXPECT_EQ(node_desc->child_nodes(0).node_type(), api::SynthNode::KNOB);
+  EXPECT_EQ(node_desc->child_nodes(0).node_name(), "attack time");
+  EXPECT_EQ(node_desc->child_nodes(0).initial_value(), 0);
+  ASSERT_EQ(node_desc->child_nodes(0).has_knob(), true);
+  EXPECT_EQ(node_desc->child_nodes(1).node_type(), api::SynthNode::KNOB);
+  EXPECT_EQ(node_desc->child_nodes(1).node_name(), "sustain level");
+  EXPECT_EQ(node_desc->child_nodes(1).initial_value(), 700);
+  ASSERT_EQ(node_desc->child_nodes(1).has_knob(), true);
+  EXPECT_EQ(node_desc->child_nodes(2).node_type(), api::SynthNode::SWITCH);
+  EXPECT_EQ(node_desc->child_nodes(2).node_name(), "curve");
+
+  Module* decoded_module = dynamic_cast<Module*>(SynthNode::Decode(*node_desc));
+  ASSERT_NE(decoded_module, nullptr);
+  EXPECT_EQ(decoded_module->GetNodeName(), module.GetNodeName());
+  EXPECT_EQ(decoded_module->GetModelName(), module.GetModelName());
+  EXPECT_EQ(decoded_module->GetChannel(), module.GetChannel());
+  EXPECT_EQ(decoded_module->GetInstanceId(), module.GetInstanceId());
+  ASSERT_EQ(decoded_module->GetChildren().size(), 3);
+  Knob* decoded_attack = dynamic_cast<Knob*>(decoded_module->GetChildren()[0]);
+  ASSERT_NE(decoded_attack, nullptr);
+  EXPECT_EQ(decoded_attack->GetNodeName(), "attack time");
+  EXPECT_EQ(decoded_attack->GetComponentNumber(), 1);
+  EXPECT_EQ(decoded_attack->GetMinValue(), 0);
+  EXPECT_EQ(decoded_attack->GetMaxValue(), 1023);
+  EXPECT_EQ(decoded_attack->GetInitialValue(), 0);
+  EXPECT_EQ(decoded_attack->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(decoded_attack->GetInstanceId(), 40);
+  Knob* decoded_sustain = dynamic_cast<Knob*>(decoded_module->GetChildren()[1]);
+  ASSERT_NE(decoded_sustain, nullptr);
+  EXPECT_EQ(decoded_sustain->GetNodeName(), "sustain level");
+  EXPECT_EQ(decoded_sustain->GetComponentNumber(), 2);
+  EXPECT_EQ(decoded_sustain->GetMinValue(), 0);
+  EXPECT_EQ(decoded_sustain->GetMaxValue(), 1023);
+  EXPECT_EQ(decoded_sustain->GetInitialValue(), 700);
+  EXPECT_EQ(decoded_sustain->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(decoded_sustain->GetInstanceId(), 40);
+  Switch* decoded_curve = dynamic_cast<Switch*>(decoded_module->GetChildren()[2]);
+  ASSERT_NE(decoded_curve, nullptr);
+  EXPECT_EQ(decoded_curve->GetNodeName(), "curve");
+  EXPECT_EQ(decoded_curve->GetComponentNumber(), 3);
+  ASSERT_EQ(decoded_curve->GetOptions().size(), 2);
+  EXPECT_EQ(decoded_curve->GetOptions()[0], "linear");
+  EXPECT_EQ(decoded_curve->GetOptions()[1], "exponential");
+  EXPECT_EQ(decoded_curve->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(decoded_curve->GetInstanceId(), 40);
+
+  delete decoded_module;
   delete node_desc;
 }
 

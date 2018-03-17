@@ -75,7 +75,6 @@ SynthNode* SynthNode::Decode(const api::SynthNode& src, SynthNode* parent) {
   }
   if (node != nullptr) {
     node->SetNodeName(src.node_name());
-    node->_parent = parent;
     // Channel and instance ID of the top node is given.
     // Otherwise are inherited from the parent
     if (parent == nullptr) {
@@ -103,18 +102,18 @@ SynthNode* SynthNode::Decode(const api::SynthNode& src, SynthNode* parent) {
   return node;
 }
 
-void SynthNode::Encode(api::SynthNode* dst) {
+void SynthNode::Encode(api::SynthNode* dst) const {
   api::SynthNode_NodeType node_type;
   switch (_node_type) {
     case NodeType::MODULE: {
-      Module* module = dynamic_cast<Module*>(this);
+      const Module* module = dynamic_cast<const Module*>(this);
       node_type = api::SynthNode::MODULE;
       dst->mutable_module()->set_model_id(module->GetModelId());
       dst->mutable_module()->set_model_name(module->GetModelName());
       break;
     }
     case NodeType::KNOB: {
-      Knob* knob = dynamic_cast<Knob*>(this);
+      const Knob* knob = dynamic_cast<const Knob*>(this);
       node_type = api::SynthNode::KNOB;
       dst->mutable_knob()->set_min_value(knob->GetMinValue());
       dst->mutable_knob()->set_max_value(knob->GetMaxValue());
@@ -123,7 +122,7 @@ void SynthNode::Encode(api::SynthNode* dst) {
       break;
     }
     case NodeType::SWITCH: {
-      Switch* switch_ = dynamic_cast<Switch*>(this);
+      const Switch* switch_ = dynamic_cast<const Switch*>(this);
       node_type = api::SynthNode::SWITCH;
       api::Switch::SwitchType switch_type;
       switch (switch_->GetSwitchType()) {
@@ -164,6 +163,10 @@ void SynthNode::Encode(api::SynthNode* dst) {
   }
   dst->set_instance_id(GetInstanceId());
   dst->set_initial_value(GetInitialValue());
+  for (auto child : GetChildren()) {
+    api::SynthNode* child_node = dst->add_child_nodes();
+    child->Encode(child_node);
+  }
 }
 
 bool SynthNode::Validate() {
@@ -171,6 +174,9 @@ bool SynthNode::Validate() {
 }
 
 void SynthNode::AddChild(SynthNode* child_node) {
+  child_node->_parent = this;
+  child_node->SetChannel(GetChannel());
+  child_node->SetInstanceId(GetInstanceId());
   _child_nodes.push_back(child_node);
 }
 

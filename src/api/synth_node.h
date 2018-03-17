@@ -46,7 +46,7 @@ class SynthNode {
   /**
    * Encode a SynthNode object to API message.
    */
-  void Encode(api::SynthNode* dst);
+  void Encode(api::SynthNode* dst) const;
 
   NodeType GetNodeType() { return _node_type; }
 
@@ -70,7 +70,7 @@ class SynthNode {
 
   virtual bool Validate() /*throw(InvalidNodeException*)*/;
 
-  const std::vector<SynthNode*>& GetChildren() { return _child_nodes; }
+  const std::vector<SynthNode*>& GetChildren() const { return _child_nodes; }
   void AddChild(SynthNode* child_node);
   bool RemoveChild(const std::string& name);
   bool RemoveChild(SynthNode* child_node);
@@ -103,16 +103,16 @@ class Knob : public SynthNode {
 
   virtual ~Knob() {}
 
-  uint16_t GetMinValue() { return _min_value; }
+  uint16_t GetMinValue() const { return _min_value; }
   void SetMinValue(uint16_t value) { _min_value = value; }
 
-  uint16_t GetMaxValue() { return _max_value; }
+  uint16_t GetMaxValue() const { return _max_value; }
   void SetMaxValue(uint16_t value) { _max_value = value; }
 
-  uint16_t GetOffset() { return _offset; }
+  uint16_t GetOffset() const { return _offset; }
   void SetOffset(uint16_t offset) { _offset = offset; }
 
-  uint16_t GetScale() { return _scale; }
+  uint16_t GetScale() const { return _scale; }
   void SetScale(uint16_t scale) { _scale = scale; }
 
  private:
@@ -131,10 +131,10 @@ class Switch : public SynthNode {
   }
   virtual ~Switch() {}
 
-  SwitchType GetSwitchType() { return _switch_type; }
+  SwitchType GetSwitchType() const { return _switch_type; }
   void SetSwitchType(SwitchType switch_type) { _switch_type = switch_type; }
 
-  const std::vector<std::string>& GetOptions() { return _options; }
+  const std::vector<std::string>& GetOptions() const { return _options; }
   void SetOptions(const std::vector<std::string>& options) { _options = options; }
   void AddOption(const std::string& option) {
     _options.push_back(option);

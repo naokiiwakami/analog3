@@ -16,7 +16,7 @@ class Module : public SynthNode {
   const std::string& GetModelName() const { return model_name; }
 
   void SetModelId(uint16_t model_id) { this->model_id = model_id; }
-  uint16_t GetModelId() { return model_id; }
+  uint16_t GetModelId() const { return model_id; }
 
   virtual bool Validate();
 
