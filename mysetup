@@ -10,3 +10,8 @@ fi
 if [ -z "$(echo ${LD_LIBRARY_PATH} | grep ${THIRD_PARTY}/lib:)" ]; then
     export LD_LIBRARY_PATH=${THIRD_PARTY}/lib:${LD_LIBRARY_PATH}
 fi
+
+#
+# Uncomment following to use Valgrind in running unit tests.
+#
+# USE_VALGRIND=y

@@ -1,17 +1,8 @@
 PROJECT_ROOT = $(abspath ../../..)
 COMPONENT_ROOT = $(abspath ..)
-THIRD_PARTY = $(PROJECT_ROOT)/third-party
+-include $(PROJECT_ROOT)/project.mk
 
-GTEST_LIB = $(THIRD_PARTY)/lib/gtest_main.a
-
-CC = gcc
-CXX = g++
-LD = g++
-CPPLINT = $(PROJECT_ROOT)/third-party/bin/cpplint.py
-DEPFLAGS = -M
-CPPFLAGS = -std=gnu++11 -O0 -g -I$(PROJECT_ROOT)/src -I$(THIRD_PARTY)/include
-LDFLAGS = -L$(PROJECT_ROOT)/src/api -L$(THIRD_PARTY)/lib
-LIBS = -la3api -lprotobuf $(GTEST_LIB) -lpthread -llog4cplus
+# TEST_LIBS = -la3api $(LIBS)
 
 all:
 	make $(TARGETS)
@@ -25,19 +16,10 @@ $(SYNTH_NODE_TEST).T: $(SYNTH_NODE_TEST)
 	$(VALGRIND) ./synth_node_test && touch synth_node_test.T
 $(SYNTH_NODE_TEST): $(SYNTH_NODE_TEST).o $(PROJECT_ROOT)/src/api/liba3api.a
 	rm -f $(SYNTH_NODE_TEST)
-	$(LD) -o $(SYNTH_NODE_TEST) $(LDFLAGS) $(SYNTH_NODE_TEST).o $(LIBS)
+	$(LD) -o $(SYNTH_NODE_TEST) $(LDFLAGS) $(SYNTH_NODE_TEST).o $(APP_LIBS)
 # end synth_node test
 
 -include $(OBJS:.o=.d)
-%.o: %.cc
-	$(CPPLINT) --quiet --filter=-legal/copyright --linelength=120 $*.cc
-	$(CXX) -c -o $*.o $(CPPFLAGS) $*.cc
-	$(CXX) $(DEPFLAGS) $(CPPFLAGS) $*.cc > $*.d
-#	@mv -f $*.d $*.d.tmp
-#	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
-#	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
-#		sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
-#	@rm -f $*.d.tmp
 
 clean:
 	rm -f *.o *.a *.d *.T $(PROGRAMS) core

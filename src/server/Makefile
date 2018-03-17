@@ -1,25 +1,8 @@
 PROJECT_ROOT = $(abspath ../..)
-THIRD_PARTY = $(PROJECT_ROOT)/third-party
 COMPONENT_ROOT = $(abspath .)
-API = $(abspath ../api)
-UNAMES = $(shell uname -s)
-
-# -include local.mk
+-include $(PROJECT_ROOT)/project.mk
 
 TARGET = synth
-
-INCLUDES = -I$(PROJECT_ROOT)/src -I$(THIRD_PARTY)/include
-CC = gcc
-CPP = g++
-LD  = g++
-CPPLINT = $(PROJECT_ROOT)/third-party/bin/cpplint.py
-CFLAGS = -I../nanopb $(INCLUDES)
-CPPWARNFLAGS = -Wformat -Wpointer-arith -Wall -Werror=return-type -Wno-deprecated-declarations
-CPPFLAGS = -std=gnu++11 -g $(CPPWARNFLAGS) $(INCLUDES)
-LDFLAGS = -L$(THIRD_PARTY)/lib -L$(PROJECT_ROOT)/src/protocol -L$(API)
-LIB = -lpthread -llog4cplus -la3api -lprotobuf
-# LIB += -lprotobuf
-DEPFLAGS = -M
 
 OBJS = \
 	errors.o \
@@ -37,18 +20,9 @@ libsynth.a: $(OBJS)
 	ar -r libsynth.a $(OBJS)
 
 synth: main.o libsynth.a $(API)/liba3api.a
-	$(LD) $(LDFLAGS) -o synth main.o libsynth.a $(LIB)
+	$(LD) $(LDFLAGS) -o synth main.o libsynth.a $(APP_LIBS)
 
 -include $(OBJS:.o=.d)
-
-%.o: %.cc
-	$(CPPLINT) --quiet --filter=-legal/copyright,-whitespace/parens --linelength=120 $*.h
-	$(CPPLINT) --quiet --filter=-legal/copyright,-whitespace/parens --linelength=120 $*.cc
-	$(CPP) -c -o $*.o $(CPPFLAGS) $*.cc
-	$(CPP) $(DEPFLAGS) $(CPPFLAGS) $*.cc > $*.d
-
-CLEANFILES = *.o *.d *~ core* $(TARGET) *.a *.hl
-CLEANESTFILES = $(CLEANFILES)
 
 clean:
 	rm -rf $(CLEANFILES)
