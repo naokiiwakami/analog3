@@ -56,8 +56,8 @@ class SynthNode {
   uint8_t GetComponentNumber() const { return _component_number; }
   void SetComponentNumber(uint8_t component_number) { _component_number = component_number; }
 
-  ChannelType GetChannel() const { return _channel; }
-  void SetChannel(enum ChannelType channel) { _channel = channel; }
+  ChannelType GetChannelType() const { return _channel_type; }
+  void SetChannelType(enum ChannelType channel_type) { _channel_type = channel_type; }
 
   uint16_t GetInstanceId() const { return _instance_id; }
   void SetInstanceId(uint16_t id) { _instance_id = id; }
@@ -83,7 +83,7 @@ class SynthNode {
   NodeType _node_type;
   std::string _node_name;
   uint8_t _component_number;
-  ChannelType _channel;
+  ChannelType _channel_type;
 
   uint16_t _instance_id;
   uint16_t _initial_value;

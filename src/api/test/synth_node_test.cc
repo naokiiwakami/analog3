@@ -10,7 +10,7 @@ TEST(SynthNodeTest, Module) {
   Module* module = new Module();
   EXPECT_EQ(module->GetNodeType(), NodeType::MODULE);
   EXPECT_EQ(module->GetInitialValue(), 0);
-  EXPECT_EQ(module->GetChannel(), ChannelType::NONE);
+  EXPECT_EQ(module->GetChannelType(), ChannelType::NONE);
 
   module->SetNodeName("abc");
   EXPECT_EQ(module->GetNodeName(), "abc");
@@ -18,8 +18,8 @@ TEST(SynthNodeTest, Module) {
   module->SetComponentNumber(255);
   EXPECT_EQ(module->GetComponentNumber(), 255);
 
-  module->SetChannel(ChannelType::CAN);
-  EXPECT_EQ(module->GetChannel(), ChannelType::CAN);
+  module->SetChannelType(ChannelType::CAN);
+  EXPECT_EQ(module->GetChannelType(), ChannelType::CAN);
 
   module->SetInitialValue(65535);
   EXPECT_EQ(module->GetInitialValue(), 65535);
@@ -74,7 +74,7 @@ TEST(SynthNodeTest, DecodeFromApiMessageModuleSingle) {
   node_desc->set_node_type(api::SynthNode::MODULE);
   node_desc->set_node_name("test_module");
   node_desc->set_component_number(2);
-  node_desc->set_channel(api::SynthNode::CAN);
+  node_desc->set_channel_type(api::SynthNode::CAN);
   node_desc->mutable_module()->set_model_id(800);
   node_desc->mutable_module()->set_model_name("monomonopolypoly");
 
@@ -88,7 +88,7 @@ TEST(SynthNodeTest, DecodeFromApiMessageModuleSingle) {
   ASSERT_NE(module, nullptr);
   EXPECT_EQ(module->GetNodeName(), "test_module");
   EXPECT_EQ(module->GetComponentNumber(), 2);
-  EXPECT_EQ(module->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(module->GetChannelType(), ChannelType::CAN);
   EXPECT_EQ(module->GetInitialValue(), 0);
   // verify module specific parameters
   EXPECT_EQ(module->GetModelId(), 800);
@@ -120,7 +120,7 @@ TEST(SynthNodeTest, DecodeFromApiMessageKnobSingle) {
   ASSERT_NE(knob, nullptr);
   EXPECT_EQ(knob->GetNodeName(), "test_knob");
   EXPECT_EQ(knob->GetComponentNumber(), 3);
-  EXPECT_EQ(knob->GetChannel(), ChannelType::NONE);
+  EXPECT_EQ(knob->GetChannelType(), ChannelType::NONE);
   EXPECT_EQ(knob->GetInitialValue(), 32767);
   // verify knob specific parameters
   EXPECT_EQ(knob->GetMinValue(), 10);
@@ -148,7 +148,7 @@ TEST(SynthNodeTest, DecodeFromApiMessageKnobSingleDefault) {
   ASSERT_NE(knob, nullptr);
   EXPECT_EQ(knob->GetNodeName(), "test_knob_default");
   EXPECT_EQ(knob->GetComponentNumber(), 0);
-  EXPECT_EQ(knob->GetChannel(), ChannelType::NONE);
+  EXPECT_EQ(knob->GetChannelType(), ChannelType::NONE);
   EXPECT_EQ(knob->GetInitialValue(), 0);
   // verify knob specific parameters
   EXPECT_EQ(knob->GetMinValue(), 0);
@@ -261,7 +261,7 @@ TEST(SynthNodeTest, DecodeFromApiMessageModuleNested) {
   // make the source message
   api::SynthNode* node_desc = new api::SynthNode();
   node_desc->set_node_type(api::SynthNode::MODULE);
-  node_desc->set_channel(api::SynthNode::CAN);
+  node_desc->set_channel_type(api::SynthNode::CAN);
   node_desc->set_instance_id(10);
   node_desc->mutable_module()->set_model_id(921);
   node_desc->mutable_module()->set_model_name("vco");
@@ -300,7 +300,7 @@ TEST(SynthNodeTest, DecodeFromApiMessageModuleNested) {
   ASSERT_NE(module, nullptr);
   EXPECT_EQ(module->GetInstanceId(), 10);
   EXPECT_EQ(module->GetComponentNumber(), 0);
-  EXPECT_EQ(module->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(module->GetChannelType(), ChannelType::CAN);
   EXPECT_EQ(module->GetModelId(), 921);
   EXPECT_EQ(module->GetModelName(), "vco");
 
@@ -310,7 +310,7 @@ TEST(SynthNodeTest, DecodeFromApiMessageModuleNested) {
   ASSERT_NE(knob, nullptr);
   ASSERT_EQ(knob->GetParent(), module);
   EXPECT_EQ(knob->GetNodeName(), "frequency");
-  EXPECT_EQ(knob->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(knob->GetChannelType(), ChannelType::CAN);
   EXPECT_EQ(knob->GetInstanceId(), 10);
   EXPECT_EQ(knob->GetComponentNumber(), 1);
   EXPECT_EQ(knob->GetInitialValue(), 32768);
@@ -319,7 +319,7 @@ TEST(SynthNodeTest, DecodeFromApiMessageModuleNested) {
   ASSERT_NE(switch_, nullptr);
   ASSERT_EQ(switch_->GetParent(), module);
   EXPECT_EQ(switch_->GetNodeName(), "waveform");
-  EXPECT_EQ(switch_->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(switch_->GetChannelType(), ChannelType::CAN);
   EXPECT_EQ(switch_->GetInstanceId(), 10);
   EXPECT_EQ(switch_->GetComponentNumber(), 2);
   ASSERT_EQ(switch_->GetOptions().size(), 3);
@@ -333,7 +333,7 @@ TEST(SynthNodeTest, DecodeFromApiMessageModuleNested) {
   EXPECT_EQ(sub_module->GetNodeName(), "modulation submodule");
   EXPECT_EQ(sub_module->GetInstanceId(), 10);
   EXPECT_EQ(sub_module->GetComponentNumber(), 3);
-  EXPECT_EQ(sub_module->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(sub_module->GetChannelType(), ChannelType::CAN);
   ASSERT_EQ(sub_module->GetChildren().size(), 1);
 
   knob = dynamic_cast<Knob*>(sub_module->GetChildren()[0]);
@@ -342,7 +342,7 @@ TEST(SynthNodeTest, DecodeFromApiMessageModuleNested) {
   EXPECT_EQ(knob->GetNodeName(), "depth");
   EXPECT_EQ(knob->GetComponentNumber(), 4);
   EXPECT_EQ(knob->GetInstanceId(), 10);
-  EXPECT_EQ(knob->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(knob->GetChannelType(), ChannelType::CAN);
 
   delete module;
   delete node_desc;
@@ -352,7 +352,7 @@ TEST(SynthNodeTest, EncodeModule) {
   Module module;
   module.SetNodeName("instance1");
   module.SetComponentNumber(30);
-  module.SetChannel(ChannelType::CAN);
+  module.SetChannelType(ChannelType::CAN);
   module.SetInstanceId(40);
   module.SetInitialValue(65535);
   //
@@ -365,7 +365,7 @@ TEST(SynthNodeTest, EncodeModule) {
   EXPECT_EQ(node_desc->node_type(), api::SynthNode::MODULE);
   EXPECT_EQ(node_desc->node_name(), "instance1");
   EXPECT_EQ(node_desc->component_number(), 30);
-  EXPECT_EQ(node_desc->channel(), api::SynthNode::CAN);
+  EXPECT_EQ(node_desc->channel_type(), api::SynthNode::CAN);
   EXPECT_EQ(node_desc->instance_id(), 40);
   EXPECT_EQ(node_desc->initial_value(), 65535);
   EXPECT_TRUE(node_desc->has_module());
@@ -380,7 +380,7 @@ TEST(SynthNodeTest, EncodeModule) {
   ASSERT_NE(decoded, nullptr);
   ASSERT_EQ(decoded->GetNodeName(), module.GetNodeName());
   ASSERT_EQ(decoded->GetComponentNumber(), module.GetComponentNumber());
-  ASSERT_EQ(decoded->GetChannel(), module.GetChannel());
+  ASSERT_EQ(decoded->GetChannelType(), module.GetChannelType());
   ASSERT_EQ(decoded->GetInstanceId(), module.GetInstanceId());
   ASSERT_EQ(decoded->GetInitialValue(), module.GetInitialValue());
   ASSERT_EQ(decoded->GetModelName(), module.GetModelName());
@@ -394,7 +394,7 @@ TEST(SynthNodeTest, EncodeKnob) {
   Knob knob;
   knob.SetNodeName("attack");
   knob.SetComponentNumber(255);
-  knob.SetChannel(ChannelType::NONE);
+  knob.SetChannelType(ChannelType::NONE);
   knob.SetInstanceId(65535);
   knob.SetMinValue(333);
   knob.SetOffset(32768);
@@ -406,7 +406,7 @@ TEST(SynthNodeTest, EncodeKnob) {
   ASSERT_EQ(node_desc->node_type(), api::SynthNode::KNOB);
   ASSERT_EQ(node_desc->node_name(), "attack");
   ASSERT_EQ(node_desc->component_number(), 255);
-  ASSERT_EQ(node_desc->channel(), api::SynthNode::NONE);
+  ASSERT_EQ(node_desc->channel_type(), api::SynthNode::NONE);
   ASSERT_EQ(node_desc->instance_id(), 65535);
   EXPECT_FALSE(node_desc->has_module());
   EXPECT_TRUE(node_desc->has_knob());
@@ -516,7 +516,7 @@ TEST(SynthNodeTest, EncodeNestedModule) {
   Module module;
   module.SetNodeName("instance1");
   module.SetModelName("envelope generator");
-  module.SetChannel(ChannelType::CAN);
+  module.SetChannelType(ChannelType::CAN);
   module.SetInstanceId(40);
 
   Knob* attack = new Knob();
@@ -526,7 +526,7 @@ TEST(SynthNodeTest, EncodeNestedModule) {
   attack->SetMaxValue(1023);
   attack->SetInitialValue(0);
   module.AddChild(attack);
-  EXPECT_EQ(attack->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(attack->GetChannelType(), ChannelType::CAN);
   EXPECT_EQ(attack->GetInstanceId(), 40);
 
   Knob* sustain = new Knob();
@@ -536,7 +536,7 @@ TEST(SynthNodeTest, EncodeNestedModule) {
   sustain->SetMaxValue(1023);
   sustain->SetInitialValue(700);
   module.AddChild(sustain);
-  EXPECT_EQ(sustain->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(sustain->GetChannelType(), ChannelType::CAN);
   EXPECT_EQ(sustain->GetInstanceId(), 40);
 
   Switch* curve = new Switch();
@@ -546,7 +546,7 @@ TEST(SynthNodeTest, EncodeNestedModule) {
   curve->AddOption("linear");
   curve->AddOption("exponential");
   module.AddChild(curve);
-  EXPECT_EQ(curve->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(curve->GetChannelType(), ChannelType::CAN);
   EXPECT_EQ(curve->GetInstanceId(), 40);
 
   api::SynthNode* node_desc = new api::SynthNode();
@@ -571,7 +571,7 @@ TEST(SynthNodeTest, EncodeNestedModule) {
   ASSERT_NE(decoded_module, nullptr);
   EXPECT_EQ(decoded_module->GetNodeName(), module.GetNodeName());
   EXPECT_EQ(decoded_module->GetModelName(), module.GetModelName());
-  EXPECT_EQ(decoded_module->GetChannel(), module.GetChannel());
+  EXPECT_EQ(decoded_module->GetChannelType(), module.GetChannelType());
   EXPECT_EQ(decoded_module->GetInstanceId(), module.GetInstanceId());
   ASSERT_EQ(decoded_module->GetChildren().size(), 3);
   Knob* decoded_attack = dynamic_cast<Knob*>(decoded_module->GetChildren()[0]);
@@ -581,7 +581,7 @@ TEST(SynthNodeTest, EncodeNestedModule) {
   EXPECT_EQ(decoded_attack->GetMinValue(), 0);
   EXPECT_EQ(decoded_attack->GetMaxValue(), 1023);
   EXPECT_EQ(decoded_attack->GetInitialValue(), 0);
-  EXPECT_EQ(decoded_attack->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(decoded_attack->GetChannelType(), ChannelType::CAN);
   EXPECT_EQ(decoded_attack->GetInstanceId(), 40);
   Knob* decoded_sustain = dynamic_cast<Knob*>(decoded_module->GetChildren()[1]);
   ASSERT_NE(decoded_sustain, nullptr);
@@ -590,7 +590,7 @@ TEST(SynthNodeTest, EncodeNestedModule) {
   EXPECT_EQ(decoded_sustain->GetMinValue(), 0);
   EXPECT_EQ(decoded_sustain->GetMaxValue(), 1023);
   EXPECT_EQ(decoded_sustain->GetInitialValue(), 700);
-  EXPECT_EQ(decoded_sustain->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(decoded_sustain->GetChannelType(), ChannelType::CAN);
   EXPECT_EQ(decoded_sustain->GetInstanceId(), 40);
   Switch* decoded_curve = dynamic_cast<Switch*>(decoded_module->GetChildren()[2]);
   ASSERT_NE(decoded_curve, nullptr);
@@ -599,7 +599,7 @@ TEST(SynthNodeTest, EncodeNestedModule) {
   ASSERT_EQ(decoded_curve->GetOptions().size(), 2);
   EXPECT_EQ(decoded_curve->GetOptions()[0], "linear");
   EXPECT_EQ(decoded_curve->GetOptions()[1], "exponential");
-  EXPECT_EQ(decoded_curve->GetChannel(), ChannelType::CAN);
+  EXPECT_EQ(decoded_curve->GetChannelType(), ChannelType::CAN);
   EXPECT_EQ(decoded_curve->GetInstanceId(), 40);
 
   delete decoded_module;

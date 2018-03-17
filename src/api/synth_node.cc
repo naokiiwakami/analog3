@@ -6,7 +6,7 @@ namespace analog3 {
 namespace models {
 
 SynthNode::SynthNode(NodeType t)
-    : _node_type(t), _component_number(0), _channel(ChannelType::NONE),
+    : _node_type(t), _component_number(0), _channel_type(ChannelType::NONE),
       _instance_id(0), _initial_value(0), _value(0), _parent(NULL) {
 }
 
@@ -78,18 +78,18 @@ SynthNode* SynthNode::Decode(const api::SynthNode& src, SynthNode* parent) {
     // Channel and instance ID of the top node is given.
     // Otherwise are inherited from the parent
     if (parent == nullptr) {
-      enum ChannelType channel;
-      switch (src.channel()) {
+      enum ChannelType channel_type;
+      switch (src.channel_type()) {
         case api::SynthNode::CAN:
-          channel = ChannelType::CAN;
+          channel_type = ChannelType::CAN;
           break;
         default:
-          channel = ChannelType::NONE;
+          channel_type = ChannelType::NONE;
       }
-      node->SetChannel(channel);
+      node->SetChannelType(channel_type);
       node->SetInstanceId(src.instance_id());
     } else {
-      node->SetChannel(parent->GetChannel());
+      node->SetChannelType(parent->GetChannelType());
       node->SetInstanceId(parent->GetInstanceId());
     }
     node->SetComponentNumber(src.component_number());
@@ -154,12 +154,12 @@ void SynthNode::Encode(api::SynthNode* dst) const {
   dst->set_node_type(node_type);
   dst->set_node_name(GetNodeName());
   dst->set_component_number(GetComponentNumber());
-  switch (GetChannel()) {
+  switch (GetChannelType()) {
     case ChannelType::CAN:
-      dst->set_channel(api::SynthNode::CAN);
+      dst->set_channel_type(api::SynthNode::CAN);
       break;
     default:
-      dst->set_channel(api::SynthNode::NONE);
+      dst->set_channel_type(api::SynthNode::NONE);
   }
   dst->set_instance_id(GetInstanceId());
   dst->set_initial_value(GetInitialValue());
@@ -175,7 +175,7 @@ bool SynthNode::Validate() {
 
 void SynthNode::AddChild(SynthNode* child_node) {
   child_node->_parent = this;
-  child_node->SetChannel(GetChannel());
+  child_node->SetChannelType(GetChannelType());
   child_node->SetInstanceId(GetInstanceId());
   _child_nodes.push_back(child_node);
 }

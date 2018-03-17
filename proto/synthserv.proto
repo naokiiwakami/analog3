@@ -35,7 +35,7 @@ message SynthNode {
     KNOB = 2;
     SWITCH = 3;
   }
-  enum Channel {
+  enum ChannelType {
     NONE = 0;
     CAN = 1;
   }
@@ -43,7 +43,7 @@ message SynthNode {
   string node_name = 2;
   uint32 instance_id = 3;
   uint32 component_number = 4;
-  Channel channel = 5;
+  ChannelType channel_type = 5;
   uint32 initial_value = 6;
   oneof type_specific_metadata {
     Module module = 7;
