@@ -113,7 +113,7 @@ class GetModelsConsumer : public SyncAcceptor {
     if (*_status == 0) {
       int size = response->models_size();
       for (int i = 0; i < size; ++i) {
-        _models->push_back(models::SynthNode::Build(response->models(i)));
+        _models->push_back(models::SynthNode::Decode(response->models(i)));
       }
     }
   }

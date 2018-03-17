@@ -22,7 +22,7 @@ LD  = g++
 CFLAGS = -I../nanopb $(INCLUDES)
 # Temporary suppress warnings coming from third-party components
 CPP_SUPPRESS_WARNINGS = -Wno-deprecated-declarations -Wno-sign-compare
-CPPWARNFLAGS = -Wformat -Wpointer-arith -Wall -Werror=return-type
+CPPWARNFLAGS = -Wformat -Wpointer-arith -Wall -Werror=return-type $(CPP_SUPPRESS_WARNINGS)
 CPPFLAGS = -std=gnu++11 -g $(CPPWARNFLAGS) $(INCLUDES)
 
 LDFLAGS = -L$(THIRD_PARTY)/lib -L$(PROJECT_ROOT)/src/api

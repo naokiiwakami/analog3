@@ -16,7 +16,7 @@ SynthNode::~SynthNode() {
   }
 }
 
-SynthNode* SynthNode::Build(const api::SynthNode& src, SynthNode* parent) {
+SynthNode* SynthNode::Decode(const api::SynthNode& src, SynthNode* parent) {
   SynthNode* node;
   switch (src.node_type()) {
     case api::SynthNode::MODULE: {
@@ -98,11 +98,73 @@ SynthNode* SynthNode::Build(const api::SynthNode& src, SynthNode* parent) {
   }
   int size = src.child_nodes_size();
   for (int i = 0; i < size; ++i) {
-    node->AddChild(Build(src.child_nodes(i), node));
+    node->AddChild(Decode(src.child_nodes(i), node));
   }
   return node;
 }
 
+void SynthNode::Encode(api::SynthNode* dst) {
+  api::SynthNode_NodeType node_type;
+  switch (_node_type) {
+    case NodeType::MODULE: {
+      Module* module = dynamic_cast<Module*>(this);
+      node_type = api::SynthNode::MODULE;
+      dst->mutable_module()->set_model_id(module->GetModelId());
+      dst->mutable_module()->set_model_name(module->GetModelName());
+      break;
+    }
+    case NodeType::KNOB: {
+      Knob* knob = dynamic_cast<Knob*>(this);
+      node_type = api::SynthNode::KNOB;
+      dst->mutable_knob()->set_min_value(knob->GetMinValue());
+      dst->mutable_knob()->set_max_value(knob->GetMaxValue());
+      dst->mutable_knob()->set_offset(knob->GetOffset());
+      dst->mutable_knob()->set_scale(knob->GetScale());
+      break;
+    }
+    case NodeType::SWITCH: {
+      Switch* switch_ = dynamic_cast<Switch*>(this);
+      node_type = api::SynthNode::SWITCH;
+      api::Switch::SwitchType switch_type;
+      switch (switch_->GetSwitchType()) {
+        case SwitchType::TOGGLE:
+          switch_type = api::Switch::TOGGLE;
+          break;
+        case SwitchType::ROTARY:
+          switch_type = api::Switch::ROTARY;
+          break;
+        case SwitchType::SELECTOR:
+          switch_type = api::Switch::SELECTOR;
+          break;
+        case SwitchType::MOMENTARY:
+          switch_type = api::Switch::MOMENTARY;
+          break;
+        default:
+          switch_type = api::Switch::NOT_SET;
+      }
+      dst->mutable_switch_()->set_switch_type(switch_type);
+      for (const std::string& option : switch_->GetOptions()) {
+        dst->mutable_switch_()->add_options(option);
+      }
+      break;
+    }
+    default:
+      node_type = api::SynthNode::NOT_SET;
+  }
+
+  dst->set_node_type(node_type);
+  dst->set_node_name(GetNodeName());
+  dst->set_component_number(GetComponentNumber());
+  switch (GetChannel()) {
+    case ChannelType::CAN:
+      dst->set_channel(api::SynthNode::CAN);
+      break;
+    default:
+      dst->set_channel(api::SynthNode::NONE);
+  }
+  dst->set_instance_id(GetInstanceId());
+  dst->set_initial_value(GetInitialValue());
+}
 
 bool SynthNode::Validate() {
   return !_node_name.empty() && _instance_id != 0;

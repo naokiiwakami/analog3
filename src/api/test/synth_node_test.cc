@@ -68,7 +68,7 @@ TEST(SynthNodeTest, Switch) {
   delete switch_;
 }
 
-TEST(SynthNodeTest, BuildFromApiMessageModuleSingle) {
+TEST(SynthNodeTest, DecodeFromApiMessageModuleSingle) {
   // make the source message
   api::SynthNode* node_desc = new api::SynthNode();
   node_desc->set_node_type(api::SynthNode::MODULE);
@@ -78,8 +78,8 @@ TEST(SynthNodeTest, BuildFromApiMessageModuleSingle) {
   node_desc->mutable_module()->set_model_id(800);
   node_desc->mutable_module()->set_model_name("monomonopolypoly");
 
-  // build
-  SynthNode* node = SynthNode::Build(*node_desc);
+  // decode
+  SynthNode* node = SynthNode::Decode(*node_desc);
 
   // verify
   ASSERT_NE(node, nullptr);
@@ -98,7 +98,7 @@ TEST(SynthNodeTest, BuildFromApiMessageModuleSingle) {
   delete node_desc;
 }
 
-TEST(SynthNodeTest, BuildFromApiMessageKnobSingle) {
+TEST(SynthNodeTest, DecodeFromApiMessageKnobSingle) {
   // make the source message
   api::SynthNode* node_desc = new api::SynthNode();
   node_desc->set_node_type(api::SynthNode::KNOB);
@@ -110,8 +110,8 @@ TEST(SynthNodeTest, BuildFromApiMessageKnobSingle) {
   node_desc->mutable_knob()->set_offset(25000);
   node_desc->mutable_knob()->set_scale(1024);
 
-  // build
-  SynthNode* node = SynthNode::Build(*node_desc);
+  // decode
+  SynthNode* node = SynthNode::Decode(*node_desc);
 
   // verify
   ASSERT_NE(node, nullptr);
@@ -132,14 +132,14 @@ TEST(SynthNodeTest, BuildFromApiMessageKnobSingle) {
   delete node_desc;
 }
 
-TEST(SynthNodeTest, BuildFromApiMessageKnobSingleDefault) {
+TEST(SynthNodeTest, DecodeFromApiMessageKnobSingleDefault) {
   // make the source message
   api::SynthNode* node_desc = new api::SynthNode();
   node_desc->set_node_type(api::SynthNode::KNOB);
   node_desc->set_node_name("test_knob_default");
 
-  // build
-  SynthNode* node = SynthNode::Build(*node_desc);
+  // decode
+  SynthNode* node = SynthNode::Decode(*node_desc);
 
   // verify
   ASSERT_NE(node, nullptr);
@@ -160,7 +160,7 @@ TEST(SynthNodeTest, BuildFromApiMessageKnobSingleDefault) {
   delete node_desc;
 }
 
-TEST(SynthNodeTest, BuildFromApiMessageSwitchSingle) {
+TEST(SynthNodeTest, DecodeFromApiMessageSwitchSingle) {
   // make the source message
   api::SynthNode* node_desc = new api::SynthNode();
   node_desc->set_node_type(api::SynthNode::SWITCH);
@@ -172,8 +172,8 @@ TEST(SynthNodeTest, BuildFromApiMessageSwitchSingle) {
   node_desc->mutable_switch_()->add_options("triangular");
   node_desc->mutable_switch_()->set_switch_type(api::Switch::ROTARY);
 
-  // build
-  SynthNode* node = SynthNode::Build(*node_desc);
+  // decode
+  SynthNode* node = SynthNode::Decode(*node_desc);
 
   // verify
   ASSERT_NE(node, nullptr);
@@ -194,14 +194,14 @@ TEST(SynthNodeTest, BuildFromApiMessageSwitchSingle) {
   delete node_desc;
 }
 
-TEST(SynthNodeTest, BuildFromApiMessageSwitchSingleDefault) {
+TEST(SynthNodeTest, DecodeFromApiMessageSwitchSingleDefault) {
   // make the source message
   api::SynthNode* node_desc = new api::SynthNode();
   node_desc->set_node_type(api::SynthNode::SWITCH);
   node_desc->set_node_name("test_switch_default");
 
-  // build
-  SynthNode* node = SynthNode::Build(*node_desc);
+  // decode
+  SynthNode* node = SynthNode::Decode(*node_desc);
 
   // verify
   ASSERT_NE(node, nullptr);
@@ -221,14 +221,14 @@ TEST(SynthNodeTest, BuildFromApiMessageSwitchSingleDefault) {
   delete node_desc;
 }
 
-TEST(SynthNodeTest, BuildFromApiMessageSwitchType) {
+TEST(SynthNodeTest, DecodeFromApiMessageSwitchType) {
   // make the source message
   api::SynthNode* node_desc = new api::SynthNode();
   node_desc->set_node_type(api::SynthNode::SWITCH);
   node_desc->set_node_name("test_switch_types");
 
   node_desc->mutable_switch_()->set_switch_type(api::Switch::TOGGLE);
-  SynthNode* node = SynthNode::Build(*node_desc);
+  SynthNode* node = SynthNode::Decode(*node_desc);
   ASSERT_NE(node, nullptr);
   EXPECT_EQ(node->GetNodeType(), NodeType::SWITCH);
   Switch* switch_ = dynamic_cast<Switch*>(node);
@@ -237,7 +237,7 @@ TEST(SynthNodeTest, BuildFromApiMessageSwitchType) {
   delete switch_;
 
   node_desc->mutable_switch_()->set_switch_type(api::Switch::MOMENTARY);
-  node = SynthNode::Build(*node_desc);
+  node = SynthNode::Decode(*node_desc);
   ASSERT_NE(node, nullptr);
   EXPECT_EQ(node->GetNodeType(), NodeType::SWITCH);
   switch_ = dynamic_cast<Switch*>(node);
@@ -246,7 +246,7 @@ TEST(SynthNodeTest, BuildFromApiMessageSwitchType) {
   delete switch_;
 
   node_desc->mutable_switch_()->set_switch_type(api::Switch::SELECTOR);
-  node = SynthNode::Build(*node_desc);
+  node = SynthNode::Decode(*node_desc);
   ASSERT_NE(node, nullptr);
   EXPECT_EQ(node->GetNodeType(), NodeType::SWITCH);
   switch_ = dynamic_cast<Switch*>(node);
@@ -257,7 +257,7 @@ TEST(SynthNodeTest, BuildFromApiMessageSwitchType) {
   delete node_desc;
 }
 
-TEST(SynthNodeTest, BuildFromApiMessageModuleNested) {
+TEST(SynthNodeTest, DecodeFromApiMessageModuleNested) {
   // make the source message
   api::SynthNode* node_desc = new api::SynthNode();
   node_desc->set_node_type(api::SynthNode::MODULE);
@@ -290,8 +290,8 @@ TEST(SynthNodeTest, BuildFromApiMessageModuleNested) {
   child->set_node_name("depth");
   child->set_component_number(4);
 
-  // build
-  SynthNode* node = SynthNode::Build(*node_desc);
+  // decode
+  SynthNode* node = SynthNode::Decode(*node_desc);
 
   // verify
   ASSERT_NE(node, nullptr);
@@ -347,5 +347,170 @@ TEST(SynthNodeTest, BuildFromApiMessageModuleNested) {
   delete module;
   delete node_desc;
 }
+
+TEST(SynthNodeTest, EncodeModule) {
+  api::SynthNode* node_desc = new api::SynthNode();
+  Module module;
+  module.SetNodeName("instance1");
+  module.SetComponentNumber(30);
+  module.SetChannel(ChannelType::CAN);
+  module.SetInstanceId(40);
+  module.SetInitialValue(65535);
+  //
+  module.SetModelName("test_module");
+  module.SetModelId(123);
+
+  module.Encode(node_desc);
+
+  EXPECT_EQ(node_desc->node_type(), api::SynthNode::MODULE);
+  EXPECT_EQ(node_desc->node_name(), "instance1");
+  EXPECT_EQ(node_desc->component_number(), 30);
+  EXPECT_EQ(node_desc->channel(), api::SynthNode::CAN);
+  EXPECT_EQ(node_desc->instance_id(), 40);
+  EXPECT_EQ(node_desc->initial_value(), 65535);
+  EXPECT_TRUE(node_desc->has_module());
+  EXPECT_FALSE(node_desc->has_knob());
+  EXPECT_FALSE(node_desc->has_switch_());
+  EXPECT_EQ(node_desc->module().model_name(), "test_module");
+  EXPECT_EQ(node_desc->module().model_id(), 123);
+
+  SynthNode* node = SynthNode::Decode(*node_desc);
+  ASSERT_NE(node, nullptr);
+  Module* decoded = dynamic_cast<Module*>(node);
+  ASSERT_NE(decoded, nullptr);
+  ASSERT_EQ(decoded->GetNodeName(), module.GetNodeName());
+  ASSERT_EQ(decoded->GetComponentNumber(), module.GetComponentNumber());
+  ASSERT_EQ(decoded->GetChannel(), module.GetChannel());
+  ASSERT_EQ(decoded->GetInstanceId(), module.GetInstanceId());
+  ASSERT_EQ(decoded->GetInitialValue(), module.GetInitialValue());
+  ASSERT_EQ(decoded->GetModelName(), module.GetModelName());
+  ASSERT_EQ(decoded->GetModelId(), module.GetModelId());
+
+  delete decoded;
+  delete node_desc;
+}
+
+TEST(SynthNodeTest, EncodeKnob) {
+  api::SynthNode* node_desc = new api::SynthNode();
+  Knob knob;
+  knob.SetNodeName("attack");
+  knob.SetComponentNumber(255);
+  knob.SetChannel(ChannelType::NONE);
+  knob.SetInstanceId(65535);
+  knob.SetMinValue(333);
+  knob.SetOffset(32768);
+  knob.SetScale(3);
+
+  knob.Encode(node_desc);
+
+  ASSERT_EQ(node_desc->node_type(), api::SynthNode::KNOB);
+  ASSERT_EQ(node_desc->node_name(), "attack");
+  ASSERT_EQ(node_desc->component_number(), 255);
+  ASSERT_EQ(node_desc->channel(), api::SynthNode::NONE);
+  ASSERT_EQ(node_desc->instance_id(), 65535);
+  EXPECT_FALSE(node_desc->has_module());
+  EXPECT_TRUE(node_desc->has_knob());
+  EXPECT_FALSE(node_desc->has_switch_());
+  EXPECT_EQ(node_desc->knob().min_value(), 333);
+  EXPECT_EQ(node_desc->knob().max_value(), 65535);
+  EXPECT_EQ(node_desc->knob().offset(), 32768);
+  EXPECT_EQ(node_desc->knob().scale(), 3);
+
+  SynthNode* node = SynthNode::Decode(*node_desc);
+  ASSERT_NE(node, nullptr);
+  Knob* decoded = dynamic_cast<Knob*>(node);
+  ASSERT_NE(decoded, nullptr);
+
+  delete decoded;
+  delete node_desc;
+}
+
+TEST(SynthNodeTest, EncodeSwitch) {
+  api::SynthNode* node_desc = new api::SynthNode();
+  Switch switch_;
+  switch_.SetSwitchType(SwitchType::TOGGLE);
+
+  switch_.Encode(node_desc);
+
+  ASSERT_EQ(node_desc->node_type(), api::SynthNode::SWITCH);
+  EXPECT_FALSE(node_desc->has_module());
+  EXPECT_FALSE(node_desc->has_knob());
+  EXPECT_TRUE(node_desc->has_switch_());
+  EXPECT_EQ(node_desc->switch_().switch_type(), api::Switch::TOGGLE);
+  EXPECT_EQ(node_desc->switch_().options_size(), 2);
+  EXPECT_EQ(node_desc->switch_().options(0), "off");
+  EXPECT_EQ(node_desc->switch_().options(1), "on");
+
+  SynthNode* node = SynthNode::Decode(*node_desc);
+  ASSERT_NE(node, nullptr);
+  Switch* decoded = dynamic_cast<Switch*>(node);
+  ASSERT_NE(decoded, nullptr);
+
+  ASSERT_EQ(decoded->GetSwitchType(), SwitchType::TOGGLE);
+  ASSERT_EQ(decoded->GetOptions().size(), 2);
+  ASSERT_EQ(decoded->GetOptions()[0], "off");
+  ASSERT_EQ(decoded->GetOptions()[1], "on");
+
+  delete decoded;
+
+  node_desc->Clear();
+  switch_.SetSwitchType(SwitchType::ROTARY);
+  switch_.ClearOptions();
+  switch_.AddOption("Triangular");
+  switch_.AddOption("Sawtooth");
+  switch_.AddOption("Pulse");
+  switch_.Encode(node_desc);
+  ASSERT_EQ(node_desc->switch_().switch_type(), api::Switch::ROTARY);
+  ASSERT_EQ(node_desc->switch_().options_size(), 3);
+  decoded = dynamic_cast<Switch*>(SynthNode::Decode(*node_desc));
+  ASSERT_NE(decoded, nullptr);
+  ASSERT_EQ(decoded->GetSwitchType(), SwitchType::ROTARY);
+  ASSERT_EQ(decoded->GetOptions().size(), 3);
+  ASSERT_EQ(decoded->GetOptions()[0], "Triangular");
+  ASSERT_EQ(decoded->GetOptions()[1], "Sawtooth");
+  ASSERT_EQ(decoded->GetOptions()[2], "Pulse");
+  delete decoded;
+
+  node_desc->Clear();
+  switch_.SetSwitchType(SwitchType::SELECTOR);
+  switch_.ClearOptions();
+  switch_.AddOption("1");
+  switch_.AddOption("2");
+  switch_.AddOption("3");
+  switch_.AddOption("4");
+  switch_.AddOption("5");
+  switch_.Encode(node_desc);
+  ASSERT_EQ(node_desc->switch_().switch_type(), api::Switch::SELECTOR);
+  ASSERT_EQ(node_desc->switch_().options_size(), 5);
+  decoded = dynamic_cast<Switch*>(SynthNode::Decode(*node_desc));
+  ASSERT_NE(decoded, nullptr);
+  ASSERT_EQ(decoded->GetSwitchType(), SwitchType::SELECTOR);
+  ASSERT_EQ(decoded->GetOptions().size(), 5);
+  ASSERT_EQ(decoded->GetOptions()[0], "1");
+  ASSERT_EQ(decoded->GetOptions()[1], "2");
+  ASSERT_EQ(decoded->GetOptions()[2], "3");
+  ASSERT_EQ(decoded->GetOptions()[3], "4");
+  ASSERT_EQ(decoded->GetOptions()[4], "5");
+  delete decoded;
+
+  node_desc->Clear();
+  switch_.SetSwitchType(SwitchType::MOMENTARY);
+  switch_.ClearOptions();
+  switch_.AddOption("off");
+  switch_.AddOption("on");
+  switch_.Encode(node_desc);
+  ASSERT_EQ(node_desc->switch_().switch_type(), api::Switch::MOMENTARY);
+  ASSERT_EQ(node_desc->switch_().options_size(), 2);
+  decoded = dynamic_cast<Switch*>(SynthNode::Decode(*node_desc));
+  ASSERT_NE(decoded, nullptr);
+  ASSERT_EQ(decoded->GetSwitchType(), SwitchType::MOMENTARY);
+  ASSERT_EQ(decoded->GetOptions().size(), 2);
+  ASSERT_EQ(decoded->GetOptions()[0], "off");
+  ASSERT_EQ(decoded->GetOptions()[1], "on");
+  delete decoded;
+
+  delete node_desc;
+}
+
 }  // namespace models
 }  // namespace analog3

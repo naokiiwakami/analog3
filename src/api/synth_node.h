@@ -38,26 +38,34 @@ class SynthNode {
   explicit SynthNode(NodeType t);
   virtual ~SynthNode();
 
-  static SynthNode* Build(const api::SynthNode& src, SynthNode* parent = nullptr);
+  /**
+   * Decode to a synth node object from SynthNode API message.
+   */
+  static SynthNode* Decode(const api::SynthNode& src, SynthNode* parent = nullptr);
+
+  /**
+   * Encode a SynthNode object to API message.
+   */
+  void Encode(api::SynthNode* dst);
 
   NodeType GetNodeType() { return _node_type; }
 
-  std::string GetNodeName() { return _node_name; }
+  const std::string& GetNodeName() const { return _node_name; }
   void SetNodeName(const std::string& node_name) { _node_name = node_name; }
 
-  uint8_t GetComponentNumber() { return _component_number; }
+  uint8_t GetComponentNumber() const { return _component_number; }
   void SetComponentNumber(uint8_t component_number) { _component_number = component_number; }
 
-  ChannelType GetChannel() { return _channel; }
+  ChannelType GetChannel() const { return _channel; }
   void SetChannel(enum ChannelType channel) { _channel = channel; }
 
-  uint16_t GetInstanceId() { return _instance_id; }
+  uint16_t GetInstanceId() const { return _instance_id; }
   void SetInstanceId(uint16_t id) { _instance_id = id; }
 
-  uint16_t GetInitialValue() { return _initial_value; }
+  uint16_t GetInitialValue() const { return _initial_value; }
   void SetInitialValue(uint16_t value) { _initial_value = value; }
 
-  uint16_t GetValue() { return _value; }
+  uint16_t GetValue() const { return _value; }
   void SetValue(uint16_t value) { _value = value; }
 
   virtual bool Validate() /*throw(InvalidNodeException*)*/;
@@ -126,9 +134,7 @@ class Switch : public SynthNode {
   SwitchType GetSwitchType() { return _switch_type; }
   void SetSwitchType(SwitchType switch_type) { _switch_type = switch_type; }
 
-  const std::vector<std::string>& GetOptions() {
-    return _options;
-  }
+  const std::vector<std::string>& GetOptions() { return _options; }
   void SetOptions(const std::vector<std::string>& options) { _options = options; }
   void AddOption(const std::string& option) {
     _options.push_back(option);
