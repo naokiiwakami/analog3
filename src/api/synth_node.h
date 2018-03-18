@@ -10,27 +10,28 @@
 namespace analog3 {
 namespace models {
 
-enum class NodeType {
-  MODULE,
-  KNOB,
-  SWITCH,
-  VIRTUAL_INPUT,
-  VIRTUAL_OUTPUT,
-  PHYSICAL_INPUT,
-  PHYSICAL_OUTPUT,
+enum class NodeType: int {
+  UNKNOWN = 0,
+  MODULE = 1,
+  KNOB = 2,
+  SWITCH = 3,
+  VIRTUAL_INPUT = 4,
+  VIRTUAL_OUTPUT = 5,
+  PHYSICAL_INPUT = 6,
+  PHYSICAL_OUTPUT = 7
 };
 
 enum class ChannelType {
-  NONE,
-  CAN,
+  NONE = 0,
+  CAN = 1
 };
 
-enum class SwitchType {
-  NONE,
-  TOGGLE,
-  ROTARY,
-  SELECTOR,
-  MOMENTARY
+enum class SwitchType: int {
+  NONE = 0,
+  TOGGLE = 1,
+  ROTARY = 2,
+  SELECTOR = 3,
+  MOMENTARY = 4
 };
 
 class SynthNode {

@@ -42,23 +42,7 @@ SynthNode* SynthNode::Decode(const api::SynthNode& src, SynthNode* parent) {
     case api::SynthNode::SWITCH: {
       Switch* switch_ = new Switch();
       if (src.has_switch_()) {
-        SwitchType switch_type;
-        switch (src.switch_().switch_type()) {
-          case api::Switch::TOGGLE:
-            switch_type = SwitchType::TOGGLE;
-            break;
-          case api::Switch::ROTARY:
-            switch_type = SwitchType::ROTARY;
-            break;
-          case api::Switch::SELECTOR:
-            switch_type = SwitchType::SELECTOR;
-            break;
-          case api::Switch::MOMENTARY:
-            switch_type = SwitchType::MOMENTARY;
-            break;
-          default:
-            switch_type = SwitchType::NONE;
-        }
+        SwitchType switch_type = static_cast<SwitchType>(src.switch_().switch_type());
         switch_->SetSwitchType(switch_type);
         if (!src.switch_().options().empty()) {
           switch_->ClearOptions();
@@ -78,14 +62,7 @@ SynthNode* SynthNode::Decode(const api::SynthNode& src, SynthNode* parent) {
     // Channel and instance ID of the top node is given.
     // Otherwise are inherited from the parent
     if (parent == nullptr) {
-      enum ChannelType channel_type;
-      switch (src.channel_type()) {
-        case api::SynthNode::CAN:
-          channel_type = ChannelType::CAN;
-          break;
-        default:
-          channel_type = ChannelType::NONE;
-      }
+      enum ChannelType channel_type = static_cast<ChannelType>(src.channel_type());
       node->SetChannelType(channel_type);
       node->SetInstanceId(src.instance_id());
     } else {
@@ -124,23 +101,8 @@ void SynthNode::Encode(api::SynthNode* dst) const {
     case NodeType::SWITCH: {
       const Switch* switch_ = dynamic_cast<const Switch*>(this);
       node_type = api::SynthNode::SWITCH;
-      api::Switch::SwitchType switch_type;
-      switch (switch_->GetSwitchType()) {
-        case SwitchType::TOGGLE:
-          switch_type = api::Switch::TOGGLE;
-          break;
-        case SwitchType::ROTARY:
-          switch_type = api::Switch::ROTARY;
-          break;
-        case SwitchType::SELECTOR:
-          switch_type = api::Switch::SELECTOR;
-          break;
-        case SwitchType::MOMENTARY:
-          switch_type = api::Switch::MOMENTARY;
-          break;
-        default:
-          switch_type = api::Switch::NOT_SET;
-      }
+      api::Switch::SwitchType switch_type =
+          static_cast<api::Switch::SwitchType>(switch_->GetSwitchType());
       dst->mutable_switch_()->set_switch_type(switch_type);
       for (const std::string& option : switch_->GetOptions()) {
         dst->mutable_switch_()->add_options(option);
@@ -148,19 +110,13 @@ void SynthNode::Encode(api::SynthNode* dst) const {
       break;
     }
     default:
-      node_type = api::SynthNode::NOT_SET;
+      node_type = api::SynthNode::UNKNOWN;
   }
 
   dst->set_node_type(node_type);
   dst->set_node_name(GetNodeName());
   dst->set_component_number(GetComponentNumber());
-  switch (GetChannelType()) {
-    case ChannelType::CAN:
-      dst->set_channel_type(api::SynthNode::CAN);
-      break;
-    default:
-      dst->set_channel_type(api::SynthNode::NONE);
-  }
+  dst->set_channel_type(static_cast<api::SynthNode::ChannelType>(GetChannelType()));
   dst->set_instance_id(GetInstanceId());
   dst->set_initial_value(GetInitialValue());
   for (auto child : GetChildren()) {

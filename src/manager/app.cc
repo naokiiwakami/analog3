@@ -15,7 +15,7 @@ App::App(bool is_stub) {
   if (is_stub) {
     _service = new api::StubSynthService();
   } else {
-    _service = new api::NetSynthService("beaglebone", 12345);
+    _service = new api::NetSynthService("localhost", 12345);
   }
 }
 

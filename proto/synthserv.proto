@@ -30,7 +30,7 @@ message Switch {
 
 message SynthNode {
   enum NodeType {
-    NOT_SET = 0;
+    UNKNOWN = 0;
     MODULE = 1;
     KNOB = 2;
     SWITCH = 3;
@@ -55,21 +55,20 @@ message SynthNode {
 
 message SynthServiceMessage {
   enum Operation {
-    NOT_SET             = 0;
-    PING                = 1;
-    PING_RESP           = 2;
-    LIST_MODELS         = 3;
-    LIST_MODELS_RESP    = 4;
-    GET_MODELS          = 5;
-    GET_MODELS_RESP     = 6;
-    LIST_INSTANCES      = 7;
-    LIST_INSTANCES_RESP = 8;
-    BIND                = 9;
-    BIND_RESP           = 10;
-    UNBIND              = 11;
-    UNBIND_RESP         = 12;
-    VALUE_CHANGE_REQ    = 13;
-    VALUE_CHANGE_NOTIF  = 14;
+    PING                = 0;
+    PING_RESP           = 1;
+    LIST_MODELS         = 2;
+    LIST_MODELS_RESP    = 3;
+    GET_MODELS          = 4;
+    GET_MODELS_RESP     = 5;
+    LIST_INSTANCES      = 6;
+    LIST_INSTANCES_RESP = 7;
+    BIND                = 8;
+    BIND_RESP           = 9;
+    UNBIND              = 10;
+    UNBIND_RESP         = 11;
+    VALUE_CHANGE_REQ    = 12;
+    VALUE_CHANGE_NOTIF  = 13;
   }
   Operation op                 = 1;
   uint32 sequence_number       = 2;
