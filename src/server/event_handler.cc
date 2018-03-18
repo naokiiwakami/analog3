@@ -82,12 +82,29 @@ Status SessionHandler::HandleEvent(const struct epoll_event& epoll_event) {
       api::NetUtils::WriteToStream(*response, _outstream);
       _outstream->Flush();
       break;
-    case api::SynthServiceMessage::GET_MODELS:
+    case api::SynthServiceMessage::GET_MODELS: {
       std::cout << "GET_MODELS" << std::endl;
       response->set_op(api::SynthServiceMessage::GET_MODELS_RESP);
+      int size = request->model_ids_size();
+      if (size > 0) {
+        for (int i = 0; i < size; ++i) {
+          uint16_t model_id = request->model_ids(i);
+          models::Module* module = _server->GetModel(model_id);
+          if (module != nullptr) {
+            api::SynthNode* node_message = response->add_models();
+            module->Encode(node_message);
+          }
+        }
+      } else {
+        _server->ForEachModel([&] (models::Module* module) {
+            api::SynthNode* node_message = response->add_models();
+            module->Encode(node_message);
+          });
+      }
       api::NetUtils::WriteToStream(*response, _outstream);
       _outstream->Flush();
       break;
+    }
     default:
       std::cerr << "NOT YET IMPLEMENTED" << std::endl;
   }

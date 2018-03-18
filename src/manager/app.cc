@@ -11,11 +11,11 @@ namespace analog3 {
 
 const char* App::prompt = "analog3> ";
 
-App::App(bool is_stub) {
+App::App(bool is_stub, const std::string& host, int port) {
   if (is_stub) {
     _service = new api::StubSynthService();
   } else {
-    _service = new api::NetSynthService("localhost", 12345);
+    _service = new api::NetSynthService(host, port);
   }
 }
 
