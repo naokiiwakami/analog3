@@ -26,7 +26,7 @@ $(TARGET_LIB_NAME).a: $(OBJS)
 -include $(OBJS:.o=.d)
 
 clean:
-	rm -rf $(CLEANFILES)
+	rm -rf $(CLEANFILES) synthserv.pb.*
 	make -C test clean
 
 cleanest:
