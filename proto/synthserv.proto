@@ -1,0 +1,82 @@
+syntax = "proto3";
+option cc_enable_arenas = true;
+
+package analog3.api;
+option java_package = "jp.gaje.analog3.api";
+
+message Module {
+  uint32 model_id = 1;
+  string model_name = 2;
+}
+
+message Knob {
+  uint32 min_value = 1;
+  uint32 max_value = 2;
+  uint32 offset = 3;
+  uint32 scale = 4;
+}
+
+message Switch {
+  enum SwitchType {
+    NOT_SET = 0;
+    TOGGLE = 1;
+    ROTARY = 2;
+    SELECTOR = 3;
+    MOMENTARY = 4;
+  }
+  SwitchType switch_type = 1;
+  repeated string options = 2;
+}
+
+message SynthNode {
+  enum NodeType {
+    UNKNOWN = 0;
+    MODULE = 1;
+    KNOB = 2;
+    SWITCH = 3;
+  }
+  enum ChannelType {
+    NONE = 0;
+    CAN = 1;
+  }
+  NodeType node_type = 1;
+  string node_name = 2;
+  uint32 instance_id = 3;
+  uint32 component_number = 4;
+  ChannelType channel_type = 5;
+  uint32 initial_value = 6;
+  oneof type_specific_metadata {
+    Module module = 7;
+    Knob knob = 8;
+    Switch switch = 9;
+  }
+  repeated SynthNode child_nodes = 10;
+}
+
+message SynthServiceMessage {
+  enum Operation {
+    PING                = 0;
+    PING_RESP           = 1;
+    LIST_MODELS         = 2;
+    LIST_MODELS_RESP    = 3;
+    GET_MODELS          = 4;
+    GET_MODELS_RESP     = 5;
+    LIST_INSTANCES      = 6;
+    LIST_INSTANCES_RESP = 7;
+    BIND                = 8;
+    BIND_RESP           = 9;
+    UNBIND              = 10;
+    UNBIND_RESP         = 11;
+    VALUE_CHANGE_REQ    = 12;
+    VALUE_CHANGE_NOTIF  = 13;
+  }
+  Operation op                 = 1;
+  uint32 sequence_number       = 2;
+  int32 status                 = 3;
+  repeated uint32 model_ids    = 4;
+  repeated SynthNode models    = 5;
+  repeated uint32 instance_ids = 6;
+  uint32 instance_id           = 7;
+  uint32 component_id          = 8;
+  uint32 new_value             = 9;
+}

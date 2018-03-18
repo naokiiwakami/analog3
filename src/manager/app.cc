@@ -2,19 +2,20 @@
 #include <stdio.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <iostream>
-#include "protocol/synthserv.pb.h"
+#include "api/synthserv.pb.h"
 
 namespace analog3 {
 
 const char* App::prompt = "analog3> ";
 
-App::App(bool is_stub) {
+App::App(bool is_stub, const std::string& host, int port) {
   if (is_stub) {
-    _service = new StubSynthService();
+    _service = new api::StubSynthService();
   } else {
-    _service = new NetSynthService("localhost", 12345);
+    _service = new api::NetSynthService(host, port);
   }
 }
 
@@ -76,11 +77,31 @@ bool App::ProcessInput(const std::vector<std::string>& args) {
     _service->Ping();
     std::cout << "PONG" << std::endl;
   } else if (command == "listmodelids") {
-    std::vector<uint32_t> model_ids;
+    std::vector<uint16_t> model_ids;
     result = _service->ListModelIds(&model_ids);
     if (result == 0) {
       for (uint32_t id : model_ids) {
         std::cout << id << std::endl;
+      }
+    } else {
+      std::cout << "ERROR: " << result << std::endl;
+    }
+  } else if (command == "getmodels") {
+    std::vector<uint16_t> model_ids;
+    for (uint32_t i = 1; i < args.size(); ++i) {
+      try {
+        model_ids.push_back(boost::lexical_cast<uint16_t>(args[i]));
+      } catch (const boost::bad_lexical_cast& err) {
+        std::cout << "ERROR: Argument " << args[i] << " must be a short integer" << std::endl;
+        return false;
+      }
+    }
+    std::vector<models::SynthNode*> models;
+    result = _service->GetModels(model_ids, &models);
+    if (result == 0) {
+      for (models::SynthNode* module : models) {
+        std::cout << module->GetNodeName() << std::endl;
+        delete module;
       }
     } else {
       std::cout << "ERROR: " << result << std::endl;

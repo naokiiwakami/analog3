@@ -4,8 +4,8 @@
 #include <string>
 
 #include "rapidjson/document.h"
-#include "server/module.h"
-#include "server/synth_node.h"
+#include "api/module.h"
+#include "api/synth_node.h"
 
 namespace analog3 {
 
@@ -15,7 +15,7 @@ class NodeBuilder {
       : _doc(doc)
   {}
 
-  SynthNode* Build();
+  models::SynthNode* Build();
 
   enum class DataType {
     STRING,
@@ -35,13 +35,13 @@ class NodeBuilder {
 
   bool CheckProp(const rapidjson::Value& value, const Prop& prop, bool is_required);
 
-  SynthNode* BuildNode(const rapidjson::Value& value);
+  models::SynthNode* BuildNode(const rapidjson::Value& value);
 
-  Module* BuildModule(const rapidjson::Value& value);
+  models::Module* BuildModule(const rapidjson::Value& value);
 
-  Knob* BuildKnob(const rapidjson::Value& value);
+  models::Knob* BuildKnob(const rapidjson::Value& value);
 
-  Switch* BuildSwitch(const rapidjson::Value& value);
+  models::Switch* BuildSwitch(const rapidjson::Value& value);
 
   rapidjson::Document* _doc;
 };

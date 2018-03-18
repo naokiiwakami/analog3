@@ -1,15 +1,30 @@
 #ifndef SRC_SERVER_SERVER_H_
 #define SRC_SERVER_SERVER_H_
 
+#include <sys/queue.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <boost/container/flat_map.hpp>
+#include <functional>
+#include <unordered_map>
 #include <vector>
 #include "server/errors.h"
 #include "server/event_handler.h"
+#include "api/module.h"
 
 namespace analog3 {
+
+struct ModuleEntry {
+  models::Module* module;
+  TAILQ_ENTRY(ModuleEntry) next;
+
+  explicit ModuleEntry(models::Module* m) {
+    module = m;
+  }
+};
+
+TAILQ_HEAD(ModulesHead, ModuleEntry);
 
 class Server {
  public:
@@ -33,6 +48,14 @@ class Server {
 
   Status DelFd(int fd);
 
+  void AddModel(models::Module* model);
+
+  // void DeleteModel(models::Module* model);
+
+  models::Module* GetModel(uint16_t model_id);
+
+  void ForEachModel(std::function<void (models::Module*)> func);
+
  private:
   Status Run();
 
@@ -47,6 +70,9 @@ class Server {
 
   pthread_t _tid;
   Status _finish_status;
+
+  struct ModulesHead models_head;
+  std::unordered_map<uint16_t, ModuleEntry*> models;
 };
 
 }  // namespace analog3

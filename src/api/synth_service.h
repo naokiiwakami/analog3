@@ -1,8 +1,7 @@
-#ifndef SRC_MANAGER_SYNTH_SERVICE_H_
-#define SRC_MANAGER_SYNTH_SERVICE_H_
+#ifndef SRC_API_SYNTH_SERVICE_H_
+#define SRC_API_SYNTH_SERVICE_H_
 
 #include <google/protobuf/arena.h>
-#include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <pthread.h>
 
@@ -13,9 +12,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "protocol/synthserv.pb.h"
+#include "api/synth_node.h"
+#include "api/synthserv.pb.h"
 
 namespace analog3 {
+namespace api {
 
 template<typename T>
 class Consumer {
@@ -56,7 +57,8 @@ class SynthService {
   static const uint64_t DEFAULT_TIMEOUT;  // millisecond
 
   void Ping();
-  int ListModelIds(std::vector<uint32_t>* model_ids);
+  int ListModelIds(std::vector<uint16_t>* model_ids);
+  int GetModels(const std::vector<uint16_t>& model_ids, std::vector<models::SynthNode*>* models);
 
  protected:
   void Call(api::SynthServiceMessage *message, Request* request);
@@ -114,10 +116,6 @@ class NetSynthService : public SynthService {
   int _fd;
   google::protobuf::io::FileInputStream* _instream;
   google::protobuf::io::FileOutputStream* _outstream;
-  // google::protobuf::io::CodedOutputStream* _coded_outstream;
-
-  pthread_mutex_t _net_mutex;
-  pthread_cond_t _net_cond;
 };
 
 class StubSynthService : public SynthService {
@@ -135,5 +133,6 @@ class StubSynthService : public SynthService {
   pthread_cond_t _stub_cond;
 };
 
+}  // namespace api
 }  // namespace analog3
-#endif  // SRC_MANAGER_SYNTH_SERVICE_H_
+#endif  // SRC_API_SYNTH_SERVICE_H_

@@ -1,4 +1,4 @@
-#include "manager/synth_service.h"
+#include "api/synth_service.h"
 #include <error.h>
 #include <netdb.h>
 #include <poll.h>
@@ -9,7 +9,10 @@
 #include <unistd.h>
 #include <iostream>
 
+#include "api/net_utils.h"
+
 namespace analog3 {
+namespace api {
 
 const uint64_t SynthService::DEFAULT_TIMEOUT = 10000;  // 10s
 
@@ -80,7 +83,7 @@ class PingConsumer : public SyncAcceptor {
 
 class ListModelIdsConsumer : public SyncAcceptor {
  public:
-  explicit ListModelIdsConsumer(int32_t* status, std::vector<uint32_t>* model_ids)
+  explicit ListModelIdsConsumer(int32_t* status, std::vector<uint16_t>* model_ids)
       : SyncAcceptor(), _status(status), _model_ids(model_ids) {}
   ~ListModelIdsConsumer() {}
 
@@ -96,7 +99,28 @@ class ListModelIdsConsumer : public SyncAcceptor {
 
  private:
   int32_t* _status;
-  std::vector<uint32_t>* _model_ids;
+  std::vector<uint16_t>* _model_ids;
+};
+
+class GetModelsConsumer : public SyncAcceptor {
+ public:
+  explicit GetModelsConsumer(int32_t* status, std::vector<models::SynthNode*>* models)
+      : SyncAcceptor(), _status(status), _models(models) {}
+  ~GetModelsConsumer() {}
+
+  void HandleMessage(api::SynthServiceMessage* response) {
+    *_status = response->status();
+    if (*_status == 0) {
+      int size = response->models_size();
+      for (int i = 0; i < size; ++i) {
+        _models->push_back(models::SynthNode::Decode(response->models(i)));
+      }
+    }
+  }
+
+ private:
+  int32_t* _status;
+  std::vector<models::SynthNode*>* _models;
 };
 
 // synchronous command processors
@@ -112,13 +136,30 @@ void SynthService::Ping() {
   acceptor.Wait();
 }
 
-int SynthService::ListModelIds(std::vector<uint32_t>* model_ids) {
+int SynthService::ListModelIds(std::vector<uint16_t>* model_ids) {
   int32_t status;
   ListModelIdsConsumer acceptor(&status, model_ids);
   Request request(_next_sequence_num++, &acceptor);
   api::SynthServiceMessage *message = google::protobuf::Arena::CreateMessage<api::SynthServiceMessage>(_arena);
   message->set_op(api::SynthServiceMessage::LIST_MODELS);
   message->set_sequence_number(request.sequence_number);
+
+  Call(message, &request);
+
+  acceptor.Wait();
+  return status;
+}
+
+int SynthService::GetModels(const std::vector<uint16_t>& model_ids, std::vector<models::SynthNode*>* models) {
+  int32_t status;
+  GetModelsConsumer acceptor(&status, models);
+  Request request(_next_sequence_num++, &acceptor);
+  api::SynthServiceMessage *message = google::protobuf::Arena::CreateMessage<api::SynthServiceMessage>(_arena);
+  message->set_op(api::SynthServiceMessage::GET_MODELS);
+  message->set_sequence_number(request.sequence_number);
+  for (uint16_t model_id : model_ids) {
+    message->add_model_ids(model_id);
+  }
 
   Call(message, &request);
 
@@ -236,21 +277,7 @@ void NetSynthService::Send(api::SynthServiceMessage *message) {
   std::cout << "  seq = " << message->sequence_number() << std::endl;
   std::cout << "  IsMessageTypeSet = " << message->ByteSizeLong() << std::endl;
   std::cout << "... sending" << std::endl;
-  {
-    google::protobuf::io::CodedOutputStream output(_outstream);
-    const int size = message->ByteSize();
-    std::cout << "size = " << size << std::endl;
-    output.WriteVarint32(size);
-    uint8_t* buffer = output.GetDirectBufferForNBytesAndAdvance(size);
-    if (buffer != nullptr) {
-      message->SerializeWithCachedSizesToArray(buffer);
-    } else {
-      message->SerializeWithCachedSizes(&output);
-      if (output.HadError()) {
-        // TODO(Naoki): do something
-      }
-    }
-  }
+  api::NetUtils::WriteToStream(*message, _outstream);
   _outstream->Flush();
   std::cout << "...sent" << std::endl;
 }
@@ -260,7 +287,6 @@ void NetSynthService::Notify() {
 }
 
 void NetSynthService::WaitForEvents() {
-#if 1
   struct pollfd pollfd = {
     .fd = _fd,
     .events = POLLIN,
@@ -274,18 +300,8 @@ void NetSynthService::WaitForEvents() {
   // TODO(Naoki): handle connection lost
 
   api::SynthServiceMessage *message = google::protobuf::Arena::CreateMessage<api::SynthServiceMessage>(_arena);
-  google::protobuf::io::CodedInputStream input(_instream);
-  uint32_t size;
-  input.ReadVarint32(&size);
-  google::protobuf::io::CodedInputStream::Limit limit = input.PushLimit(size);
-  message->MergeFromCodedStream(&input);
-  input.PopLimit(limit);
+  api::NetUtils::ReadFromStream(_instream, message);
   received_messages.push_back(message);
-#else
-  pthread_mutex_lock(&_net_mutex);
-  pthread_cond_wait(&_net_cond, &_net_mutex);
-  pthread_mutex_unlock(&_net_mutex);
-#endif
 }
 
 // StubSynthService implementation //////////////////////////////////////////////////////
@@ -335,4 +351,5 @@ void StubSynthService::WaitForEvents() {
   pthread_mutex_unlock(&_stub_mutex);
 }
 
+}  // namespace api
 }  // namespace analog3

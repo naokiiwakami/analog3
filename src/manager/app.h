@@ -4,13 +4,13 @@
 #include <string>
 #include <vector>
 
-#include "manager/synth_service.h"
+#include "api/synth_service.h"
 
 namespace analog3 {
 
 class App {
  public:
-  explicit App(bool is_stub);
+  explicit App(bool is_stub, const std::string& host, int port);
   virtual ~App();
 
   int run();
@@ -18,7 +18,7 @@ class App {
  private:
   bool ProcessInput(const std::vector<std::string>& args);
 
-  SynthService *_service;
+  api::SynthService *_service;
 
   static const char* prompt;
 };

@@ -15,7 +15,7 @@ NodeBuilder::Prop NodeBuilder::Prop::CHANNEL("channel", DataType::STRING);
 NodeBuilder::Prop NodeBuilder::Prop::CHILD_NODES("child_nodes", DataType::ARRAY);
 NodeBuilder::Prop NodeBuilder::Prop::OPTIONS("options", DataType::ARRAY);
 
-SynthNode* NodeBuilder::Build() {
+models::SynthNode* NodeBuilder::Build() {
   if (!_doc->IsObject()) {
     throw AppError(Status::SCHEMA_NOT_AN_OBJECT);
   }
@@ -93,12 +93,12 @@ bool NodeBuilder::CheckProp(const rapidjson::Value& value, const NodeBuilder::Pr
   return true;
 }
 
-SynthNode* NodeBuilder::BuildNode(const rapidjson::Value& value) {
+models::SynthNode* NodeBuilder::BuildNode(const rapidjson::Value& value) {
   if (!value.IsObject()) {
     throw AppError(Status::SCHEMA_NOT_AN_OBJECT);
   }
   std::string node_type = GetString(value, Prop::NODE_TYPE, true);
-  SynthNode* node = NULL;
+  models::SynthNode* node = NULL;
   try {
     if (node_type == "Module") {
       node = BuildModule(value);
@@ -124,11 +124,11 @@ SynthNode* NodeBuilder::BuildNode(const rapidjson::Value& value) {
   return node;
 }
 
-Module* NodeBuilder::BuildModule(const rapidjson::Value& value) {
+models::Module* NodeBuilder::BuildModule(const rapidjson::Value& value) {
   if (!value.IsObject()) {
     throw AppError(Status::SCHEMA_NOT_AN_OBJECT);
   }
-  Module* module = new Module();
+  models::Module* module = new models::Module();
   try {
     module->SetModelName(GetString(value, Prop::MODEL_NAME, true));
     module->SetModelId(GetInt(value, Prop::MODEL_ID, true));
@@ -141,11 +141,11 @@ Module* NodeBuilder::BuildModule(const rapidjson::Value& value) {
   return module;
 }
 
-Knob* NodeBuilder::BuildKnob(const rapidjson::Value& value) {
+models::Knob* NodeBuilder::BuildKnob(const rapidjson::Value& value) {
   if (!value.IsObject()) {
     throw AppError(Status::SCHEMA_NOT_AN_OBJECT);
   }
-  Knob* knob = new Knob();
+  models::Knob* knob = new models::Knob();
   try {
     if (CheckProp(value, Prop::MIN_VALUE, false))
       knob->SetMinValue(GetUint16(value, Prop::MIN_VALUE, false));
@@ -158,11 +158,11 @@ Knob* NodeBuilder::BuildKnob(const rapidjson::Value& value) {
   return knob;
 }
 
-Switch* NodeBuilder::BuildSwitch(const rapidjson::Value& value) {
+models::Switch* NodeBuilder::BuildSwitch(const rapidjson::Value& value) {
   if (!value.IsObject()) {
     throw AppError(Status::SCHEMA_NOT_AN_OBJECT);
   }
-  Switch* node = new Switch();
+  models::Switch* node = new models::Switch();
   try {
     if (CheckProp(value, Prop::OPTIONS, false)) {
       node->ClearOptions();
