@@ -59,7 +59,7 @@ enum MIDI_STATUS {
 
 // configuration
 uint8_t midi_target_channel = 0; // channel 1
-uint8_t num_voices = 4;
+uint8_t num_voices = 1;
 uint8_t retrigger = 0;
 enum {
     ASSIGN_LOWEST,

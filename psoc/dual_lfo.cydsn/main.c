@@ -88,6 +88,7 @@ bool ostream_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count)
 typedef struct _FreePort {
     uint8_t wireId;
     uint16_t value;
+    int32_t currentValue;
     uint8_t listener;
     char name[16];
 } FreePort;
@@ -125,8 +126,8 @@ Variables data = {
     512, 10, 0, NULL, 0, 0, // lfo1
     320, 1, 1, NULL, 0, 138, // lfo2
     0, NULL, 0, // midi-cv
-    { 138, 256,  1, {'0'}, }, // freePort1
-    { 0, 256, NA, {'0'}, }, // freePort2
+    { 138, 256, 0,  1, {'0'}, }, // freePort1
+    { 0, 256, 0, NA, {'0'}, }, // freePort2
 };
 
 typedef struct _Component {
@@ -139,6 +140,8 @@ enum {
     ComponentIdLfo1Delay,
     ComponentIdLfo2Freq,
     ComponentIdLfo2Delay,
+    ComponentIdLfo1Output,
+    ComponentIdLfo2Output,
     ComponentIdFreePort1,
     ComponentIdFreePort2,
 };
@@ -148,9 +151,34 @@ Component components[ComponentsResolverSize] = {
     { Knob, NULL },
     { Knob, NULL },
     { Knob, NULL },
+    { ValueOutputPort, NULL },
+    { ValueOutputPort, NULL },
+    // always place free ports at the back of the array.
+    // initializeComponentTable() algorithm is based on this assumption.
     { ValueInputPort, &data.freePort1 },
     { ValueInputPort, &data.freePort2 },
 };
+
+void initializeComponentTable()
+{
+    int i;
+    for (i = ComponentIdFreePort1; i <= ComponentsResolverSize; ++i) {
+        if (components[i - 1].componentType == ValueInputPort) {
+            FreePort* port = (FreePort*) components[i - 1].data;
+            if (port->listener != NA) {
+                // TODO: only supports one connection per listener yet
+                components[port->listener - 1].data = port;
+            }
+            if (data.lfo1_outputWireId == port->wireId) {
+                components[ComponentIdLfo1Output - 1].data = port;
+            }
+            if (data.lfo2_outputWireId == port->wireId) {
+                components[ComponentIdLfo2Output - 1].data = port;
+            }
+        }
+    }
+    
+}
 
 /*
  * This function makes a port name 'w<n>' from given wireId n.
@@ -208,7 +236,7 @@ void describe()
         /* 19 */ { offsetof(Variables, freePort2) + offsetof(FreePort, value), AttributeTypeValue, -19},
     };
 
-    enum {
+    enum IndexComponent {
         IndexComponentLfo1,
         IndexComponentLfo1Freq,
         IndexComponentLfo1Delay,
@@ -375,6 +403,13 @@ void addPort(int32_t idata)
             port->wireId = wireId;
             port->value = value;
             port->listener = parentComponentId;
+            components[parentComponentId - 1].data = port;
+            if (data.lfo1_outputWireId == port->wireId) {
+                components[ComponentIdLfo1Output - 1].data = port;
+            }
+            if (data.lfo2_outputWireId == port->wireId) {
+                components[ComponentIdLfo2Output - 1].data = port;
+            }                
             
             AttributeInfo attrs[] = {
                 /* 0 */ { freePortOffset + offsetof(FreePort, wireId), AttributeTypeWireId, 1},
@@ -399,8 +434,6 @@ void addPort(int32_t idata)
             flush();
         }
         // TODO: else return error.
-        
-        // TODO: add the port from the knob.
     }
     // TODO: else return error
 }
@@ -410,9 +443,18 @@ void removePort(uint32_t idata)
     uint8_t componentId = i2cSlaveWriteBuf[idata++];
     if (componentId < ComponentsResolverSize && components[componentId].componentType == ValueInputPort) {
         FreePort* port = (FreePort*) components[componentId].data;
+        components[port->listener - 1].data = NULL;
+        int i;
+        for (i = ComponentIdLfo1Output; i <= ComponentIdLfo2Output; ++i) {
+            if (components[i - 1].data != NULL) {
+                FreePort* p = (FreePort*) components[i -1].data;
+                if (p->wireId == port->wireId) {
+                    components[i - 1].data = NULL;
+                }
+            }
+        }
         port->wireId = 0;
         port->listener = NA;
-        // TODO: remove the port from the knob.
     }
     // TODO: else return error
 }
@@ -426,7 +468,7 @@ void handleI2CInput()
         switch(command) {
         case COMMAND_PING:
             Pin_LED_Blue_Write(0);
-            ledTimer = 0x1ffff;
+            ledTimer = 0xffff;
             break;
         /*
         case COMMAND_NAME: {
@@ -470,36 +512,46 @@ void handleI2CInput()
 
 uint16_t myexp(uint16_t);
 
-const float k = 2048.0 * 100.0 / 65536.0 / 20000.0;
-static struct _osc {
+const float k = 2048.0 * 100.0 / 65536.0 / 5000.0;
+typedef struct _osc {
     float granule;
     uint8_t direction;
+    uint8_t modify;
     float value;
-}
-osc = { 2048.0 / 20000, 1, 0.0 };
+} Osc;
+
+Osc osc1 = { 2048.0 / 5000, 1, 1, 0.0 };
+Osc osc2 = { 2048.0 / 5000, 1, 1, 0.0 };
     
 
 // This interrupt comes with 20kHz
 CY_ISR(ISR_Timer_1_Overflow)
 {    
     // Pin_LED_Blue_Write(!Pin_LED_Blue_Read());
-    PWM_1_WriteCompare1((int)(osc.value + 0.5));
-    if (osc.direction) {
-        if (osc.value >= 1023.0) {
-            osc.direction = 0;
-            osc.value -= osc.granule;
+    PWM_1_WriteCompare1((int)(osc1.value + 0.5));
+    PWM_1_WriteCompare2((int)(osc2.value + 0.5));
+    osc1.modify = 1;
+    osc2.modify = 1;
+}
+
+void updateOsc(Osc* osc)
+{
+    if (osc->direction) {
+        if (osc->value >= 1023.0) {
+            osc->direction = 0;
+            osc->value -= osc->granule;
         }
         else {
-            osc.value += osc.granule;
+            osc->value += osc->granule;
         }
     }
     else {
-        if (osc.value <= 0.0) {
-            osc.value += osc.granule;
-            osc.direction = 1;
+        if (osc->value <= 0.0) {
+            osc->value += osc->granule;
+            osc->direction = 1;
         }
         else {
-            osc.value -= osc.granule;
+            osc->value -= osc->granule;
         }
     }
 }
@@ -507,6 +559,7 @@ CY_ISR(ISR_Timer_1_Overflow)
 int main()
 {
     /* Place your initialization/startup code here (e.g. MyInst_Start()) */
+    initializeComponentTable();
 
     PWM_1_Start();
     // PWM_1_WriteCompare1(data.lfo1_frequency);
@@ -523,7 +576,10 @@ int main()
     ISR_Timer_1_Overflow_ClearPending();
     ISR_Timer_1_Overflow_StartEx(ISR_Timer_1_Overflow);
 
-    CyGlobalIntEnable; /* Uncomment this line to enable global interrupts. */    
+    CyGlobalIntEnable; /* Uncomment this line to enable global interrupts. */
+    
+    int32_t freq1 = data.lfo1_frequency;
+    // int32_t freq2 = data.lfo2_frequency;
     
     for(;;)
     {
@@ -552,7 +608,37 @@ int main()
             }
         }
         
-        osc.granule = k * myexp(data.lfo1_frequency * (65536 / 1024));
+        if (osc1.modify) {
+            updateOsc(&osc1);
+            osc1.granule = k * myexp(/*data.lfo1_frequency*/ freq1 * (65536 / 1024));
+            osc1.modify = 0;
+        }
+        else if (osc2.modify) {
+            updateOsc(&osc2);
+            osc2.granule = k * myexp(data.lfo2_frequency * (65536 / 1024));
+            osc2.modify = 0;
+        }
+        else {
+            if (components[ComponentIdLfo2Output -1].data) {
+                FreePort* port = (FreePort*) components[ComponentIdLfo2Output - 1].data;
+                port->currentValue = (int32_t) (osc2.value - 512) * port->value / 1024;
+            }
+            if (components[ComponentIdLfo1Freq - 1].data) {
+                FreePort* port = (FreePort*) components[ComponentIdLfo1Freq - 1].data;
+                freq1 = port->currentValue;
+            }
+            else {
+                freq1 = 0;
+            }
+            freq1 += data.lfo1_frequency;
+            if (freq1 < 0) {
+                freq1 = 0;
+            }
+            else if (freq1 >= 1024) {
+                freq1 = 1023;
+            }
+        }
+
         
 /*        
         if (rx_byteReady) {
