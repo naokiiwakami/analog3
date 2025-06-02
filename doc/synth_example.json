@@ -1,0 +1,128 @@
+[{
+  "name": "POC Box",
+  "id": "rig",
+  "type": "rack",
+  "components": [{
+    "name": "MIDI Receiver",
+    "id": "rxMidi",
+    "type": "module",
+    "components": [{
+      "name": "midi",
+      "id": "midi",
+      "type": "physicalOutput"
+    }]
+  }, {
+    "name": "MIDI Gateway",
+    "id": "midigw",
+    "type": "module",
+    "components": [{
+      "name": "MIDI IN",
+      "type": "physicalInput",
+      "connection": "rig.rxMidi.midi"
+    }, {
+      "name": "CV",
+      "id": "cv",
+      "type": "physicalOutout"
+    }, {
+      "name": "Gate",
+      "id": "gate",
+      "type": "virtualOutput"
+    }]
+  }, {
+    "name": "VCO",
+    "id": "vco",
+    "type": "module",
+    "components": [{
+      "name": "Range",
+      "id": "range",
+      "type": "selector",
+      "enum": ["64", "32", "16", "8", "4", "2"],
+      "defaultValue": "8"
+    }, {
+      "name": "Frequeny",
+      "id": "freq",
+      "type": "knob",
+      "defaultValue": 32768
+    }, {
+      "name": "CV Input",
+      "id": "cvInput",
+      "type": "physicalInput",
+      "connection": "rig.midigw.cv"
+    }, {
+      "name": "Wave Output",
+      "id": "out",
+      "type": "physicalOutput"
+    }]
+  }, {
+    "name": "EG",
+    "id": "eg",
+    "type": "module",
+    "components": [{
+      "name": "Attack Time",
+      "id": "a",
+      "type": "knob",
+      "defaultValue": 0
+    }, {
+      "name": "Decay Time",
+      "id": "d",
+      "type": "knob",
+      "defaultValue": 0
+    }, {
+      "name": "Sustain Level",
+      "id": "s",
+      "type": "knob",
+      "defaultValue": 0
+    }, {
+      "name": "Release Time",
+      "id": "r",
+      "type": "knob",
+      "defaultValue": 0
+    }, {
+      "name": "Gate",
+      "id": "in",
+      "type": "virtualInput",
+      "defaultConnections": [
+        "rig.midigw.gate"
+      ]
+    }, {
+      "name": "Output",
+      "id": "out",
+      "type": "physicalOutput"
+    }]
+  }, {
+    "name": "VCA",
+    "id": "vca",
+    "type": "module",
+    "components": [{
+      "name": "Audio In",
+      "id": "auIn",
+      "type": "physicalInput",
+      "connecton": "rig.vco.out"
+    }, {
+      "name": "CV In",
+      "id": "egIn",
+      "type": "physicalInput",
+      "connecton": "rig.eg.out"
+    }]
+  }, {
+    "name": "Output",
+    "id": "out",
+    "type": "module",
+    "components": [{
+      "name": "audio",
+      "id": "audio",
+      "type" : "physicalInput",
+      "connection": "rig.vca.out"
+    }]
+  }]
+}, {
+  "name": "virtual controllers",
+  "id": "virtualControllers",
+  "type": "rack",
+  "components": [{
+    "name": "Contour Controller",
+    "id": "cc",
+    "type": "selector",
+    "enum": [ "Hit", "Blow", "Push" ]
+  }]
+}]

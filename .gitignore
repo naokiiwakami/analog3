@@ -2,3 +2,6 @@
 *.o
 *.d
 *~
+.classpath
+.project
+.settings
