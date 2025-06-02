@@ -3,7 +3,6 @@
 
 #include "connector.pb.h"
 
-#include "rapidjson/document.h"
 #include "rapidjson/reader.h"
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/error/en.h"
@@ -410,7 +409,7 @@ FileModuleDriver::modifyAttribute(const connector::Request& request,
 
     // Set or unset attribute
     const std::string& attributeName = request.attribute().name();
-    
+
     switch (request.command()) {
     case connector::Request::SET_ATTRIBUTE: {
         // get new value
