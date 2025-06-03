@@ -308,7 +308,7 @@ A string with length up to 255. Encoded stream should be as the following.
 The string body does NOT contain terminating null.
 
 ```
-| length | body[0] | body[1] | ... | body[length - 1] |
+| body[0] | body[1] | ... | body[length - 1] |
 ```
 
 ### Field Definitions
