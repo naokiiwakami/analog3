@@ -18,6 +18,15 @@ TBD
 
 ## Message Details
 
+Messages are defined in this section. Several messages expect some responses from one or
+more remote modules. A set of request and expected responses is called a *stream*.
+Since streams are not tracked by ID, a module can make only one stream for a remote
+module at a time (it is fine to create concurrent streams of the same type
+for different modules).
+
+Note: This design is to make lengths of messages as short as possible. We keep this policy
+until concurrent operations are necessary.
+
 ### MIDI Timing Clock Message
 #### ID
 0x100 (001 0000 0000)
@@ -40,8 +49,9 @@ MIDI Receiver
 
 #### Payload
 A MIDI Voice message can contain multiple of the following sub-messages.
+All messages are for broadcasting. No responses are expected.
 
-| Opcode | Mnemonic          | Length | Operands         |
+| Opcode | Op Name           | Length | Operands         |
 | ------ | ----------------- | -----: | ---------------- |
 | 0x07   | SET_NOTE          |      2 | note_num (0-127) |
 | 0x08   | GATE_OFF          |      1 |                  |
@@ -72,7 +82,9 @@ MIDI real time messages are forwarded here except timing clocks.
 MIDI Receiver
 
 #### Payload
-| Opcode | Mnemonic         | Length | Operands                              |
+All messages are for broadcasting. No responses are expected.
+
+| Opcode | Op Name          | Length | Operands                              |
 | ------ | ---------------- | -----: | ------------------------------------- |
 | 0x0B   | CONTROL_CHANGE   |      3 | control_number (0-127), value (0-127) |
 | 0x0C   | PROGRAM_CHANGE   |      2 | program_number (0-127)                |
@@ -95,13 +107,14 @@ in range 0x00-0xFF. The CAN ID should be `0x700 + module_id`.
 Mission Control
 
 #### Payload
-| Opcode | Mnemonic         | Length | Operands                                        |
-| ------ | ---------------- | ------ | ----------------------------------------------- |
-| 0x01   | SIGN_IN          | 1      |                                                 |
-| 0x02   | ASSIGN_MODULE_ID | 5      | module_uid[4] (0-536870911), module_id (1-255)  |
-| 0x03   | PING             | 3      | module_id (1-255), enable_visual_response (0/1) |
-| 0x04   | REQUEST_NAME     | 2      | module_id (1-255)                               |
-| 0x05   | CONTINUE_NAME    | 2      | module_id (1-255)                               |
+
+| Opcode | Op Name          | Length | Operands                                          | Expected<br>Response          |
+| ------ | ---------------- | ------ | ------------------------------------------------- | ----------------------------- |
+| 0x01   | SIGN_IN          | 1      |                                                   | IM_SIGN_IN or<br>IM_NOTIFY_ID |
+| 0x02   | ASSIGN_MODULE_ID | 5      | module_uid[4] (0-536870911), module_id (1-255)    |                               |
+| 0x03   | PING             | 2 or 3 | module_id (1-255), o/enable_visual_response (0/1) | PING_REPLY                    |
+| 0x04   | REQUEST_NAME     | 2      | module_id (1-255)                                 | NAME_REPLY                    |
+| 0x05   | CONTINUE_NAME    | 2      | module_id (1-255)                                 | NAME_REPLY                    |
 
 
 #### Description
@@ -110,7 +123,8 @@ TBD
 ### Individual Module Message
 #### ID
 from 0x701 (111 0000 0001) to 0x7FF (111 1111 1111)
-Each module must have a unique ID in this range. The Mission Control assigns them dynamically. See section Module ID Assignment.
+
+Each module must have a unique ID in this range. The Mission Control assigns them dynamically. See section Module ID Assignment (TBD).
 
 In the Analog3 protocol, CAN standard IDs from 0x700 to 0x7FF are used for
 identifiers of modules. These IDs are exchanged as numbers
@@ -121,10 +135,10 @@ Individual module
 
 #### Payload
 
-| Opcode | Mnemonic   | Length | Operands   |
-| ------ | ---------- | ------ | ---------- |
-| 0x01   | REPLY_PING | 1      |            |
-| 0x02   | REPLY_NAME | >2     | data_chunk |
+| Opcode | Op Name    | Length | Operands     |
+| ------ | ---------- | ------ | ------------ |
+| 0x01   | PING_REPLY | 1      |              |
+| 0x02   | NAME_REPLY | >2     | field "name" |
 
 ### Module administration message
 #### ID
@@ -136,11 +150,11 @@ Individual module
 
 #### Payload
 
-| Opcode | Mnemonic       | Length | Operands          |
-| ------ | -------------- | ------ | ----------------- |
-| 0x01   | SIGN_IN        | 1      |                   |
-| 0x02   | NOTIFY_ID      | 2      | module_id (1-255) |
-| 0x03   | REQ_UID_CANCEL | 1      |                   |
+| Opcode | Op Name           | Length | Operands          | Expected<br>Response |
+| ------ | ----------------- | ------ | ----------------- | -------------------- |
+| 0x01   | IM_SIGN_IN        | 1      |                   | ASSIGN_MODULE_ID     |
+| 0x02   | IM_NOTIFY_ID      | 2      | module_id (1-255) |                      |
+| 0x03   | IM_REQ_UID_CANCEL | 1      |                   |                      |
 
 ## Special Operations
 
@@ -262,3 +276,43 @@ A data transmit message should consist of following data bytes:
 6: data
 7: data
 ```
+
+### Data Types
+
+#### U8
+Unsigned 8-bit integer. Encoded stream should be:
+
+```
+uint8_t value;
+| value |
+```
+
+#### U16
+Unsigned 16-bit integer. Encoded stream should be:
+
+```
+uint16_t value;
+| (value >> 8) & 0xff | value & 0xff |
+```
+
+#### U32
+Unsigned 32-bit integer. Encoded stream should be:
+
+```
+uint32_t value;
+| (value >> 24) & 0xff | (value >> 16) & 0xff | (value >> 8) & 0xff | value & 0xff |
+```
+
+#### String
+A string with length up to 255. Encoded stream should be as the following.
+The string body does NOT contain terminating null.
+
+```
+| length | body[0] | body[1] | ... | body[length - 1] |
+```
+
+### Field Definitions
+
+| Field ID | Field Name | Data Type | Description |
+| -------- | ---------- | --------- | ----------- |
+| 1        | Name       | String    | Module name |
