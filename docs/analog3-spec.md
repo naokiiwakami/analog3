@@ -115,6 +115,9 @@ Mission Control
 | 0x03   | PING             | 2 or 3 | module_id (1-255), o/enable_visual_response (0/1) | PING_REPLY                    |
 | 0x04   | REQUEST_NAME     | 2      | module_id (1-255)                                 | NAME_REPLY                    |
 | 0x05   | CONTINUE_NAME    | 2      | module_id (1-255)                                 | NAME_REPLY                    |
+| 0x06   | REQUEST_CONFIG   | 2      | module_id (1-255)                                 | CONFIG_REPLY                  |
+| 0x07   | CONTINUE_CONFIG  | 2      | module_id (1-255)                                 | CONFIG_REPLY                  |
+
 
 
 #### Description
@@ -135,10 +138,11 @@ Individual module
 
 #### Payload
 
-| Opcode | Op Name    | Length | Operands     |
-| ------ | ---------- | ------ | ------------ |
-| 0x01   | PING_REPLY | 1      |              |
-| 0x02   | NAME_REPLY | >2     | field "name" |
+| Opcode | Op Name      | Length | Operands     |
+| ------ | ------------ | ------ | ------------ |
+| 0x01   | PING_REPLY   | 1      |              |
+| 0x02   | NAME_REPLY   | >2     | field "name" |
+| 0x03   | CONFIG_REPLY | >2     | data fields  |
 
 ### Module administration message
 #### ID
