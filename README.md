@@ -1,15 +1,18 @@
-# analog3
+# Analog3
 Analog3 is a software/hardware hybrid synthesizer system.
 
 ## About This Project
 This is a software-controlled analog synthesizer project.
 
-One of the advantages of an analog synthesizer is smoothness of its voice.
-Sound of analog VCO is so beautiful and has its taste that is hard to be reproduced by digital/software oscillators.
+One of the advantages of analog synthesizers is smoothness of its voice.
+Sound of analog VCO is so beautiful and has some special taste that is hard to be reproduced by digital/software oscillators.
 
 However, it has significant disadvantage when you want to put complex modulations.
-For example, typical envelope generator of analog synthesizer gives too simple shape to create musically-attractive sound, especially at the attack part - it usually has only
-four parameters.
+For example, typical analog envelope generator has only four parameters
+(A, D, S, and R) which are too simple to create rich musical expression,
+especially at the attack part. Software/digital envelope generators have much
+more parameters, but analog parameters are fundamentally limited by number of
+knobs to be on the panel.
 
 Digital/software control works much better for such complex control.
 Analog3 is an effort to take advantage of both analog and digital synthesis.
