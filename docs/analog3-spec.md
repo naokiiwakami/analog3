@@ -13,6 +13,8 @@ TBD
 | 0x140             | 001 0100 0000                    | MIDI real time    | MIDI Receiver     | Forwarded MIDI real time messages<br>except timing clock |
 | 0x141             | 001 0100 0001                    | MIDI channel      | MIDI Receiver     | Forwarded MIDi Channel messages                          |
 |                   |                                  |                   |                   |                                                          |
+| 0x680 -<br>0x6ff  | 110 1000 0000 -<br>110 1111 1111 | Admin wires       | n/a               | Used for exchanging admin data                           |
+|                   |                                  |                   |                   |                                                          |
 | 0x700             | 111 0000 0000                    | Control message   | Mission Control   | Messages from the mission control                        |
 | 0x701 -<br>0x7FF  | 111 0000 0000 -<br>111 1111 1111 | Module ID         | Individual Module | Dynamically assigned module ID                           |
 
@@ -113,11 +115,11 @@ Mission Control
 | 0x01   | SIGN_IN          | 1      |                                                   | IM_SIGN_IN or<br>IM_NOTIFY_ID |
 | 0x02   | ASSIGN_MODULE_ID | 5      | module_uid[4] (0-536870911), module_id (1-255)    |                               |
 | 0x03   | PING             | 2 or 3 | module_id (1-255), o/enable_visual_response (0/1) | PING_REPLY                    |
-| 0x04   | REQUEST_NAME     | 2      | module_id (1-255)                                 | NAME_REPLY                    |
+| 0x04   | REQUEST_NAME     | 2      | module_id (1-255), admin_wire_id (0-63)           | NAME_REPLY                    |
 | 0x05   | CONTINUE_NAME    | 2      | module_id (1-255)                                 | NAME_REPLY                    |
-| 0x06   | REQUEST_CONFIG   | 2      | module_id (1-255)                                 | CONFIG_REPLY                  |
+| 0x06   | REQUEST_CONFIG   | 3      | module_id (1-255), admin_wire_id (0-63)           | CONFIG_REPLY                  |
 | 0x07   | CONTINUE_CONFIG  | 2      | module_id (1-255)                                 | CONFIG_REPLY                  |
-
+| 0x08   | MODIFY_CONFIG    | 3      | module_id (1-255), admin_wire_id (0-63)           | Remote frame to the wire      |
 
 
 #### Description
@@ -138,11 +140,10 @@ Individual module
 
 #### Payload
 
-| Opcode | Op Name      | Length | Operands     |
-| ------ | ------------ | ------ | ------------ |
-| 0x01   | PING_REPLY   | 1      |              |
-| 0x02   | NAME_REPLY   | >2     | field "name" |
-| 0x03   | CONFIG_REPLY | >2     | data fields  |
+| Opcode | Op Name             | Length | Operands |
+| ------ | ------------------- | ------ | -------- |
+| 0x01   | PING_REPLY          | 1      |          |
+| 0x04   | REQUEST_SEND_CONFIG | 1      |          |
 
 ### Module administration message
 #### ID
@@ -194,22 +195,22 @@ the sign-up procedure as follows:
 ## Configuration Data Scheme
 
 A TLV based scheme is used to exchange structured data between two modules over the CAN network.
-A data element is called *field*. A field is identified by *field ID*. A field ID is associated
-with a pre-defined name. Data type of a field is also pre-defined. Field names are not exchanged
+A data element is called *property*. A property is identified by *property ID*. A property ID is associated
+with a pre-defined name. Data type of a property is also pre-defined. Property names are not exchanged
 ove the CAN network. Individual nodes must save the ID to name mapping if necessary.
 Dynamic type ID allocation is not supported yet.
 
-But a receiver does not necessarily have to understand the semantics of fields thanks
+But a receiver does not necessarily have to understand the semantics of properties thanks
 to the TLV structure.
 For example, the Mission Control does not have to know a module's configuration to save it to a
 storage media.
 
 ### Basic structure
-In C syntax, a configuration data field consists of following members.
+In C syntax, a property consists of following members.
 
 ```
-struct DataField {
-  uint8_t field_id;
+struct Property {
+  uint8_t prop_id;
   uint8_t length;
   uint8_t data[N];
 };
@@ -218,33 +219,33 @@ struct DataField {
 where 0 < N < 256
 
 We assume data longer than 255 byte is not necessary in an Analog3 environment.
-To exchange the data, the fields are put to a byte array in the described order above, i.e.,
+To exchange the data, the properties are put to a byte array in the described order above, i.e.,
 
 ```
-| field_id | length | data[0] | data[1] | ... | data[N-1] |
+| prop_id | length | data[0] | data[1] | ... | data[N-1] |
 ```
 
-In case of sending multiple fields, wrap them into a Chunk:
+In case of sending multiple properties, wrap them into a Chunk:
 
 ```
 struct Chunk {
-  uint8_t num_fields;
-  struct DataField fields[];
+  uint8_t num_properties;
+  struct Property properties[];
 }
 ```
 
-To exchange the data, the fields are put to a byte array, i.e.,
+To exchange the data, the properties are put to a byte array, i.e.,
 
 ```
-| num_fields | field_id_0 | length_0 | data_0[0] | ... | data_0[N-1] | field_id_1 | ... |
+| num_properties | prop_id_0 | length_0 | data_0[0] | ... | data_0[N-1] | prop_id_1 | ... |
 ```
 
 Notes:
 
-- All fields are "flat". Nested structure is not allowed intentionally
+- All properties are "flat". Nested structure is not allowed intentionally
   to avoid modules doing a complex job to parse
-- A Chunk can contain multiple fields with the same ID. Treat them as a
-  list of fields. But the data structure is still "flat" in the Chunk.
+- A Chunk can contain multiple properties with the same ID. Treat them as a
+  list of properties. But the data structure is still "flat" in the Chunk.
 
 ### Data Transmission Protocol
 A CAN message contains only eight bytes at most. The sending data has to
@@ -300,7 +301,7 @@ uint16_t value;
 ```
 
 #### U32
-Unsigned 32-bit integer. Encoded stream should be:
+Unsigned 32-bit integer. Encoded in the big endian manner:
 
 ```
 uint32_t value;
@@ -308,15 +309,17 @@ uint32_t value;
 ```
 
 #### String
-A string with length up to 255. Encoded stream should be as the following.
+A string with length up to 63. Encoded stream should be as the following.
 The string body does NOT contain terminating null.
 
 ```
 | body[0] | body[1] | ... | body[length - 1] |
 ```
 
-### Field Definitions
+### Property Definitions
 
-| Field ID | Field Name | Data Type | Description |
-| -------- | ---------- | --------- | ----------- |
-| 1        | Name       | String    | Module name |
+| Property ID | Property Name | Data Type | Description                       |
+| ----------- | ------------- | --------- | --------------------------------- |
+| 0           | module UID    | U32       | unique ID of the module           |
+| 1           | module type   | U16       | type of the module (pre-assigned) |
+| 2           | name          | String    | module name                       |

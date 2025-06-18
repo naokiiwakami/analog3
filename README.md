@@ -1,65 +1,48 @@
 # analog3
-Analog3 is a software/hardware hybrid synthesizer.
+Analog3 is a software/hardware hybrid synthesizer system.
 
-### What is this project?
+## About This Project
 This is a software-controlled analog synthesizer project.
 
 One of the advantages of an analog synthesizer is smoothness of its voice.
 Sound of analog VCO is so beautiful and has its taste that is hard to be reproduced by digital/software oscillators.
 
-However, it has significant disadvantage when you want to put complex modulations on the sound.
-For example, typical envelope generator of analog synthesizer gives too simple shape to create
-musically attracitive sound, especially with attack part.
+However, it has significant disadvantage when you want to put complex modulations.
+For example, typical envelope generator of analog synthesizer gives too simple shape to create musically-attractive sound, especially at the attack part - it usually has only
+four parameters.
 
 Digital/software control works much better for such complex control.
-Analog3 is an effort to take advantage of both analog and digital synthesizers.
-Signal flow to make sound is built by analog circuit modules, i.e., vco, vcf, vca.
-Modulations are created digitally by embedded devices.  I chose PSoC for the first platform to implement modulators.
+Analog3 is an effort to take advantage of both analog and digital synthesis.
+Signal flow to make sound goes analog circuit paths, e.g., VCO, VCF, VCA.
+Modulations can be made digitally or in conventionally analog.
 
-Another problem in handling analog synthesizers is complexity.
-You need significantly large number of control parameters in order to control sound precisely.
-Typical analog synthesizer has one knob per control parameter on its panel.
-Analog3 is aiming to have hundreds of control parameters.
-Panel size becomes too large to put such many knobs, and control them during performance is almost impossible.
-So this project has another effort to virtualize panels.
-The software panel reads modulator devices and draw them as modules on panel.  Number of shown control parameters would be reduced by hiding and/or grouping.
+An Analog3 system has a CAN bus and each module connects to the bus to exchange
+information such as
 
-This repository is software part of the Analog3 project.  It consists of
-- frontend: Software panel and text console
-- netsynth: Modulator device manager that communicates with both frontend and modulators
-- psoc: Modulators
-- protobuf: Protocol buffers schemas to define frontend-netsynth and netsynth-modulators communications
+  - configuration
+  - performance data (similar to MIDI messages)
+  - control values (namely digital CV)
 
-### Build instruction
-#### Prerequisites
-Frontend is a Java project and can be built on any platform that supports Java.  
-Netsynth has hardware depenency on Raspberry Pi B+.  Tested only on Raspbian.  
-PSoC modulators require PSoC Creator version 3.1 and higher.
+The network has a special module called "[Mission Control](https://github.com/naokiiwakami/analog3.mission-control)". It organizes modules such as identifying them and assigning
+IDs, helps connecting individual modules. It also provides user interface to help operating
+the system.
 
-Following software tools need to be installed:
-- Apache Maven
-- Protocol Buffers
+Analog3 also aims to solve another issue of analog synthesizers that their panels would
+~become too complicated if you increase number of parameters. An Analog3 module can have more
+parameters than ones provided on the panel. These hidden parameters can be tweaked
+externally. Also, multiple parameters can be associated to a knob to simplify the
+manipulation.
 
-This project depends on following third party software components.
-- rapidjson https://github.com/miloyip/rapidjson
-- log4cplus https://github.com/log4cplus/log4cplus
-- Nanopb http://koti.kapsi.fi/jpa/nanopb/
+## About This Repository
 
-##### rapidjson
-Rapidjson consists of C/C++ include files.
-Place include/rapidjson directory in the package at $PROJECT_ROOT/thirdparty/include/rapidjson.
+This repository maintains the common part of the Analog3 project that includes:
 
-##### log4cplus
-Install the log4cplus include files and libraries at $PROJECT_ROOT/thirdparty.
+- [Module communication protocol specification](docs/analog3-spec.md)
+- Software library (TBD)
 
-##### Nanopb
-Expand the Nanopb package at $PROJECT_ROOT.  Rename the directory to nanopb.
+## Related Projects
 
-#### frontend
-This is a Java project.  Go to directory frontend and run 'mvn install'.
-
-#### netsynth
-This is a C++ project.  Go to directory netsynth and run 'make'.
-
-#### psoc
-Open projects from PSoC Creator and build.
+- [Mission Control](https://github.com/naokiiwakami/analog3.mission-control) - Manages modules
+- [Can Controller](https://github.com/naokiiwakami/can-controller) - C library to enable
+CAN interface in various micro controllers / Raspberry Pi
+- [CV-Depot](https://github.com/naokiiwakami/cv-depot) - MIDI/CV converter with Analog3 interface
