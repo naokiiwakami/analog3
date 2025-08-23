@@ -44,21 +44,21 @@ Messages with this ID are forwarded from MIDI Timing Clock. The message should c
 
 ### MIDI Voice Message
 #### ID
-0x101 (001 0000 0001) to 0x13f (001 0011 1111) - 63 voices at maximum
+0x101 (001 0000 0001) to 0x13f (001 0011 1111) - 63 voices at maximum. All modules
+that receives a voice data listens on its ID.
 
 #### Owner
 MIDI Receiver
 
 #### Payload
-A MIDI Voice message can contain multiple of the following sub-messages.
-All messages are for broadcasting. No responses are expected.
+A MIDI Voice message can contain one or more of the following sub-messages.
 
-| Opcode | Op Name           | Length | Operands         |
-| ------ | ----------------- | -----: | ---------------- |
-| 0x07   | SET_NOTE          |      2 | note_num (0-127) |
-| 0x08   | GATE_OFF          |      1 |                  |
-| 0x09   | GATE_ON           |      2 | velocity (0-127) |
-| 0x0A   | POLY_KEY_PRESSURE |      2 | pressure (0-127) |
+| Opcode | Op Name           | Length | Operands           |
+| ------ | ----------------- | -----: | ------------------ |
+| 0x07   | SET_NOTE          |      2 | note_num (0-127)   |
+| 0x08   | GATE_OFF          |      1 |                    |
+| 0x09   | GATE_ON           |      3 | velocity (0-65535) |
+| 0x0A   | POLY_KEY_PRESSURE |      3 | pressure (0-65535) |
 
 #### Description
 Used for controlling corresponding voice modules.
@@ -143,6 +143,7 @@ Individual module
 | Opcode | Op Name             | Length | Operands |
 | ------ | ------------------- | ------ | -------- |
 | 0x01   | PING_REPLY          | 1      |          |
+| 0x02   | ID_ASSIGN_ACK       | 1      |          |
 | 0x04   | REQUEST_SEND_CONFIG | 1      |          |
 
 ### Module administration message
