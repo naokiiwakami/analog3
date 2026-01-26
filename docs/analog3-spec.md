@@ -2,21 +2,29 @@
 
 ## Introduction
 
-TBD
+Contents TBD
+
+### Overview
+
+### CAN Identifier Usage in the Analog3 Network
+
+### Types of Modules
+#### Individual Module
+#### Mission Control
+#### Dispatcher
 
 ## CAN Identifier Assignments
 
-| ID (hex)          | ID (binary)                      | Name              | Owner             | Notes                                                    |
-| ----------------- | -------------------------------- | ----------------- | ----------------- | -------------------------------------------------------- |
-| 0x100             | 001 0000 0000                    | MIDI timing clock | MIDI Receiver     | Forwarded from MIDI                                      |
-| 0x101 -<br> 0x13F | 001 0000 0001 -<br>001 0011 1111 | MIDI voice        | MIDI Receiver     | Conveys voice messages                                   |
-| 0x140             | 001 0100 0000                    | MIDI real time    | MIDI Receiver     | Forwarded MIDI real time messages<br>except timing clock |
-| 0x141             | 001 0100 0001                    | MIDI channel      | MIDI Receiver     | Forwarded MIDi Channel messages                          |
-|                   |                                  |                   |                   |                                                          |
-| 0x680 -<br>0x6ff  | 110 1000 0000 -<br>110 1111 1111 | Admin wires       | n/a               | Used for exchanging admin data                           |
-|                   |                                  |                   |                   |                                                          |
-| 0x700             | 111 0000 0000                    | Control message   | Mission Control   | Messages from the mission control                        |
-| 0x701 -<br>0x7FF  | 111 0000 0000 -<br>111 1111 1111 | Module ID         | Individual Module | Dynamically assigned module ID                           |
+| ID (hex)          | ID (binary)                      | Name            | Owner             | Notes                                                                        |
+| ----------------- | -------------------------------- | --------------- | ----------------- | ---------------------------------------------------------------------------- |
+| 0x100             | 001 0000 0000                    | Timing clock    | Dispatcher        | Forwarded MIDI timing clock                                                  |
+| 0x101 -<br> 0x13F | 001 0000 0001 -<br>001 0011 1111 | Voice Message   | Dispatcher        | Voice message conveyers per voice, typically parsed from MIDI voice messages |
+| 0x140             | 001 0100 0000                    | Real time       | Dispatcher        | Forwarded MIDI real time messages<br>except timing clock                     |
+|                   |                                  |                 |                   |                                                                              |
+| 0x680 -<br>0x6ff  | 110 1000 0000 -<br>110 1111 1111 | Admin wires     | n/a               | Used for exchanging admin data                                               |
+|                   |                                  |                 |                   |                                                                              |
+| 0x700             | 111 0000 0000                    | Control message | Mission Control   | Messages from the mission control                                            |
+| 0x701 -<br>0x7FF  | 111 0000 0000 -<br>111 1111 1111 | Module ID       | Individual Module | Dynamically assigned module ID                                               |
 
 ## Message Details
 
@@ -34,7 +42,7 @@ until concurrent operations are necessary.
 0x100 (001 0000 0000)
 
 #### Owner
-The MIDI receiver
+The Dispatcher
 
 #### Payload
 None
@@ -42,13 +50,16 @@ None
 #### Description
 Messages with this ID are forwarded from MIDI Timing Clock. The message should contain no payload data.
 
-### MIDI Voice Message
+### Voice Message
+Voice messages are used for driving synthesizer voices in the system. Unlike MIDI voice messages that are mixed within a channel, Analog3 voice message are separated by voice IDs. Each voice ID is tied with a synthesizer voice in the system. The Dispatcher typically decodes MIDI voice messages into Analog3 ones using a key assigner.
+
+*Voices* may be confusing with the concept of MIDI *channel*, but they are different things. MIDI *channels* are meant to multiplex data from multiple *instruments*. A MIDI *channel* may include multiple *voices*. There is no explicit definition of *voices* in MIDI, how to determine *voices* is up to the receiver's implementation. On the other hand, an Analog3 network does not have a built-in concept of *instruments* or *channels*. An Analog3 network contains only one *instrument* that can generate multiple *voices*. If you need to provide multiple *instruments* in an Analog3 network, you can do so by categorizing *voices* into multiple *instruments* virtually.
+
 #### ID
-0x101 (001 0000 0001) to 0x13f (001 0011 1111) - 63 voices at maximum. All modules
-that receives a voice data listens on its ID.
+0x101 (001 0000 0001) to 0x13f (001 0011 1111) - 63 voices at maximum. All modules that receives a voice data listens on the corresponding ID.
 
 #### Owner
-MIDI Receiver
+Dispatcher
 
 #### Payload
 A MIDI Voice message can contain one or more of the following sub-messages.
@@ -68,7 +79,7 @@ Used for controlling corresponding voice modules.
 0x140 (001 0100 0000)
 
 #### Owner
-MIDI Receiver
+Dispatcher
 
 #### Payload
 1 byte real time message status
@@ -81,7 +92,7 @@ MIDI real time messages are forwarded here except timing clocks.
 0x141 (001 0100 0001)
 
 #### Owner
-MIDI Receiver
+Dispatcher
 
 #### Payload
 All messages are for broadcasting. No responses are expected.
@@ -115,11 +126,10 @@ Mission Control
 | 0x01   | SIGN_IN          | 1      |                                                   | IM_SIGN_IN or<br>IM_NOTIFY_ID |
 | 0x02   | ASSIGN_MODULE_ID | 5      | module_uid[4] (0-536870911), module_id (1-255)    |                               |
 | 0x03   | PING             | 2 or 3 | module_id (1-255), o/enable_visual_response (0/1) | PING_REPLY                    |
-| 0x04   | REQUEST_NAME     | 2      | module_id (1-255), admin_wire_id (0-63)           | NAME_REPLY                    |
-| 0x05   | CONTINUE_NAME    | 2      | module_id (1-255)                                 | NAME_REPLY                    |
-| 0x06   | REQUEST_CONFIG   | 3      | module_id (1-255), admin_wire_id (0-63)           | CONFIG_REPLY                  |
-| 0x07   | CONTINUE_CONFIG  | 2      | module_id (1-255)                                 | CONFIG_REPLY                  |
-| 0x08   | MODIFY_CONFIG    | 3      | module_id (1-255), admin_wire_id (0-63)           | Remote frame to the wire      |
+| 0x04   | REQUEST_NAME     | 2      | module_id (1-255), wire_addr (0-63)               | NAME_REPLY                    |
+| 0x05   | REQUEST_CONFIG   | 3      | module_id (1-255), wire_addr (0-63)               | CONFIG_REPLY                  |
+| 0x06   | CONTINUE_STREAM  | 3      | module_id (1-255), wire_addr(0-63)                | CONFIG_REPLY                  |
+| 0x08   | MODIFY_CONFIG    | 3      | module_id (1-255), wire_addr (0-63)               | Remote frame to the wire      |
 
 
 #### Description
