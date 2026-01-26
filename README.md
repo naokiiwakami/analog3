@@ -47,5 +47,5 @@ This repository maintains the common part of the Analog3 project that includes:
 
 - [Mission Control](https://github.com/naokiiwakami/analog3.mission-control) - Manages modules
 - [Can Controller](https://github.com/naokiiwakami/can-controller) - C library to enable
-CAN interface in various micro controllers / Raspberry Pi
+CAN interface with various microcontrollers / Raspberry Pi
 - [CV-Depot](https://github.com/naokiiwakami/cv-depot) - MIDI/CV converter with Analog3 interface
